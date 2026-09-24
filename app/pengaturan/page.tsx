@@ -31,19 +31,32 @@ export default function Pengaturan(){
   try{
    setError('');
    const pid=await currentPropertyId();
-   const tables=['properties','rooms','tenants','invoices','payments','expenses'] as const;
-   const results=await Promise.all(tables.map(t=>supabase.from(t).select('*').eq(t==='properties'?'id':'property_id',pid)));
-   const failed=results.find(r=>r.error);
-   if(failed?.error)throw failed.error;
+   const {data:property,error:propertyError}=await supabase.from('properties').select('*').eq('id',pid).single();
+   if(propertyError)throw propertyError;
+   const {data:rooms,error:roomsError}=await supabase.from('rooms').select('*').eq('property_id',pid);
+   if(roomsError)throw roomsError;
+   const {data:tenants,error:tenantsError}=await supabase.from('tenants').select('*').eq('property_id',pid);
+   if(tenantsError)throw tenantsError;
+   const {data:invoices,error:invoicesError}=await supabase.from('invoices').select('*').eq('property_id',pid);
+   if(invoicesError)throw invoicesError;
+   const invoiceIds=(invoices||[]).map(x=>x.id);
+   let payments:Record<string,unknown>[]=[];
+   if(invoiceIds.length){
+    const {data,error}=await supabase.from('payments').select('*').in('invoice_id',invoiceIds);
+    if(error)throw error;
+    payments=(data||[]) as Record<string,unknown>[];
+   }
+   const {data:expenses,error:expensesError}=await supabase.from('expenses').select('*').eq('property_id',pid);
+   if(expensesError)throw expensesError;
    const data:BackupData={
     version:1,
     exported_at:new Date().toISOString(),
-    property:(results[0].data?.[0]||{}) as Record<string,unknown>,
-    rooms:(results[1].data||[]) as Record<string,unknown>[],
-    tenants:(results[2].data||[]) as Record<string,unknown>[],
-    invoices:(results[3].data||[]) as Record<string,unknown>[],
-    payments:(results[4].data||[]) as Record<string,unknown>[],
-    expenses:(results[5].data||[]) as Record<string,unknown>[]
+    property:(property||{}) as Record<string,unknown>,
+    rooms:(rooms||[]) as Record<string,unknown>[],
+    tenants:(tenants||[]) as Record<string,unknown>[],
+    invoices:(invoices||[]) as Record<string,unknown>[],
+    payments,
+    expenses:(expenses||[]) as Record<string,unknown>[]
    };
    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
    const url=URL.createObjectURL(blob);
@@ -64,17 +77,31 @@ export default function Pengaturan(){
    if(parsed.version!==1||!parsed.property||!Array.isArray(parsed.rooms)||!Array.isArray(parsed.tenants)||!Array.isArray(parsed.invoices)||!Array.isArray(parsed.payments)||!Array.isArray(parsed.expenses)){
     throw new Error('Format file backup tidak valid.');
    }
-   if(parsed.property.id!==pid)throw new Error('Backup ini berasal dari properti yang berbeda.');
-   const property={...parsed.property,id:pid};
-   const{error:propertyError}=await supabase.from('properties').upsert(property,{onConflict:'id'});
+   if(String(parsed.property.id)!==pid)throw new Error('Backup ini berasal dari properti yang berbeda.');
+   const {id:propertyId,...propertyData}=parsed.property;
+   const {error:propertyError}=await supabase.from('properties').update(propertyData).eq('id',pid);
    if(propertyError)throw propertyError;
-   for(const [table,rows] of [['rooms',parsed.rooms],['tenants',parsed.tenants],['invoices',parsed.invoices],['payments',parsed.payments],['expenses',parsed.expenses]] as const){
-    if(rows.length){
-     const{error}=await supabase.from(table).upsert(rows as Record<string,unknown>[],{onConflict:'id'});
-     if(error)throw error;
-    }
+   const {error:roomsError}=await supabase.from('rooms').upsert(
+    (parsed.rooms as Record<string,unknown>[]).map(row=>({...row,property_id:pid})),{onConflict:'id'}
+   );
+   if(roomsError)throw roomsError;
+   const {error:tenantsError}=await supabase.from('tenants').upsert(
+    (parsed.tenants as Record<string,unknown>[]).map(row=>({...row,property_id:pid})),{onConflict:'id'}
+   );
+   if(tenantsError)throw tenantsError;
+   const {error:invoicesError}=await supabase.from('invoices').upsert(
+    (parsed.invoices as Record<string,unknown>[]).map(row=>({...row,property_id:pid})),{onConflict:'id'}
+   );
+   if(invoicesError)throw invoicesError;
+   if(parsed.payments.length){
+    const {error}=await supabase.from('payments').upsert(parsed.payments as Record<string,unknown>[],{onConflict:'id'});
+    if(error)throw error;
    }
-   setF({...initial,...property,owner_name:String(property.owner_name||''),manager:String(property.manager||''),phone:String(property.phone||''),address:String(property.address||''),currency:String(property.currency||'IDR'),logo:String(property.logo||'')} as Form);
+   const {error:expensesError}=await supabase.from('expenses').upsert(
+    (parsed.expenses as Record<string,unknown>[]).map(row=>({...row,property_id:pid})),{onConflict:'id'}
+   );
+   if(expensesError)throw expensesError;
+   setF({...initial,...propertyData,owner_name:String(propertyData.owner_name||''),manager:String(propertyData.manager||''),phone:String(propertyData.phone||''),address:String(propertyData.address||''),currency:String(propertyData.currency||'IDR'),logo:String(propertyData.logo||'')} as Form);
    setSaved(true);setTimeout(()=>setSaved(false),3000);
    window.dispatchEvent(new Event('kostpro-settings-updated'));
   }catch(e){setError(e instanceof Error?e.message:'Gagal restore backup.')}
