@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, DoorOpen, Users, Receipt, Wallet, BarChart3, Settings, FileText, Menu, X, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, DoorOpen, Users, Receipt, Wallet, BarChart3, Settings, FileText, Menu, X } from 'lucide-react';
 
 const items = [
   ['/', 'Dashboard', LayoutDashboard],
@@ -18,14 +18,9 @@ const items = [
 export default function Sidebar() {
   const p = usePathname();
   const [open, setOpen] = useState(false);
-  const [laporanOpen, setLaporanOpen] = useState(p === '/laporan' || p === '/tagihan');
 
   useEffect(() => {
     setOpen(false);
-  }, [p]);
-
-  useEffect(() => {
-    if (p === '/laporan' || p === '/tagihan') setLaporanOpen(true);
   }, [p]);
 
   useEffect(() => {
@@ -58,29 +53,16 @@ export default function Sidebar() {
           {items.map(([href, label, Icon]) => (
             label === 'Laporan' ? (
               <div className="nav-group" key={href}>
-                <div className={'nav-parent ' + (p === href || p === '/tagihan' ? 'active' : '')}>
-                  <Link className="nav-parent-link" href={href}>
-                    <Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />
-                    {label}
+                <Link className={'nav-parent-link nav-parent ' + (p === href || p === '/tagihan' ? 'active' : '')} href={href}>
+                  <Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />
+                  {label}
+                </Link>
+                <div className="nav-submenu">
+                  <Link className={p === '/tagihan' ? 'active' : ''} href="/tagihan">
+                    <Receipt size={15} />
+                    Tagihan
                   </Link>
-                  <button
-                    type="button"
-                    className="nav-chevron"
-                    aria-label={laporanOpen ? 'Tutup submenu Laporan' : 'Buka submenu Laporan'}
-                    aria-expanded={laporanOpen}
-                    onClick={() => setLaporanOpen(v => !v)}
-                  >
-                    <ChevronDown size={16} className={laporanOpen ? 'rotated' : ''} />
-                  </button>
                 </div>
-                {laporanOpen && (
-                  <div className="nav-submenu">
-                    <Link className={p === '/tagihan' ? 'active' : ''} href="/tagihan">
-                      <Receipt size={15} />
-                      Tagihan
-                    </Link>
-                  </div>
-                )}
               </div>
             ) : (
               <Link className={p === href ? 'active' : ''} href={href} key={href}>
