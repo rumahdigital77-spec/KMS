@@ -1,0 +1,7 @@
+'use client';
+import{useState}from'react';import{useRouter}from'next/navigation';import{supabase}from'@/lib/supabase-browser';
+export default function Login(){
+ const router=useRouter(),[user,setUser]=useState(''),[pass,setPass]=useState(''),[error,setError]=useState('');
+ const submit=async()=>{setError('');const username=user.trim().toLowerCase();if(!username||!pass)return setError('Username dan password wajib diisi.');const {error}=await supabase.auth.signInWithPassword({email:`${username}@kms.local`,password:pass});if(error)return setError('Username atau password salah.');router.replace('/');router.refresh()};
+ return <div style={{maxWidth:440,margin:'8vh auto'}}><div className="card"><div style={{textAlign:'center',marginBottom:24}}><div style={{fontSize:42}}>🏠</div><div className="title" style={{fontSize:26}}>KMS</div><div className="sub">Login Pengelola Kost</div></div><div className="form"><div className="field"><label>Username</label><input value={user} onChange={e=>setUser(e.target.value)} autoComplete="username"/></div><div className="field"><label>Password</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} autoComplete="current-password"/></div></div>{error&&<div style={{color:'#b91c1c',fontWeight:700,marginTop:12}}>{error}</div>}<div className="actions" style={{marginTop:18}}><button className="btn" onClick={submit}>Masuk</button></div></div></div>
+}
