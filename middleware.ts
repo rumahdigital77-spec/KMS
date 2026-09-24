@@ -10,10 +10,21 @@ export async function middleware(request: NextRequest) {
     { cookies: { getAll: () => request.cookies.getAll(), setAll: cookies => cookies.forEach(({name,value,options}) => { request.cookies.set(name,value); response.cookies.set(name,value,options); }) } }
   );
   const { data: { user } } = await supabase.auth.getUser();
-  const path=request.nextUrl.pathname;
-  const publicPath=path==='/login'||path==='/daftar'||path.startsWith('/api/auth');
-  if(!user&&!publicPath){const url=request.nextUrl.clone();url.pathname='/login';url.searchParams.set('next',path);return NextResponse.redirect(url)}
-  if(user&&(path==='/login'||path==='/daftar'))return NextResponse.redirect(new URL('/',request.url));
+  const path = request.nextUrl.pathname;
+  // Hanya menu Pengaturan yang memerlukan login. Menu operasional tetap terbuka.
+  if (path === '/pengaturan' || path.startsWith('/pengaturan/')) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('next', path);
+      return NextResponse.redirect(url);
+    }
+  }
+  if (user && (path === '/login' || path === '/daftar')) {
+    const next = request.nextUrl.searchParams.get('next');
+    const target = next && next.startsWith('/') && !next.startsWith('//') ? next : '/pengaturan';
+    return NextResponse.redirect(new URL(target, request.url));
+  }
   return response;
 }
 
