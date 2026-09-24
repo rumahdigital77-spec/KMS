@@ -40,7 +40,7 @@ export default function LoginPage() {
     }
 
     localStorage.setItem('kostpro_active_property_id', mapping.property_id);
-    router.push('/');
+    router.push(new URLSearchParams(window.location.search).get('next') || '/');
   };
 
   return (
