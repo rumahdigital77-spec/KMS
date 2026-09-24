@@ -99,26 +99,25 @@ export default function BookingPage() {
       setMsg('Kamar, nama, nomor WhatsApp, dan tanggal masuk wajib diisi.');
       return;
     }
-    const currentRooms = loadData<Room[]>('rooms', defaultRooms);
-    const room = currentRooms.find(x => x.id === roomId);
+    const room = rooms.find(x => x.id === roomId) || loadData<Room[]>( 'rooms', defaultRooms).find(x => x.id === roomId);
     if (!room || room.status !== 'available') {
-      setRooms(currentRooms);
       setMsg('Kamar sudah tidak tersedia. Silakan pilih kamar yang masih berstatus Tersedia.');
       return;
     }
 
     const send=async()=>{
       try{
+        setMsg('Mengirim booking...');
         const response=await fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roomId:room.id,name:name.trim(),phone:phone.trim(),startDate,duration})});
-        const data=await response.json();
-        if(!response.ok) throw new Error(data.error||'Gagal menyimpan booking.');
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok) throw new Error(data.error||'Database online belum terhubung. Silakan hubungkan Supabase di Vercel.');
         const booking:Booking={id:String(data.booking.id),room:data.booking.room_id,name:data.booking.name,phone:data.booking.phone,startDate:data.booking.start_date,duration:data.booking.duration,createdAt:data.booking.created_at,status:'pending'};
         const next=[booking,...loadData<Booking[]>('bookings',[]).filter(x=>x.id!==booking.id)];
         setBookings(next);saveData('bookings',next);
         setMsg('Booking berhasil dikirim. Data sudah masuk ke sistem pengelola.');
         setName('');setPhone('');setRoomId('');setSelectedRoom(null);
       }catch(error){
-        setMsg(error instanceof Error?error.message:'Gagal menyimpan booking. Coba lagi.');
+        setMsg(error instanceof Error?error.message:'Gagal mengirim booking. Coba lagi.');
       }
     };
     send();
