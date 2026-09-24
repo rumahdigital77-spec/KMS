@@ -474,3 +474,18 @@ $$;
 
 revoke execute on function public.record_payment(uuid,numeric,text,text) from public, anon;
 grant execute on function public.record_payment(uuid,numeric,text,text) to authenticated;
+
+
+-- Atomic tenant checkout: history + room release in one transaction.
+create or replace function public.checkout_tenant(p_tenant_id uuid, p_end_date date default current_date, p_reason text default 'checkout')
+returns boolean language plpgsql security definer set search_path = '' as $$
+declare v_property_id uuid; v_room_id uuid;
+begin
+ select property_id,room_id into v_property_id,v_room_id from public.tenants where id=p_tenant_id and property_id=public.current_property_id() and status='active' for update;
+ if v_property_id is null then raise exception 'Penghuni aktif tidak ditemukan'; end if;
+ update public.tenants set status='history',end_date=coalesce(p_end_date,current_date),checkout_reason=coalesce(nullif(btrim(p_reason),''),'checkout') where id=p_tenant_id and property_id=v_property_id;
+ if v_room_id is not null then update public.rooms set status='available' where id=v_room_id and property_id=v_property_id; end if;
+ return true;
+end; $$;
+revoke execute on function public.checkout_tenant(uuid,date,text) from public,anon;
+grant execute on function public.checkout_tenant(uuid,date,text) to authenticated;
