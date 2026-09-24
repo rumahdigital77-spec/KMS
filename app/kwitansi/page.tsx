@@ -8,7 +8,7 @@ const defaults:Settings={name:'KOSTPRO',phone:'',address:'Alamat properti',manag
 
 export default function Kwitansi(){
  const[p,setP]=useState<Payment[]>(defaultPayments),[id,setId]=useState(''),[email,setEmail]=useState(''),[phone,setPhone]=useState(''),[settings,setSettings]=useState<Settings>(defaults);
- useEffect(()=>{setP(loadData('payments',defaultPayments));try{const s=localStorage.getItem('kostpro_settings');if(s)setSettings({...defaults,...JSON.parse(s)})}catch{}},[]);
+ useEffect(()=>{const payments=loadData('payments',defaultPayments);setP(payments);try{const s=localStorage.getItem('kostpro_settings');if(s)setSettings({...defaults,...JSON.parse(s)})}catch{}const q=new URLSearchParams(location.search).get('id');if(q)setId(q)},[]);
  const payment=p.find(x=>x.id===id)||p[0];
  const no=payment?.receiptNo||settings.receiptPrefix+'-'+new Date().getFullYear()+'-'+String(settings.receiptNext).padStart(5,'0');
  const text=useMemo(()=>payment?['KWITANSI PEMBAYARAN',settings.name,settings.address,settings.phone,'No. Kwitansi: '+no,'Penghuni: '+payment.tenant,'Kamar: '+payment.room,'Periode: '+payment.month,'Nominal: '+money(payment.amount),'Metode: '+(payment.method||'transfer'),'Tanggal: '+(payment.paidAt||new Date().toISOString().slice(0,10)),'','Terima kasih atas pembayarannya.'].join('\n'):'',[payment,settings,no]);
