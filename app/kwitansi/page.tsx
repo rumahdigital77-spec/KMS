@@ -34,7 +34,7 @@ export default function Kwitansi() {
   const [settings, setSettings] = useState<Settings>(defaults);
 
   useEffect(() => {
-    setPayments(loadData('payments', defaultPayments));
+    const activePayments=loadData<Payment[]>('payments',defaultPayments);const paymentHistory=loadData<Payment[]>('paymentHistory',[]);setPayments([...paymentHistory,...activePayments.filter(x=>x.status==='paid'&&!paymentHistory.some(h=>h.id===x.id))]);
     try {
       const raw = localStorage.getItem('kostpro_settings');
       if (raw) setSettings({ ...defaults, ...JSON.parse(raw) });
