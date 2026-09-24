@@ -10,7 +10,6 @@ const items = [
   ['/kamar', 'Kamar', DoorOpen],
   ['/penghuni', 'Penghuni Aktif', Users],
   ['/kwitansi', 'Kwitansi', FileText],
-  ['/keuangan', 'Keuangan', Wallet],
   ['/laporan', 'Laporan', BarChart3],
   ['/pengaturan', 'Pengaturan', Settings],
 ] as const;
@@ -53,7 +52,7 @@ export default function Sidebar() {
           {items.map(([href, label, Icon]) => (
             label === 'Laporan' ? (
               <div className="nav-group" key={href}>
-                <Link className={'nav-parent-link nav-parent ' + (p === href || p === '/tagihan' ? 'active' : '')} href={href}>
+                <Link className={'nav-parent-link nav-parent ' + (p === href || p === '/tagihan' || p === '/keuangan' ? 'active' : '')} href={href}>
                   <Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />
                   {label}
                 </Link>
@@ -61,6 +60,10 @@ export default function Sidebar() {
                   <Link className={p === '/tagihan' ? 'active' : ''} href="/tagihan">
                     <Receipt size={15} />
                     Tagihan
+                  </Link>
+                  <Link className={p === '/keuangan' ? 'active' : ''} href="/keuangan">
+                    <Wallet size={15} />
+                    Keuangan
                   </Link>
                 </div>
               </div>
