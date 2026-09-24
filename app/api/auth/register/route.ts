@@ -51,7 +51,8 @@ export async function POST(request: Request) {
       .single();
 
     if (propertyError || !property) {
-      return NextResponse.json({ error: 'Gagal membuat properti.' }, { status: 500 });
+      console.error('register property insert failed:', propertyError?.message || 'property insert returned no row');
+      return NextResponse.json({ error: propertyError?.message ? `Gagal membuat properti: ${propertyError.message}` : 'Gagal membuat properti.' }, { status: 500 });
     }
 
     const { data: auth, error: authError } = await admin.auth.admin.createUser({
