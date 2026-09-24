@@ -58,6 +58,7 @@ export default function Sidebar() {
             </Link>
           ))}
         </nav>
+        <div style={{ marginTop: 'auto', padding: '14px 16px 4px', textAlign: 'center', fontSize: 11, color: '#98a2b3', fontWeight: 700, letterSpacing: .5 }}>KOSTPRO • V.1.1</div>
       </aside>
     </>
   );
