@@ -40,6 +40,15 @@ export default function BookingPage() {
     } catch {}
     const query = new URLSearchParams(window.location.search);
     setPublicMode(query.get('public') === '1');
+    fetch('/api/rooms',{cache:'no-store'}).then(r=>r.json()).then(data=>{
+      if(Array.isArray(data.rooms) && data.rooms.length){setRooms(data.rooms);saveData('rooms',data.rooms);}
+    }).catch(()=>{});
+    fetch('/api/bookings',{cache:'no-store'}).then(r=>r.json()).then(data=>{
+      if(Array.isArray(data.bookings)){
+        const mapped=data.bookings.map((x:any)=>({id:String(x.id),room:x.room_id,name:x.name,phone:x.phone,startDate:x.start_date,duration:x.duration,createdAt:x.created_at,status:x.status}));
+        setBookings(mapped);saveData('bookings',mapped);
+      }
+    }).catch(()=>{});
     const requestedRoom = new URLSearchParams(window.location.search).get('room');
     if (requestedRoom) {
       const room = loadedRooms.find(x => x.id === requestedRoom);
@@ -98,39 +107,21 @@ export default function BookingPage() {
       return;
     }
 
-    const currentBookings = loadData<Booking[]>('bookings', []);
-    const booking: Booking = {
-      id: 'BK-' + Date.now(),
-      room: room.id,
-      name: name.trim(),
-      phone: phone.trim(),
-      startDate,
-      duration,
-      createdAt: new Date().toISOString(),
-      status: 'pending',
+    const send=async()=>{
+      try{
+        const response=await fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roomId:room.id,name:name.trim(),phone:phone.trim(),startDate,duration})});
+        const data=await response.json();
+        if(!response.ok) throw new Error(data.error||'Gagal menyimpan booking.');
+        const booking:Booking={id:String(data.booking.id),room:data.booking.room_id,name:data.booking.name,phone:data.booking.phone,startDate:data.booking.start_date,duration:data.booking.duration,createdAt:data.booking.created_at,status:'pending'};
+        const next=[booking,...loadData<Booking[]>('bookings',[]).filter(x=>x.id!==booking.id)];
+        setBookings(next);saveData('bookings',next);
+        setMsg('Booking berhasil dikirim. Data sudah masuk ke sistem pengelola.');
+        setName('');setPhone('');setRoomId('');setSelectedRoom(null);
+      }catch(error){
+        setMsg(error instanceof Error?error.message:'Gagal menyimpan booking. Coba lagi.');
+      }
     };
-    const next = [...currentBookings, booking];
-    setBookings(next);
-    saveData('bookings', next);
-    setMsg('Booking berhasil dikirim. Pengelola akan menghubungi Anda untuk konfirmasi.');
-    if (publicMode && managerPhone) {
-      const manager = managerPhone.replace(/\D/g, '').replace(/^0/, '62');
-      const text = [
-        'BOOKING KAMAR BARU',
-        'ID: ' + booking.id,
-        'Nama: ' + booking.name,
-        'WhatsApp: ' + booking.phone,
-        'Kamar: ' + booking.room,
-        'Mulai: ' + booking.startDate,
-        'Durasi: ' + booking.duration,
-        'Harga: ' + money(room.price) + '/bulan',
-      ].join('\n');
-      window.setTimeout(() => window.location.href = 'https://wa.me/' + manager + '?text=' + encodeURIComponent(text), 250);
-    }
-    setName('');
-    setPhone('');
-    setRoomId('');
-    setSelectedRoom(null);
+    send();
   };
 
   return (
