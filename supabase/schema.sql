@@ -173,6 +173,150 @@ create policy "property users delete own expenses" on public.expenses for delete
   using (property_id = public.current_property_id());
 
 
+-- Multi-user integrity hardening
+-- Prevent records from linking to another property's tenant/room.
+drop policy if exists "property users insert own tenants" on public.tenants;
+create policy "property users insert own tenants" on public.tenants for insert
+  with check (
+    property_id = public.current_property_id()
+    and (
+      room_id is null
+      or exists (
+        select 1 from public.rooms r
+        where r.id = tenants.room_id and r.property_id = public.current_property_id()
+      )
+    )
+  );
+
+drop policy if exists "property users update own tenants" on public.tenants;
+create policy "property users update own tenants" on public.tenants for update
+  using (property_id = public.current_property_id())
+  with check (
+    property_id = public.current_property_id()
+    and (
+      room_id is null
+      or exists (
+        select 1 from public.rooms r
+        where r.id = tenants.room_id and r.property_id = public.current_property_id()
+      )
+    )
+  );
+
+drop policy if exists "property users insert own invoices" on public.invoices;
+create policy "property users insert own invoices" on public.invoices for insert
+  with check (
+    property_id = public.current_property_id()
+    and exists (
+      select 1 from public.tenants t
+      where t.id = invoices.tenant_id and t.property_id = public.current_property_id()
+    )
+  );
+
+drop policy if exists "property users update own invoices" on public.invoices;
+create policy "property users update own invoices" on public.invoices for update
+  using (property_id = public.current_property_id())
+  with check (
+    property_id = public.current_property_id()
+    and exists (
+      select 1 from public.tenants t
+      where t.id = invoices.tenant_id and t.property_id = public.current_property_id()
+    )
+  );
+
+-- One non-cancelled invoice per tenant and billing period.
+create unique index if not exists invoices_tenant_period_unique_idx
+  on public.invoices(property_id, tenant_id, period)
+  where status <> 'cancelled';
+
+-- Enforce payment totals even when a client bypasses record_payment RPC.
+create or replace function public.validate_payment_total()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_invoice_amount numeric;
+  v_paid numeric;
+begin
+  select amount into v_invoice_amount
+  from public.invoices
+  where id = new.invoice_id
+  for update;
+
+  if v_invoice_amount is null then
+    raise exception 'Tagihan tidak ditemukan';
+  end if;
+
+  select coalesce(sum(amount), 0) into v_paid
+  from public.payments
+  where invoice_id = new.invoice_id
+    and id <> new.id;
+
+  if new.amount is null or new.amount <= 0 or v_paid + new.amount > v_invoice_amount then
+    raise exception 'Pembayaran melebihi sisa tagihan';
+  end if;
+
+  return new;
+end;
+$;
+
+drop trigger if exists payments_validate_total on public.payments;
+create trigger payments_validate_total
+before insert or update of invoice_id, amount on public.payments
+for each row execute function public.validate_payment_total();
+
+create or replace function public.sync_invoice_status()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_invoice_id uuid;
+  v_amount numeric;
+  v_paid numeric;
+begin
+  v_invoice_id := coalesce(new.invoice_id, old.invoice_id);
+  select amount into v_amount from public.invoices where id = v_invoice_id;
+  if v_amount is null then return coalesce(new, old); end if;
+
+  select coalesce(sum(amount), 0) into v_paid
+  from public.payments where invoice_id = v_invoice_id;
+
+  update public.invoices
+  set status = case
+    when v_paid >= v_amount then 'paid'
+    when v_paid > 0 then 'partial'
+    else 'unpaid'
+  end
+  where id = v_invoice_id;
+
+  if tg_op = 'UPDATE' and old.invoice_id <> new.invoice_id then
+    select amount into v_amount from public.invoices where id = old.invoice_id;
+    if v_amount is not null then
+      select coalesce(sum(amount), 0) into v_paid
+      from public.payments where invoice_id = old.invoice_id;
+      update public.invoices
+      set status = case
+        when v_paid >= v_amount then 'paid'
+        when v_paid > 0 then 'partial'
+        else 'unpaid'
+      end
+      where id = old.invoice_id;
+    end if;
+  end if;
+
+  return coalesce(new, old);
+end;
+$;
+
+drop trigger if exists payments_sync_invoice_status on public.payments;
+create trigger payments_sync_invoice_status
+after insert or update or delete on public.payments
+for each row execute function public.sync_invoice_status();
+
+
 -- KMS MULTI-USER — STAGES 3-6: payment isolation
 alter table public.payments enable row level security;
 
