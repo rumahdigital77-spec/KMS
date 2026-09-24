@@ -1,7 +1,8 @@
 create extension if not exists pgcrypto;
 create table if not exists properties(id uuid primary key default gen_random_uuid(),name text not null,address text,phone text,created_at timestamptz default now());
 create table if not exists rooms(id uuid primary key default gen_random_uuid(),property_id uuid references properties(id) on delete cascade,room_code text not null,rent numeric(14,2) not null default 0,status text not null default 'available' check(status in ('available','occupied','maintenance')),created_at timestamptz default now(),unique(property_id,room_code));
-create table if not exists tenants(id uuid primary key default gen_random_uuid(),property_id uuid references properties(id) on delete cascade,room_id uuid references rooms(id) on delete set null,name text not null,phone text,email text,start_date date,monthly_rent numeric(14,2) not null default 0,status text default 'active',created_at timestamptz default now());
+create table if not exists tenants(id uuid primary key default gen_random_uuid(),property_id uuid references properties(id) on delete cascade,room_id uuid references rooms(id) on delete set null,name text not null,phone text,email text,start_date date,monthly_rent numeric(14,2) not null default 0,status text default 'active',end_date date,checkout_reason text,created_at timestamptz default now());
+alter table public.tenants add column if not exists end_date date, add column if not exists checkout_reason text;
 create table if not exists invoices(id uuid primary key default gen_random_uuid(),property_id uuid references properties(id) on delete cascade,tenant_id uuid references tenants(id) on delete cascade,period date not null,amount numeric(14,2) not null,status text not null default 'unpaid' check(status in ('unpaid','paid','partial','cancelled')),due_date date,created_at timestamptz default now());
 create table if not exists payments(id uuid primary key default gen_random_uuid(),invoice_id uuid references invoices(id) on delete cascade,amount numeric(14,2) not null,paid_at timestamptz default now(),method text default 'cash',note text);
 create table if not exists expenses(id uuid primary key default gen_random_uuid(),property_id uuid references properties(id) on delete cascade,category text not null,description text,amount numeric(14,2) not null,spent_at date default current_date,created_at timestamptz default now());
@@ -79,7 +80,23 @@ as $$
   limit 1;
 $$;
 
+revoke execute on function public.current_property_id() from public, anon;
 grant execute on function public.current_property_id() to authenticated;
+
+revoke all on table public.properties from anon;
+grant select, update on table public.properties to authenticated;
+revoke all on table public.rooms from anon;
+grant select, insert, update, delete on table public.rooms to authenticated;
+revoke all on table public.tenants from anon;
+grant select, insert, update, delete on table public.tenants to authenticated;
+revoke all on table public.invoices from anon;
+grant select, insert, update, delete on table public.invoices to authenticated;
+revoke all on table public.payments from anon;
+grant select, insert, update, delete on table public.payments to authenticated;
+revoke all on table public.expenses from anon;
+grant select, insert, update, delete on table public.expenses to authenticated;
+revoke all on table public.property_users from anon;
+grant select on table public.property_users to authenticated;
 
 alter table public.properties enable row level security;
 
@@ -197,3 +214,119 @@ create policy "property users delete own payments" on public.payments for delete
   ));
 
 create index if not exists payments_invoice_idx on public.payments(invoice_id);
+
+
+-- Atomic tenant onboarding: tenant + first invoice + room occupancy.
+create or replace function public.create_tenant_with_invoice(
+  p_room_id uuid,
+  p_name text,
+  p_phone text,
+  p_start_date date,
+  p_monthly_rent numeric
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_property_id uuid;
+  v_tenant_id uuid;
+begin
+  if (p_name is null or btrim(p_name) = '') then
+    raise exception 'Nama penghuni wajib diisi';
+  end if;
+  if p_monthly_rent <= 0 then
+    raise exception 'Sewa bulanan harus lebih besar dari 0';
+  end if;
+
+  select r.property_id into v_property_id
+  from public.rooms r
+  where r.id = p_room_id
+    and r.property_id = public.current_property_id()
+    and r.status = 'available'
+  for update;
+
+  if v_property_id is null then
+    raise exception 'Kamar tidak tersedia';
+  end if;
+
+  insert into public.tenants(property_id, room_id, name, phone, start_date, monthly_rent, status)
+  values (v_property_id, p_room_id, btrim(p_name), coalesce(btrim(p_phone), ''), p_start_date, p_monthly_rent, 'active')
+  returning id into v_tenant_id;
+
+  insert into public.invoices(property_id, tenant_id, period, amount, status)
+  values (v_property_id, v_tenant_id, date_trunc('month', p_start_date)::date, p_monthly_rent, 'unpaid');
+
+  update public.rooms
+  set status = 'occupied'
+  where id = p_room_id
+    and property_id = v_property_id;
+
+  return v_tenant_id;
+end;
+$$;
+
+revoke execute on function public.create_tenant_with_invoice(uuid,text,text,date,numeric) from public, anon;
+grant execute on function public.create_tenant_with_invoice(uuid,text,text,date,numeric) to authenticated;
+
+-- Atomic payment recording with partial-payment support.
+create or replace function public.record_payment(
+  p_invoice_id uuid,
+  p_amount numeric,
+  p_method text default 'cash',
+  p_note text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_property_id uuid;
+  v_invoice_amount numeric;
+  v_paid numeric;
+  v_payment_id uuid;
+begin
+  if p_amount is null or p_amount <= 0 then
+    raise exception 'Nominal pembayaran harus lebih besar dari 0';
+  end if;
+
+  select i.property_id, i.amount
+    into v_property_id, v_invoice_amount
+  from public.invoices i
+  where i.id = p_invoice_id
+    and i.property_id = public.current_property_id()
+  for update;
+
+  if v_property_id is null then
+    raise exception 'Tagihan tidak ditemukan';
+  end if;
+
+  select coalesce(sum(p.amount), 0)
+    into v_paid
+  from public.payments p
+  where p.invoice_id = p_invoice_id;
+
+  if v_paid + p_amount > v_invoice_amount then
+    raise exception 'Pembayaran melebihi sisa tagihan';
+  end if;
+
+  insert into public.payments(invoice_id, amount, paid_at, method, note)
+  values (p_invoice_id, p_amount, now(), coalesce(nullif(btrim(p_method), ''), 'cash'), p_note)
+  returning id into v_payment_id;
+
+  update public.invoices
+  set status = case
+    when v_paid + p_amount >= v_invoice_amount then 'paid'
+    else 'partial'
+  end
+  where id = p_invoice_id
+    and property_id = v_property_id;
+
+  return v_payment_id;
+end;
+$$;
+
+revoke execute on function public.record_payment(uuid,numeric,text,text) from public, anon;
+grant execute on function public.record_payment(uuid,numeric,text,text) to authenticated;
