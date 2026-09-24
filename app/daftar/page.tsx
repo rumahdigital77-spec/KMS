@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-browser';
 
 export default function DaftarPage() {
   const router = useRouter();
@@ -28,7 +29,18 @@ export default function DaftarPage() {
         return;
       }
 
-      router.push('/login?registered=1');
+      const { data: sessionData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: form.username.trim().toLowerCase() + '@kms.local',
+        password: form.password,
+      });
+
+      if (loginError || !sessionData.user) {
+        router.push('/login?registered=1');
+        return;
+      }
+
+      localStorage.setItem('kostpro_active_property_id', result.propertyId);
+      router.push('/pengaturan');
     } catch {
       setError('Tidak dapat menghubungi server.');
     } finally {
