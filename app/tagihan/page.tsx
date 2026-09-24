@@ -1,82 +1,28 @@
 'use client';
-
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase-browser';
-import { currentPropertyId } from '@/lib/property';
-import { money } from '@/lib/store';
-
-type Invoice = { id: string; tenant_id: string; period: string; amount: number; status: string; due_date: string | null };
-type Tenant = { id: string; name: string };
-
-export default function Tagihan() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [show, setShow] = useState(false);
-  const [tenant, setTenant] = useState('');
-  const [amount, setAmount] = useState('');
-  const [period, setPeriod] = useState(`${new Date().toISOString().slice(0, 7)}-01`);
-  const [due, setDue] = useState('');
-  const [selected, setSelected] = useState('');
-  const [method, setMethod] = useState('transfer');
-  const [paymentAmount, setPaymentAmount] = useState('');
-  const [msg, setMsg] = useState('');
-
-  const load = async () => {
-    try {
-      const pid = await currentPropertyId();
-      const [invoiceResult, tenantResult] = await Promise.all([
-        supabase.from('invoices').select('id,tenant_id,period,amount,status,due_date').eq('property_id', pid).order('period', { ascending: false }),
-        supabase.from('tenants').select('id,name').eq('property_id', pid).eq('status', 'active').order('name'),
-      ]);
-      if (invoiceResult.error) throw invoiceResult.error;
-      if (tenantResult.error) throw tenantResult.error;
-      setInvoices((invoiceResult.data || []) as Invoice[]);
-      setTenants((tenantResult.data || []) as Tenant[]);
-    } catch { setMsg('Gagal memuat tagihan.'); }
-  };
-
-  useEffect(() => { void load(); }, []);
-
-  const create = async () => {
-    if (!tenant || !amount || !period) return setMsg('Penghuni, periode, dan nominal wajib diisi.');
-    const nominal = Number(amount);
-    if (!Number.isFinite(nominal) || nominal <= 0) return setMsg('Nominal tagihan harus lebih besar dari 0.');
-    try {
-      const pid = await currentPropertyId();
-      const { data: existing, error: existingError } = await supabase.from('invoices').select('id').eq('property_id', pid).eq('tenant_id', tenant).eq('period', period).neq('status', 'cancelled').maybeSingle();
-      if (existingError) throw existingError;
-      if (existing) return setMsg('Tagihan untuk penghuni dan periode tersebut sudah ada.');
-      const { error } = await supabase.from('invoices').insert({ property_id: pid, tenant_id: tenant, period, amount: nominal, status: 'unpaid', due_date: due || null });
-      if (error) throw error;
-      setShow(false); setAmount(''); setTenant(''); setMsg('Tagihan berhasil dibuat.'); await load();
-    } catch (error) { setMsg(error instanceof Error ? error.message : 'Gagal membuat tagihan.'); }
-  };
-
-  const pay = async () => {
-    const invoice = invoices.find((item) => item.id === selected);
-    if (!invoice) return setMsg('Pilih tagihan.');
-    if (invoice.status === 'paid') return setMsg('Tagihan sudah lunas.');
-    const nominal = Number(paymentAmount);
-    if (!Number.isFinite(nominal) || nominal <= 0) return setMsg('Nominal pembayaran wajib diisi.');
-    try {
-      const { error } = await supabase.rpc('record_payment', { p_invoice_id: invoice.id, p_amount: nominal, p_method: method, p_note: null });
-      if (error) throw error;
-      setSelected(''); setPaymentAmount(''); setMsg('Pembayaran berhasil dicatat.'); await load();
-    } catch (error) { setMsg(error instanceof Error ? error.message : 'Gagal mencatat pembayaran.'); }
-  };
-
-  return (
-    <>
-      <div className="top"><div><div className="title">Tagihan & Pembayaran</div><div className="sub">Invoice dan pembayaran sekarang tersimpan terpisah per properti.</div></div><button className="btn" onClick={() => setShow(!show)}>+ Buat Tagihan</button></div>
-      {msg && <div className="card" style={{ marginBottom: 18 }}>{msg}</div>}
-      {show && <div className="card" style={{ marginBottom: 18 }}><div className="section-title">Buat Tagihan</div><div className="form">
-        <div className="field"><label>Penghuni</label><select value={tenant} onChange={(e) => setTenant(e.target.value)}><option value="">Pilih penghuni</option>{tenants.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
-        <div className="field"><label>Periode</label><input type="date" value={period} onChange={(e) => setPeriod(e.target.value)} /></div>
-        <div className="field"><label>Nominal</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-        <div className="field"><label>Jatuh Tempo</label><input type="date" value={due} onChange={(e) => setDue(e.target.value)} /></div>
-      </div><div className="actions"><button className="btn" onClick={create}>Simpan Tagihan</button><button className="btn secondary" onClick={() => setShow(false)}>Batal</button></div></div>}
-      <div className="card"><table className="table"><thead><tr><th>Penghuni</th><th>Periode</th><th>Nominal</th><th>Jatuh Tempo</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{invoices.map((invoice) => <tr key={invoice.id}><td><b>{tenants.find((item) => item.id === invoice.tenant_id)?.name || invoice.tenant_id}</b></td><td>{invoice.period}</td><td>{money(Number(invoice.amount))}</td><td>{invoice.due_date || '-'}</td><td><span className={`badge ${invoice.status === 'paid' ? 'green' : invoice.status === 'partial' ? 'amber' : 'red'}`}>{invoice.status === 'paid' ? 'Lunas' : invoice.status === 'partial' ? 'Sebagian' : 'Belum Bayar'}</span></td><td>{invoice.status !== 'paid' && <button className="btn secondary" onClick={() => { setSelected(invoice.id); setPaymentAmount(String(invoice.amount)); }}>Bayar</button>}</td></tr>)}</tbody></table></div>
-      {selected && <div className="card" style={{ marginTop: 18 }}><div className="section-title">Catat Pembayaran</div><div className="form"><div className="field"><label>Nominal Dibayar</label><input type="number" min="1" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} /></div><div className="field"><label>Metode</label><select value={method} onChange={(e) => setMethod(e.target.value)}><option value="transfer">Transfer</option><option value="cash">Cash</option><option value="qris">QRIS</option></select></div></div><div className="actions"><button className="btn" onClick={pay}>Simpan Pembayaran</button><button className="btn secondary" onClick={() => setSelected('')}>Batal</button></div></div>}
-    </>
-  );
-}
+import{useEffect,useState}from'react';
+import{defaultPayments,defaultTransactions,loadData,money,Payment,saveData,Transaction}from'@/lib/store';
+export default function Tagihan(){
+ const[p,setP]=useState<Payment[]>(defaultPayments),[show,setShow]=useState(false),[sel,setSel]=useState(''),[method,setMethod]=useState('transfer'),[msg,setMsg]=useState('');
+ useEffect(()=>{const payments=loadData('payments',defaultPayments);setP(payments);const q=new URLSearchParams(location.search);const paymentId=q.get('id');if(paymentId){setSel(paymentId);setShow(true);if(q.get('baru')==='1')setMsg('Penghuni baru berhasil dibuat. Tagihan pertama sudah dibuat. Pilih metode pembayaran lalu klik “Simpan & Lunas + Buat Kwitansi”.')}else if(q.get('aksi')==='catat')setShow(true)},[]);
+ const pay=()=>{
+  if(!sel)return setMsg('Pilih tagihan.');
+  const current=p.find(x=>x.id===sel);
+  if(!current)return setMsg('Tagihan tidak ditemukan.');
+  if(current.status==='paid')return setMsg('Tagihan ini sudah lunas.');
+  const paidAt=new Date().toISOString().slice(0,10);
+  let receiptNo=current.receiptNo;
+  try{const raw=localStorage.getItem('kostpro_settings');const s=raw?JSON.parse(raw):{};const next=Number(s.receiptNext||1);if(!receiptNo){receiptNo=(s.receiptPrefix||'KW')+'-'+new Date().getFullYear()+'-'+String(next).padStart(5,'0');localStorage.setItem('kostpro_settings',JSON.stringify({...s,receiptNext:next+1}))}}catch{}
+  const paidPayment={...current,status:'paid' as const,paidAt,method,receiptNo};
+  const n=p.filter(x=>x.id!==sel);
+  const paymentHistory=loadData<Payment[]>('paymentHistory',[]);
+  const historyWithoutDuplicate=paymentHistory.filter(x=>x.id!==paidPayment.id);
+  const nextPaymentHistory=[...historyWithoutDuplicate,paidPayment];
+  const existing=loadData('transactions',defaultTransactions);
+  const alreadyRecorded=existing.some(x=>x.referenceId===current.id);
+  const tx:Transaction={id:'TR-'+Date.now(),date:paidAt,description:'Pelunasan sewa '+current.tenant+' — '+current.room+' — '+current.month,category:'Pendapatan sewa',amount:current.amount,type:'income',referenceId:current.id};
+  const transactions=alreadyRecorded?existing:[...existing,tx];
+  setP(n);saveData('payments',n);saveData('paymentHistory',nextPaymentHistory);saveData('transactions',transactions);setShow(false);setMsg(alreadyRecorded?'Tagihan lunas dan dipindahkan dari daftar tagihan aktif. Membuka kwitansi...':'Pelunasan berhasil. Tagihan dipindahkan ke History Payment dan nomor kwitansi sudah dicatat. Membuka kwitansi...');
+  location.href='/kwitansi?id='+encodeURIComponent(current.id);
+ };
+ const openPay=(id:string)=>{setSel(id);setShow(true);setMsg('')};
+ return <><div className="top"><div><div className="title">Tagihan & Pembayaran</div><div className="sub">Alur: penghuni baru → tagihan → pelunasan → transaksi → kwitansi</div></div><button className="btn" onClick={()=>{setShow(!show);setMsg('')}}>+ Catat Pembayaran</button></div>{msg&&<div className="card" style={{marginBottom:18}}>{msg}</div>}{show&&<div className="card" style={{marginBottom:18}}><div className="section-title">Pelunasan Tagihan</div><div className="sub" style={{marginBottom:14}}>Pilih tagihan yang akan dibayar. Setelah disimpan, sistem otomatis mencatat transaksi dan membuka kwitansi.</div><div className="form"><div className="field full"><label>Tagihan</label><select value={sel} onChange={e=>setSel(e.target.value)}><option value="">Pilih tagihan belum lunas</option>{p.filter(x=>x.status==='unpaid').map(x=><option key={x.id} value={x.id}>{x.tenant} — {x.room} — {money(x.amount)}</option>)}</select></div><div className="field"><label>Metode</label><select value={method} onChange={e=>setMethod(e.target.value)}><option value="transfer">Transfer</option><option value="cash">Cash</option><option value="qris">QRIS</option></select></div></div><div className="actions"><button className="btn" onClick={pay}>Simpan & Lunas + Buat Kwitansi</button><button className="btn secondary" onClick={()=>setShow(false)}>Batal</button></div></div>}<div className="card"><table className="table"><thead><tr><th>Penghuni</th><th>Kamar</th><th>Periode</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{p.map(x=><tr key={x.id}><td><b>{x.tenant}</b></td><td>{x.room}</td><td>{x.month}</td><td>{money(x.amount)}</td><td><span className={'badge '+(x.status==='paid'?'green':'red')}>{x.status==='paid'?'Lunas':'Belum Bayar'}</span></td><td>{x.status==='unpaid'?<button className="btn secondary" onClick={()=>openPay(x.id)}>Pelunasan → Kwitansi</button>:<button className="btn secondary" onClick={()=>location.href='/kwitansi?id='+encodeURIComponent(x.id)}>Lihat Kwitansi</button>}</td></tr>)}</tbody></table></div></>}
