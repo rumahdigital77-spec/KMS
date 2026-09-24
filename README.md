@@ -30,3 +30,7 @@ Open http://localhost:3000
 For a new database, run `supabase/schema.sql` in Supabase SQL Editor.
 
 This version uses demo data in the UI so it can render immediately. The schema is prepared for the next integration stage: authentication, multi-property access, CRUD, billing, payments, expenses and reports.
+
+
+## Version Archive
+- **V.2.1** — archived baseline: owner logo from Pengaturan displayed in sidebar, with Laporan submenu behavior preserved.
