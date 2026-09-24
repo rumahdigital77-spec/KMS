@@ -183,3 +183,60 @@ drop policy if exists "property users delete own expenses" on public.expenses;
 create policy "property users delete own expenses"
   on public.expenses for delete
   using (property_id = public.current_property_id());
+
+
+-- KMS MULTI-USER — STAGES 3-6: payment isolation and tenant-safe relations
+alter table public.payments enable row level security;
+
+drop policy if exists "property users read own payments" on public.payments;
+create policy "property users read own payments"
+  on public.payments for select
+  using (
+    exists (
+      select 1 from public.invoices i
+      where i.id = payments.invoice_id
+        and i.property_id = public.current_property_id()
+    )
+  );
+
+drop policy if exists "property users insert own payments" on public.payments;
+create policy "property users insert own payments"
+  on public.payments for insert
+  with check (
+    exists (
+      select 1 from public.invoices i
+      where i.id = payments.invoice_id
+        and i.property_id = public.current_property_id()
+    )
+  );
+
+drop policy if exists "property users update own payments" on public.payments;
+create policy "property users update own payments"
+  on public.payments for update
+  using (
+    exists (
+      select 1 from public.invoices i
+      where i.id = payments.invoice_id
+        and i.property_id = public.current_property_id()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.invoices i
+      where i.id = payments.invoice_id
+        and i.property_id = public.current_property_id()
+    )
+  );
+
+drop policy if exists "property users delete own payments" on public.payments;
+create policy "property users delete own payments"
+  on public.payments for delete
+  using (
+    exists (
+      select 1 from public.invoices i
+      where i.id = payments.invoice_id
+        and i.property_id = public.current_property_id()
+    )
+  );
+
+create index if not exists payments_invoice_idx on public.payments(invoice_id);
