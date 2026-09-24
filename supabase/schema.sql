@@ -41,3 +41,17 @@ create policy "public read available rooms" on public.kost_rooms
 drop policy if exists "public create booking" on public.kost_bookings;
 create policy "public create booking" on public.kost_bookings
   for insert with check (true);
+
+
+-- Authentication mapping for property accounts
+create table if not exists public.property_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  username text not null unique,
+  property_id uuid references public.properties(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.property_users enable row level security;
+drop policy if exists "users read own property account" on public.property_users;
+create policy "users read own property account" on public.property_users
+  for select using (auth.uid() = user_id);
