@@ -62,7 +62,7 @@ export default function Sidebar() {
       <aside className={'sidebar ' + (open ? 'sidebar-open' : '')}>
         <div className="brand">
           {logo ? <img src={logo} alt="Logo pemilik" className="brand-logo" /> : <><span>KOST</span><span>PRO</span></>}
-          <div className="sub" style={{ color: '#98a2b3' }}>Management System</div>
+          <div className="sub" style={{ color: '#98a2b3' }}>Kost Management System</div>
         </div>
         <nav className="nav">
           {items.map(([href, label, Icon]) => (
