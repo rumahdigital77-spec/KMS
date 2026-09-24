@@ -10,8 +10,10 @@ export default function Tagihan(){
   if(!current)return setMsg('Tagihan tidak ditemukan.');
   if(current.status==='paid')return setMsg('Tagihan ini sudah lunas.');
   const paidAt=new Date().toISOString().slice(0,10);
-  const receiptNo=current.receiptNo;
-  const n=p.map(x=>x.id===sel?{...x,status:'paid' as const,paidAt,method}:x);
+  let receiptNo=current.receiptNo;
+  let receiptNext=1;
+  try{const raw=localStorage.getItem('kostpro_settings');const s=raw?JSON.parse(raw):{};receiptNext=Number(s.receiptNext||1);if(!receiptNo){receiptNo=(s.receiptPrefix||'KW')+'-'+new Date().getFullYear()+'-'+String(receiptNext).padStart(5,'0');localStorage.setItem('kostpro_settings',JSON.stringify({...s,receiptNext:receiptNext+1}))}}catch{}
+  const n=p.map(x=>x.id===sel?{...x,status:'paid' as const,paidAt,method,receiptNo}:x);
   const tx:Transaction={id:'TR-'+Date.now(),date:paidAt,description:'Pelunasan sewa '+current.tenant+' — '+current.room,category:'Pendapatan sewa',amount:current.amount,type:'income'};
   const transactions=[...loadData('transactions',defaultTransactions),tx];
   setP(n);saveData('payments',n);saveData('transactions',transactions);setShow(false);setMsg('Pelunasan berhasil. Transaksi pendapatan dan data pembayaran sudah dicatat.');
