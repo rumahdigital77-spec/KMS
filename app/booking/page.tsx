@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarCheck, MessageCircle, Users, Phone, CheckCircle2 } from 'lucide-react';
+import { CalendarCheck, MessageCircle, CheckCircle2, Copy } from 'lucide-react';
 import { defaultRooms, loadData, money, Room, saveData } from '@/lib/store';
 
 type Booking = {
@@ -26,10 +26,22 @@ export default function BookingPage() {
   const [startDate, setStartDate] = useState(today);
   const [duration, setDuration] = useState('1 bulan');
   const [msg, setMsg] = useState('');
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   useEffect(() => {
-    setRooms(loadData<Room[]>('rooms', defaultRooms));
+    const loadedRooms = loadData<Room[]>('rooms', defaultRooms);
+    setRooms(loadedRooms);
     setBookings(loadData<Booking[]>('bookings', []));
+    const requestedRoom = new URLSearchParams(window.location.search).get('room');
+    if (requestedRoom) {
+      const room = loadedRooms.find(x => x.id === requestedRoom);
+      if (room?.status === 'available') {
+        setRoomId(room.id);
+        setSelectedRoom(room);
+      } else if (room) {
+        setMsg('Kamar ' + room.id + ' sudah tidak tersedia. Silakan pilih kamar lain yang berstatus Tersedia.');
+      }
+    }
   }, []);
 
   const availableRooms = useMemo(
@@ -37,8 +49,11 @@ export default function BookingPage() {
     [rooms]
   );
 
+  const bookingUrl = (room: Room) =>
+    window.location.origin + '/booking?room=' + encodeURIComponent(room.id);
+
   const shareLink = (room: Room) => {
-    const url = window.location.origin + '/booking?room=' + encodeURIComponent(room.id);
+    const url = bookingUrl(room);
     const text = [
       'Halo, saya ingin booking kamar ' + room.id + '.',
       'Harga: ' + money(room.price) + '/bulan',
@@ -46,10 +61,19 @@ export default function BookingPage() {
       url,
     ].join('\n');
     const normalized = phone.replace(/\D/g, '').replace(/^0/, '62');
-    if (normalized.length >= 10) {
-      window.open('https://wa.me/' + normalized + '?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
-    } else {
-      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
+    const waUrl = normalized.length >= 10
+      ? 'https://wa.me/' + normalized + '?text=' + encodeURIComponent(text)
+      : 'https://wa.me/?text=' + encodeURIComponent(text);
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const copyLink = async (room: Room) => {
+    const url = bookingUrl(room);
+    try {
+      await navigator.clipboard.writeText(url);
+      setMsg('Link booking ' + room.id + ' berhasil disalin. Silakan tempel ke WhatsApp.');
+    } catch {
+      window.prompt('Salin link booking berikut:', url);
     }
   };
 
@@ -84,6 +108,7 @@ export default function BookingPage() {
     setName('');
     setPhone('');
     setRoomId('');
+    setSelectedRoom(null);
   };
 
   return (
@@ -111,11 +136,14 @@ export default function BookingPage() {
             <div className="metric" style={{fontSize:24,marginTop:14}}>{money(room.price)}</div>
             <div className="sub">per bulan</div>
             <div className="actions" style={{marginTop:16}}>
-              <button className="btn" onClick={() => { setRoomId(room.id); setMsg(''); }}>
+              <button className="btn" onClick={() => { setRoomId(room.id); setSelectedRoom(room); setMsg('Form booking untuk ' + room.id + ' sudah dipilih. Silakan isi data calon penghuni.'); document.getElementById('booking-form')?.scrollIntoView({behavior:'smooth',block:'start'}); }}>
                 Booking {room.id}
               </button>
               <button className="btn secondary" onClick={() => shareLink(room)}>
                 <MessageCircle size={16} style={{verticalAlign:'middle',marginRight:6}} /> Share Link WA
+              </button>
+              <button className="btn secondary" onClick={() => copyLink(room)} title="Salin link booking">
+                <Copy size={16} style={{verticalAlign:'middle',marginRight:6}} /> Salin Link
               </button>
             </div>
           </div>
@@ -129,7 +157,7 @@ export default function BookingPage() {
         </div>
       )}
 
-      <div className="card" style={{marginTop:18}}>
+      <div id="booking-form" className="card" style={{marginTop:18}}>
         <div className="section-title">Form Booking</div>
         <div className="sub" style={{marginBottom:14}}>Form ini dapat dibuka langsung dari link WhatsApp.</div>
         <div className="form">
