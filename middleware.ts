@@ -11,15 +11,8 @@ export async function middleware(request: NextRequest) {
   );
   const { data: { user } } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
-  // Hanya menu Pengaturan yang memerlukan login. Menu operasional tetap terbuka.
-  if (path === '/pengaturan' || path.startsWith('/pengaturan/')) {
-    if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/login';
-      url.searchParams.set('next', path);
-      return NextResponse.redirect(url);
-    }
-  }
+  // Pengaturan memiliki gate login di halaman (Supabase property user atau Superadmin lama).
+  // Jangan blokir lewat middleware karena session Superadmin disimpan di sessionStorage browser.
   if (user && (path === '/login' || path === '/daftar')) {
     const next = request.nextUrl.searchParams.get('next');
     const target = next && next.startsWith('/') && !next.startsWith('//') ? next : '/pengaturan';
