@@ -12,12 +12,16 @@ export default function Tagihan(){
   const paidAt=new Date().toISOString().slice(0,10);
   let receiptNo=current.receiptNo;
   try{const raw=localStorage.getItem('kostpro_settings');const s=raw?JSON.parse(raw):{};const next=Number(s.receiptNext||1);if(!receiptNo){receiptNo=(s.receiptPrefix||'KW')+'-'+new Date().getFullYear()+'-'+String(next).padStart(5,'0');localStorage.setItem('kostpro_settings',JSON.stringify({...s,receiptNext:next+1}))}}catch{}
-  const n=p.map(x=>x.id===sel?{...x,status:'paid' as const,paidAt,method,receiptNo}:x);
+  const paidPayment={...current,status:'paid' as const,paidAt,method,receiptNo};
+  const n=p.filter(x=>x.id!==sel);
+  const paymentHistory=loadData<Payment[]>('paymentHistory',[]);
+  const historyWithoutDuplicate=paymentHistory.filter(x=>x.id!==paidPayment.id);
+  const nextPaymentHistory=[...historyWithoutDuplicate,paidPayment];
   const existing=loadData('transactions',defaultTransactions);
   const alreadyRecorded=existing.some(x=>x.referenceId===current.id);
   const tx:Transaction={id:'TR-'+Date.now(),date:paidAt,description:'Pelunasan sewa '+current.tenant+' — '+current.room+' — '+current.month,category:'Pendapatan sewa',amount:current.amount,type:'income',referenceId:current.id};
   const transactions=alreadyRecorded?existing:[...existing,tx];
-  setP(n);saveData('payments',n);saveData('transactions',transactions);setShow(false);setMsg(alreadyRecorded?'Tagihan lunas; transaksi sebelumnya dipertahankan. Membuka kwitansi...':'Pelunasan berhasil. Transaksi pendapatan dan nomor kwitansi sudah dicatat. Membuka kwitansi...');
+  setP(n);saveData('payments',n);saveData('paymentHistory',nextPaymentHistory);saveData('transactions',transactions);setShow(false);setMsg(alreadyRecorded?'Tagihan lunas dan dipindahkan dari daftar tagihan aktif. Membuka kwitansi...':'Pelunasan berhasil. Tagihan dipindahkan ke History Payment dan nomor kwitansi sudah dicatat. Membuka kwitansi...');
   location.href='/kwitansi?id='+encodeURIComponent(current.id);
  };
  const openPay=(id:string)=>{setSel(id);setShow(true);setMsg('')};
