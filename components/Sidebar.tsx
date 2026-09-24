@@ -17,9 +17,15 @@ const items = [
 export default function Sidebar() {
   const p = usePathname();
   const [open, setOpen] = useState(false);
+  const [laporanOpen, setLaporanOpen] = useState(false);
 
   useEffect(() => {
     setOpen(false);
+    setLaporanOpen(false);
+  }, [p]);
+
+  useEffect(() => {
+    if (p === '/tagihan' || p === '/keuangan') setLaporanOpen(true);
   }, [p]);
 
   useEffect(() => {
@@ -52,20 +58,27 @@ export default function Sidebar() {
           {items.map(([href, label, Icon]) => (
             label === 'Laporan' ? (
               <div className="nav-group" key={href}>
-                <Link className={'nav-parent-link nav-parent ' + (p === href || p === '/tagihan' || p === '/keuangan' ? 'active' : '')} href={href}>
+                <button
+                  type="button"
+                  className={'nav-parent-link nav-parent ' + (p === href || p === '/tagihan' || p === '/keuangan' ? 'active' : '')}
+                  onClick={() => setLaporanOpen(v => !v)}
+                  aria-expanded={laporanOpen}
+                >
                   <Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />
                   {label}
-                </Link>
-                <div className="nav-submenu">
-                  <Link className={p === '/tagihan' ? 'active' : ''} href="/tagihan">
-                    <Receipt size={15} />
-                    Tagihan
-                  </Link>
-                  <Link className={p === '/keuangan' ? 'active' : ''} href="/keuangan">
-                    <Wallet size={15} />
-                    Keuangan
-                  </Link>
-                </div>
+                </button>
+                {laporanOpen && (
+                  <div className="nav-submenu">
+                    <Link className={p === '/tagihan' ? 'active' : ''} href="/tagihan">
+                      <Receipt size={15} />
+                      Tagihan
+                    </Link>
+                    <Link className={p === '/keuangan' ? 'active' : ''} href="/keuangan">
+                      <Wallet size={15} />
+                      Keuangan
+                    </Link>
+                  </div>
+                )}
               </div>
             ) : (
               <Link className={p === href ? 'active' : ''} href={href} key={href}>
