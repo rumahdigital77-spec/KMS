@@ -72,8 +72,8 @@ returns uuid
 language sql
 stable
 security definer
-set search_path = public
-as $$
+set search_path = ''
+as $
   select property_id
   from public.property_users
   where user_id = auth.uid()
