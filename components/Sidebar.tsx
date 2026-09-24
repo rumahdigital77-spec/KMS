@@ -18,11 +18,21 @@ export default function Sidebar() {
   const p = usePathname();
   const [open, setOpen] = useState(false);
   const [laporanOpen, setLaporanOpen] = useState(false);
+  const [logo, setLogo] = useState('');
 
   useEffect(() => {
     setOpen(false);
     setLaporanOpen(false);
   }, [p]);
+
+  useEffect(() => {
+    try {
+      const settings = JSON.parse(localStorage.getItem('kostpro_settings') || '{}');
+      setLogo(typeof settings.logo === 'string' ? settings.logo : '');
+    } catch {
+      setLogo('');
+    }
+  }, []);
 
   useEffect(() => {
     if (p === '/tagihan' || p === '/keuangan') setLaporanOpen(true);
@@ -51,7 +61,7 @@ export default function Sidebar() {
 
       <aside className={'sidebar ' + (open ? 'sidebar-open' : '')}>
         <div className="brand">
-          KOST<span>PRO</span>
+          {logo ? <img src={logo} alt="Logo pemilik" className="brand-logo" /> : <><span>KOST</span><span>PRO</span></>}
           <div className="sub" style={{ color: '#98a2b3' }}>Management System</div>
         </div>
         <nav className="nav">
