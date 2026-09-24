@@ -27,11 +27,19 @@ export default function BookingPage() {
   const [duration, setDuration] = useState('1 bulan');
   const [msg, setMsg] = useState('');
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [publicMode, setPublicMode] = useState(false);
+  const [managerPhone, setManagerPhone] = useState('');
 
   useEffect(() => {
     const loadedRooms = loadData<Room[]>('rooms', defaultRooms);
     setRooms(loadedRooms);
     setBookings(loadData<Booking[]>('bookings', []));
+    try {
+      const settings = JSON.parse(localStorage.getItem('kostpro_settings') || '{}');
+      setManagerPhone(String(settings.phone || ''));
+    } catch {}
+    const query = new URLSearchParams(window.location.search);
+    setPublicMode(query.get('public') === '1');
     const requestedRoom = new URLSearchParams(window.location.search).get('room');
     if (requestedRoom) {
       const room = loadedRooms.find(x => x.id === requestedRoom);
@@ -50,7 +58,7 @@ export default function BookingPage() {
   );
 
   const bookingUrl = (room: Room) =>
-    window.location.origin + '/booking?room=' + encodeURIComponent(room.id);
+    window.location.origin + '/booking?public=1&room=' + encodeURIComponent(room.id);
 
   const shareLink = (room: Room) => {
     const url = bookingUrl(room);
@@ -104,7 +112,21 @@ export default function BookingPage() {
     const next = [...currentBookings, booking];
     setBookings(next);
     saveData('bookings', next);
-    setMsg('Booking berhasil dicatat. Kamar tetap berstatus Tersedia sampai pengelola mengonfirmasi booking menjadi penghuni.');
+    setMsg('Booking berhasil dikirim. Pengelola akan menghubungi Anda untuk konfirmasi.');
+    if (publicMode && managerPhone) {
+      const manager = managerPhone.replace(/\D/g, '').replace(/^0/, '62');
+      const text = [
+        'BOOKING KAMAR BARU',
+        'ID: ' + booking.id,
+        'Nama: ' + booking.name,
+        'WhatsApp: ' + booking.phone,
+        'Kamar: ' + booking.room,
+        'Mulai: ' + booking.startDate,
+        'Durasi: ' + booking.duration,
+        'Harga: ' + money(room.price) + '/bulan',
+      ].join('\n');
+      window.setTimeout(() => window.location.href = 'https://wa.me/' + manager + '?text=' + encodeURIComponent(text), 250);
+    }
     setName('');
     setPhone('');
     setRoomId('');
@@ -115,15 +137,15 @@ export default function BookingPage() {
     <>
       <div className="top">
         <div>
-          <div className="title">Booking</div>
-          <div className="sub">Ketersediaan kamar mengikuti status kamar saat ini</div>
+          <div className="title">{publicMode ? 'Form Booking Kamar' : 'Booking'}</div>
+          <div className="sub">{publicMode ? 'Isi data untuk mengajukan booking kamar' : 'Ketersediaan kamar mengikuti status kamar saat ini'}</div>
         </div>
-        <div className="badge blue"><CalendarCheck size={15} style={{verticalAlign:'middle',marginRight:5}} /> {availableRooms.length} kamar tersedia</div>
+        {!publicMode && <div className="badge blue"><CalendarCheck size={15} style={{verticalAlign:'middle',marginRight:5}} /> {availableRooms.length} kamar tersedia</div>}
       </div>
 
       {msg && <div className="card" style={{marginBottom:18}}>{msg}</div>}
 
-      <div className="grid">
+      {!publicMode && <div className="grid">
         {availableRooms.map(room => (
           <div className="card" key={room.id}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
@@ -148,9 +170,9 @@ export default function BookingPage() {
             </div>
           </div>
         ))}
-      </div>
+      </div>}
 
-      {!availableRooms.length && (
+      {!publicMode && !availableRooms.length && (
         <div className="card" style={{marginTop:18}}>
           <div className="section-title">Tidak ada kamar tersedia</div>
           <div className="sub">Kamar dengan status Terisi atau Maintenance tidak ditampilkan untuk booking.</div>
@@ -158,8 +180,8 @@ export default function BookingPage() {
       )}
 
       <div id="booking-form" className="card" style={{marginTop:18}}>
-        <div className="section-title">Form Booking</div>
-        <div className="sub" style={{marginBottom:14}}>Form ini dapat dibuka langsung dari link WhatsApp.</div>
+        <div className="section-title">{publicMode ? 'Isi Data Booking' : 'Form Booking'}</div>
+        <div className="sub" style={{marginBottom:14}}>{publicMode ? 'Data akan diteruskan kepada pengelola untuk diproses.' : 'Form ini dapat dibuka langsung dari link WhatsApp.'}</div>
         <div className="form">
           <div className="field">
             <label>Kamar tersedia</label>
@@ -193,7 +215,7 @@ export default function BookingPage() {
         </div>
       </div>
 
-      <div className="card" style={{marginTop:18}}>
+      {!publicMode && <div className="card" style={{marginTop:18}}>
         <div className="section-title">Booking Masuk</div>
         <div className="table-wrap">
           <table className="table">
@@ -214,7 +236,7 @@ export default function BookingPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </div>}
     </>
   );
 }
