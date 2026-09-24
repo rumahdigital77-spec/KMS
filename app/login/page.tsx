@@ -15,13 +15,20 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
+    // Pertahankan login Superadmin lama. Akun ini tidak bergantung pada Supabase Auth.
+    if (username.trim().toLowerCase() === 'admin' && password === 'admin123') {
+      sessionStorage.setItem('kostpro_settings_auth', '1');
+      router.push('/pengaturan');
+      return;
+    }
+
     const { data, error: authError } = await supabase.auth.signInWithPassword({
       email: username.trim().toLowerCase() + '@kms.local',
       password,
     });
 
     if (authError || !data.user) {
-      setError('Username atau password salah.');
+      setError('Username atau password salah. Untuk Superadmin gunakan login admin di sini.');
       setLoading(false);
       return;
     }
