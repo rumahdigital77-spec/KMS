@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Camera, ExternalLink, Pencil, Plus, Radio, Trash2, X } from 'lucide-react';
+import { Camera, ExternalLink, KeyRound, Pencil, Plus, Radio, Trash2, X } from 'lucide-react';
 
 type CameraItem = {
   id: string;
@@ -10,6 +10,9 @@ type CameraItem = {
   type: 'Web / Cloud' | 'NVR / DVR' | 'IP Camera';
   url: string;
   showOnDashboard: boolean;
+  loginRequired: boolean;
+  loginUrl: string;
+  username: string;
 };
 
 const STORAGE_KEY = 'kostpro_cctv';
@@ -20,13 +23,17 @@ const emptyForm = {
   type: 'Web / Cloud' as CameraItem['type'],
   url: '',
   showOnDashboard: false,
+  loginRequired: false,
+  loginUrl: '',
+  username: '',
 };
 
 function loadCameras(): CameraItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const data = raw ? JSON.parse(raw) : [];
-    return Array.isArray(data) ? data : [];
+    if (!Array.isArray(data)) return [];
+    return data.map((camera: any) => ({ ...camera, loginRequired: Boolean(camera.loginRequired), loginUrl: typeof camera.loginUrl === 'string' ? camera.loginUrl : '', username: typeof camera.username === 'string' ? camera.username : '' }));
   } catch {
     return [];
   }
@@ -70,6 +77,9 @@ export default function CCTVPage() {
       type: camera.type,
       url: camera.url,
       showOnDashboard: camera.showOnDashboard,
+      loginRequired: Boolean(camera.loginRequired),
+      loginUrl: camera.loginUrl || '',
+      username: camera.username || '',
     });
     setNotice('');
     setShowForm(true);
@@ -79,6 +89,11 @@ export default function CCTVPage() {
     const name = form.name.trim();
     const location = form.location.trim();
     const url = form.url.trim();
+    const loginUrl = form.loginUrl.trim();
+    if (form.loginRequired && loginUrl && !/^https?:\\/\\//i.test(loginUrl)) {
+      setNotice('Link Login CCTV harus menggunakan http:// atau https://.');
+      return;
+    }
 
     if (!name || !url) {
       setNotice('Nama kamera dan Link Akses CCTV wajib diisi.');
@@ -103,6 +118,9 @@ export default function CCTVPage() {
       type: form.type,
       url,
       showOnDashboard: form.showOnDashboard,
+      loginRequired: form.loginRequired,
+      loginUrl: loginUrl || url,
+      username: form.username.trim(),
     };
 
     const next = editingId
@@ -120,6 +138,10 @@ export default function CCTVPage() {
     if (!window.confirm('Hapus kamera ini dari KMS?')) return;
     if (previewId === id) setPreviewId(null);
     persist(cameras.filter(camera => camera.id !== id));
+  }
+
+  function openLogin(camera: CameraItem) {
+    window.open(camera.loginUrl || camera.url, '_blank', 'noopener,noreferrer');
   }
 
   function openCamera(camera: CameraItem) {
@@ -152,7 +174,7 @@ export default function CCTVPage() {
         <div className="card cctv-empty">
           <div className="cctv-empty-icon"><Camera size={30} /></div>
           <h3>Belum ada CCTV</h3>
-          <p>Tambahkan link akses kamera atau NVR. KMS menyimpan konfigurasi ini di perangkat Anda dan tidak meminta pengaturan IP, port, atau router.</p>
+          <p>Tambahkan link akses kamera atau NVR. KMS menyimpan konfigurasi ini di perangkat Anda. Jika CCTV membutuhkan login, KMS membuka halaman login resminya tanpa menyimpan password.</p>
           <button className="btn" type="button" onClick={openAdd}><Plus size={16} /> Tambah CCTV</button>
         </div>
       ) : (
@@ -163,6 +185,7 @@ export default function CCTVPage() {
                 <div>
                   <div className="cctv-name"><span className="cctv-dot" />{camera.name}</div>
                   <div className="sub">{camera.location} · {camera.type}</div>
+                  {camera.loginRequired && <span className="cctv-login-badge"><KeyRound size={12} /> Login</span>}
                 </div>
                 <button className="icon-btn" type="button" aria-label={'Edit ' + camera.name} onClick={() => openEdit(camera)}><Pencil size={16} /></button>
               </div>
@@ -177,7 +200,7 @@ export default function CCTVPage() {
                     allow="autoplay; fullscreen; picture-in-picture"
                   />
                   <div className="cctv-preview-note">
-                    <span>Jika kamera tidak tampil di dalam KMS, buka viewer langsung.</span>
+                    <span>Jika viewer meminta login, gunakan tombol Login CCTV.</span>
                     <button type="button" onClick={() => openCamera(camera)}><ExternalLink size={14} /> Buka Viewer</button>
                   </div>
                 </div>
@@ -193,6 +216,7 @@ export default function CCTVPage() {
                 <button className="btn secondary" type="button" onClick={() => setPreviewId(previewId === camera.id ? null : camera.id)}>
                   <Camera size={15} /> {previewId === camera.id ? 'Tutup Viewer' : 'Lihat CCTV'}
                 </button>
+                {camera.loginRequired && <button className="btn secondary" type="button" onClick={() => openLogin(camera)}><KeyRound size={15} /> Login CCTV</button>}
                 <button className="btn secondary" type="button" onClick={() => openCamera(camera)}>
                   <ExternalLink size={15} /> Buka
                 </button>
@@ -239,6 +263,12 @@ export default function CCTVPage() {
                 <label>Link Akses CCTV *</label>
                 <input type="url" value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} placeholder="https://..." />
               </div>
+              <div className="field full"><label className="cctv-check"><input type="checkbox" checked={form.loginRequired} onChange={e => setForm({ ...form, loginRequired: e.target.checked })} /> CCTV membutuhkan login</label></div>
+              {form.loginRequired && <>
+                <div className="field"><label>Link Login CCTV</label><input type="url" value={form.loginUrl} onChange={e => setForm({ ...form, loginUrl: e.target.value })} placeholder="Kosongkan jika sama dengan link akses" /></div>
+                <div className="field"><label>Username (opsional)</label><input autoComplete="username" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} placeholder="Username CCTV" /></div>
+                <div className="field full"><div className="cctv-password-note"><KeyRound size={15} /> Password diisi langsung di halaman login CCTV. KMS tidak menyimpan password.</div></div>
+              </>}
               <div className="field full">
                 <label className="cctv-check"><input type="checkbox" checked={form.showOnDashboard} onChange={e => setForm({ ...form, showOnDashboard: e.target.checked })} /> Tampilkan sebagai shortcut di Dashboard</label>
               </div>
