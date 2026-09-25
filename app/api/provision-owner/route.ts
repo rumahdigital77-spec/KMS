@@ -120,8 +120,15 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ propertyId });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('provision-owner failed:', message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const e = error as { message?: unknown; code?: unknown; details?: unknown; hint?: unknown };
+    const detail = {
+      message: typeof e?.message === 'string' ? e.message : null,
+      code: typeof e?.code === 'string' ? e.code : null,
+      details: typeof e?.details === 'string' ? e.details : null,
+      hint: typeof e?.hint === 'string' ? e.hint : null
+    };
+    const message = detail.message || 'Provisioning server gagal.';
+    console.error('provision-owner failed:', JSON.stringify(detail), error);
+    return NextResponse.json({ error: message, code: detail.code, details: detail.details, hint: detail.hint }, { status: 500 });
   }
 }
