@@ -2,6 +2,7 @@
 'use client';
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { createClient } from '../../lib/supabase-browser';
+import type { AuthChangeEvent } from '@supabase/supabase-js';
 
 type S={name:string;phone:string;address:string;currency:string;manager:string;ownerName:string;availableRooms:number;logo:string;signature:string;receiptPrefix:string;receiptNext:number};
 const d:S={name:'Kost Harmoni',phone:'0812-0000-0000',address:'Alamat properti',currency:'IDR',manager:'Pengelola Kost',ownerName:'',availableRooms:0,logo:'',signature:'',receiptPrefix:'KW',receiptNext:1};
@@ -14,7 +15,7 @@ export default function Pengaturan(){
   const syncDatabaseState=async()=>{try{const {data:{user}}=await supabase.auth.getUser();if(!active)return;if(!user){setEmail('');setDatabaseCreated(false);setMsg('');return;}setEmail(user.email||'');const {data}=await supabase.from('account_properties').select('property_id').eq('user_id',user.id).limit(1).maybeSingle();if(!active)return;if(data?.property_id){setDatabaseCreated(true);setMsg('✓ Database sudah dibuat untuk account ini.')}else setDatabaseCreated(false);}catch{}};
   try{const x=localStorage.getItem('kostpro_settings');if(x)setF({...d,...JSON.parse(x)})}catch{}
   syncDatabaseState();
-  const {data:listener}=supabase.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){setDatabaseCreated(false);setEmail('');setPassword('');setMsg('');return;}if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')syncDatabaseState()});
+  const {data:listener}=supabase.auth.onAuthStateChange((event:AuthChangeEvent)=>{if(event==='SIGNED_OUT'){setDatabaseCreated(false);setEmail('');setPassword('');setMsg('');return;}if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')syncDatabaseState()});
   return()=>{active=false;listener.subscription.unsubscribe()};
  },[]);
  const set=(k:keyof S,v:string|number)=>setF(x=>({...x,[k]:v}));
