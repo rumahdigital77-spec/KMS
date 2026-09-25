@@ -37,7 +37,9 @@ export default function Sidebar() {
       setLogo('');
     }
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email || ''));
+    supabase.auth.getUser().then((result: { data: { user: { email?: string | null } | null } }) => {
+      setUserEmail(result.data.user?.email || '');
+    });
   }, []);
 
   useEffect(() => {
