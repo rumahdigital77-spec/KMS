@@ -90,7 +90,7 @@ export default function CCTVPage() {
     const location = form.location.trim();
     const url = form.url.trim();
     const loginUrl = form.loginUrl.trim();
-    if (form.loginRequired && loginUrl && !/^https?:\\/\\//i.test(loginUrl)) {
+    if (form.loginRequired && loginUrl && !/^https?:\/\//i.test(loginUrl)) {
       setNotice('Link Login CCTV harus menggunakan http:// atau https://.');
       return;
     }
