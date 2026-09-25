@@ -33,6 +33,12 @@ export default function Pengaturan(){
    }else{
      ownerEmail=(user.email||ownerEmail).trim().toLowerCase();
    }
+   const refreshed=await supabase.auth.refreshSession();
+   if(refreshed.error && /sub claim|does not exist/i.test(refreshed.error.message||'')){
+     await supabase.auth.signOut();
+     throw new Error('Sesi login lama tidak valid. Silakan klik CREATE DATABASE lagi untuk login ulang.');
+   }
+   if(refreshed.data.user) user=refreshed.data.user;
 
    // Provisioning is performed by one SECURITY DEFINER transaction so RLS cannot
    // leave the owner with a partially-created property/account.
