@@ -16,11 +16,18 @@ export default function Pengaturan(){
  const save=()=>{localStorage.setItem('kostpro_settings',JSON.stringify(f));setSaved(true);setTimeout(()=>setSaved(false),2500)};
  const createDatabase=async(e:FormEvent)=>{e.preventDefault();if(databaseCreated||busy)return;setMsg('');const ownerEmail=email.trim().toLowerCase();const propertyName=f.name.trim();if(!ownerEmail||password.length<6||!propertyName){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);
   try{
-   const sign=await supabase.auth.signUp({email:ownerEmail,password,options:{data:{full_name:f.ownerName||ownerEmail,property_name:propertyName}}});
-   if(sign.error) throw sign.error;
-   const user=sign.data.user;
-   if(!user) throw new Error('Account owner tidak berhasil dibuat.');
-   if(!sign.data.session) throw new Error('Email confirmation masih aktif. Pastikan Confirm email = OFF pada Authentication → Sign In / Providers → Email.');
+   const current=await supabase.auth.getUser();
+   if(current.error) throw current.error;
+   let user=current.data.user;
+   if(!user){
+     const sign=await supabase.auth.signUp({email:ownerEmail,password,options:{data:{full_name:f.ownerName||ownerEmail,property_name:propertyName}}});
+     if(sign.error) throw sign.error;
+     user=sign.data.user;
+     if(!user) throw new Error('Account owner tidak berhasil dibuat.');
+     if(!sign.data.session) throw new Error('Email confirmation masih aktif. Pastikan Confirm email = OFF pada Authentication → Sign In / Providers → Email.');
+   }else{
+     ownerEmail=(user.email||ownerEmail).trim().toLowerCase();
+   }
 
    // Provisioning is performed by one SECURITY DEFINER transaction so RLS cannot
    // leave the owner with a partially-created property/account.
@@ -38,7 +45,7 @@ export default function Pengaturan(){
    // Some PostgREST instances can temporarily keep an old function schema cache
    // after a function is replaced. If that happens, finish provisioning through
    // the normal RLS-protected tables instead of creating a second database.
-   if(provisionError?.code==='PGRST202'){
+   if(provisionError?.code==='PGRST202'||provisionError?.code==='PGRST205'){
      const {data:existing}=await supabase.from('properties').select('id').eq('owner_user_id',user.id).order('created_at',{ascending:true}).limit(1).maybeSingle();
      if(existing?.id){
        propertyId=existing.id;
