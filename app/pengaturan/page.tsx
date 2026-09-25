@@ -17,6 +17,11 @@ export default function Pengaturan(){
  const createDatabase=async(e:FormEvent)=>{e.preventDefault();if(databaseCreated||busy)return;setMsg('');let ownerEmail=email.trim().toLowerCase();const propertyName=f.name.trim();if(!ownerEmail||password.length<6||!propertyName){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);
   try{
    let current=await supabase.auth.getUser();
+   if(current.error && /sub claim|does not exist/i.test(current.error.message||'')){
+     await supabase.auth.signOut();
+     const relogin=await supabase.auth.signInWithPassword({email:ownerEmail,password});
+     if(!relogin.error) current={data:{user:relogin.data.user},error:null};
+   }
    if(current.error) throw current.error;
    let user=current.data.user;
    if(!user){
