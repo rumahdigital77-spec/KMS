@@ -13,24 +13,26 @@ export default function Pengaturan(){
  const set=(k:keyof S,v:string|number)=>setF(x=>({...x,[k]:v}));
  const image=(k:'logo'|'signature')=>(e:React.ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file)return;if(file.size>1024*1024)return alert('File maksimal 1 MB.');const r=new FileReader();r.onload=()=>set(k,String(r.result));r.readAsDataURL(file)};
  const save=()=>{localStorage.setItem('kostpro_settings',JSON.stringify(f));setSaved(true);setTimeout(()=>setSaved(false),2500)};
- const createDatabase=async(e:FormEvent)=>{e.preventDefault();setMsg('');if(!email.trim()||password.length<6||!f.name.trim()){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);
+ const createDatabase=async(e:FormEvent)=>{e.preventDefault();setMsg('');const ownerEmail=email.trim().toLowerCase();if(!ownerEmail||password.length<6||!f.name.trim()){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);
   try{
-   let userId:string|null=null; let sessionExists=false;
-   const sign=await supabase.auth.signUp({email:email.trim(),password,options:{data:{full_name:f.ownerName||email.trim(),property_name:f.name.trim()}}});
-   if(sign.data.user){userId=sign.data.user.id;sessionExists=!!sign.data.session}
-   if(sign.error && !/already registered|already exists/i.test(sign.error.message)) throw sign.error;
-   if(!userId||!sessionExists){const login=await supabase.auth.signInWithPassword({email:email.trim(),password});if(login.error)throw login.error;userId=login.data.user?.id||null;sessionExists=!!login.data.session}
-   if(!userId||!sessionExists){setMsg('Account dibuat. Silakan konfirmasi email terlebih dahulu, lalu gunakan DATABASE LOGIN.');return}
-   const {data:prop,error:pe}=await supabase.from('properties').insert({name:f.name.trim(),address:f.address||null,phone:f.phone||null,owner_user_id:userId}).select('id').single();
+   // IMPORTANT: Supabase Auth must have "Confirm email" disabled for the requested
+   // owner-first onboarding flow. When disabled, signUp returns a live session.
+   const sign=await supabase.auth.signUp({email:ownerEmail,password,options:{data:{full_name:f.ownerName||ownerEmail,property_name:f.name.trim()}}});
+   if(sign.error) throw sign.error;
+   const user=sign.data.user; const session=sign.data.session;
+   if(!user) throw new Error('Account owner tidak berhasil dibuat.');
+   if(!session) throw new Error('Email confirmation masih aktif di Supabase. Matikan Authentication → Providers → Email → Confirm email agar CREATE DATABASE langsung aktif tanpa verifikasi email.');
+   const {data:prop,error:pe}=await supabase.from('properties').insert({name:f.name.trim(),address:f.address||null,phone:f.phone||null,owner_user_id:user.id}).select('id').single();
    if(pe)throw pe;
-   const {error:ae}=await supabase.from('account_properties').insert({user_id:userId,property_id:prop.id,role:'owner'});
+   const {error:ae}=await supabase.from('account_properties').insert({user_id:user.id,property_id:prop.id,role:'owner'});
    if(ae && !/duplicate key/i.test(ae.message))throw ae;
-   const {data:ua}=await supabase.from('user_accounts').select('user_id').eq('user_id',userId).maybeSingle();
-   if(!ua){const {error:ue}=await supabase.from('user_accounts').insert({user_id:userId,email:email.trim().toLowerCase(),full_name:f.ownerName||null,property_id:prop.id,role:'owner',status:'active'});if(ue)throw ue}
-   setMsg('✓ Database + login + property berhasil dibuat. Anda sudah masuk.');setPassword('');
+   const {data:ua}=await supabase.from('user_accounts').select('user_id').eq('user_id',user.id).maybeSingle();
+   if(!ua){const {error:ue}=await supabase.from('user_accounts').insert({user_id:user.id,email:ownerEmail,full_name:f.ownerName||null,property_id:prop.id,role:'owner',status:'active'});if(ue)throw ue}
+   setMsg('✓ Database + login + property aktif. Owner langsung masuk ke KMS.');setPassword('');
+   setTimeout(()=>{window.location.href='/';},700);
   }catch(err){setMsg(err instanceof Error?err.message:'Pembuatan database gagal.')}finally{setBusy(false)}
  };
- const login=async(e:FormEvent)=>{e.preventDefault();setLoginMsg('');setLoginBusy(true);try{const {error}=await supabase.auth.signInWithPassword({email:loginEmail.trim(),password:loginPassword});if(error)throw error;window.location.href='/'}catch(err){setLoginMsg(err instanceof Error?err.message:'Login gagal.')}finally{setLoginBusy(false)}};
+ const login=async(e:FormEvent)=>{e.preventDefault();setLoginMsg('');setLoginBusy(true);try{const {error}=await supabase.auth.signInWithPassword({email:loginEmail.trim().toLowerCase(),password:loginPassword});if(error)throw error;window.location.href='/'}catch(err){setLoginMsg(err instanceof Error?err.message:'Login gagal.')}finally{setLoginBusy(false)}};
  return <><div className="top"><div><div className="title">Pengaturan</div><div className="sub">Profil pemilik, property, database dan akses login</div></div></div>
  <div className="card"><div className="section-title">Created Database</div><div className="sub" style={{marginBottom:14}}>Satu email = satu account. Satu account dapat memiliki satu atau banyak property.</div>
  <form onSubmit={createDatabase}><div className="form"><div className="field"><label>Email Account</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email"/></div><div className="field"><label>Password Login</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password"/></div><div className="field"><label>Nama Property</label><input value={f.name} onChange={e=>set('name',e.target.value)} placeholder="Nama kost / hotel"/></div></div><div className="actions" style={{marginTop:14}}><button className="btn" type="submit" disabled={busy}>{busy?'Membuat...':'CREATE DATABASE'}</button></div></form>
