@@ -16,14 +16,13 @@ export async function POST(req: Request) {
   try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 
-    if (!url || !anonKey || !serviceKey) {
+    if (!url || !anonKey) {
       return NextResponse.json({ error: 'Supabase server environment belum lengkap.' }, { status: 500 });
     }
 
     const authHeader = req.headers.get('authorization') || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
     if (!token) return NextResponse.json({ error: 'Auth session missing!' }, { status: 401 });
 
     const authClient = createClient(url, anonKey, {
@@ -41,27 +40,58 @@ export async function POST(req: Request) {
     const authEmail = String(user.email || '').trim().toLowerCase();
 
     if (!propertyName) return NextResponse.json({ error: 'Nama property wajib diisi.' }, { status: 400 });
-    if (!authEmail || ownerEmail !== authEmail) return NextResponse.json({ error: 'OWNER_EMAIL_MISMATCH' }, { status: 400 });
+    if (!authEmail || ownerEmail !== authEmail) {
+      return NextResponse.json({ error: 'OWNER_EMAIL_MISMATCH' }, { status: 400 });
+    }
 
-    const admin = createClient(url, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false }
+    // Do not call the PostgREST RPC. Provisioning is delegated to the
+    // Supabase Edge Function to avoid RPC schema-cache resolution failures.
+    const edgeResponse = await fetch(`${url}/functions/v1/provision-account`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: anonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'bootstrap',
+        property_name: propertyName,
+        address: body.p_address?.trim() || '',
+        phone: body.p_phone?.trim() || '',
+        full_name: String(body.p_full_name || '').trim() || null,
+      }),
+      cache: 'no-store',
     });
 
-    // Use the original, already-published RPC signature. Do not call the
-    // PostgREST table endpoints from this provisioning route.
-    const { data: propertyId, error: provisioningError } = await admin.rpc(
-      'provision_owner_property',
-      {
-        p_address: body.p_address?.trim() || null,
-        p_email: ownerEmail,
-        p_full_name: String(body.p_full_name || '').trim() || null,
-        p_phone: body.p_phone?.trim() || null,
-        p_property_name: propertyName
-      }
-    );
+    const edgeText = await edgeResponse.text();
+    let edgeData: Record<string, unknown>;
+    try {
+      edgeData = JSON.parse(edgeText);
+    } catch {
+      edgeData = { error: edgeText || 'Supabase provisioning service returned invalid response.' };
+    }
 
-    if (provisioningError) throw provisioningError;
-    if (!propertyId) throw new Error('PROPERTY_ID_NOT_RETURNED');
+    if (!edgeResponse.ok) {
+      const message = typeof edgeData.error === 'string' ? edgeData.error : 'Database provisioning gagal.';
+      return NextResponse.json({
+        error: message,
+        code: typeof edgeData.code === 'string' ? edgeData.code : null,
+        details: typeof edgeData.details === 'string' ? edgeData.details : null,
+        hint: typeof edgeData.hint === 'string' ? edgeData.hint : null,
+      }, { status: edgeResponse.status >= 400 && edgeResponse.status < 600 ? edgeResponse.status : 500 });
+    }
+
+    const account = edgeData.account as { property_id?: unknown } | undefined;
+    const propertyId = typeof edgeData.propertyId === 'string'
+      ? edgeData.propertyId
+      : typeof account?.property_id === 'string'
+        ? account.property_id
+        : null;
+
+    if (!propertyId) {
+      return NextResponse.json({ error: 'PROPERTY_ID_NOT_RETURNED' }, { status: 500 });
+    }
+
     return NextResponse.json({ propertyId });
   } catch (error) {
     const e = error as { message?: unknown; code?: unknown; details?: unknown; hint?: unknown };
