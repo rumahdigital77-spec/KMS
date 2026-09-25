@@ -11,6 +11,14 @@ Starter production-ready Next.js application for managing boarding houses/kost.
 - Laporan
 - Pengaturan
 - Supabase database schema
+- Created Database + Database Login
+
+## Account & Property
+- 1 email = 1 account.
+- 1 account can own multiple properties.
+- Property access is isolated by authenticated user and RLS.
+- Created Database creates the property and associates it with the logged-in account.
+- Database Login uses Supabase Auth; passwords are never stored in application tables.
 
 ## Run locally
 ```powershell
@@ -28,8 +36,9 @@ Open http://localhost:3000
 
 ## Supabase
 For a new database, run `supabase/schema.sql` in Supabase SQL Editor.
+For the existing project, `supabase/migration_account_property_provisioning.sql` contains the account/property access hardening.
 
-This version uses demo data in the UI so it can render immediately. The schema is prepared for the next integration stage: authentication, multi-property access, CRUD, billing, payments, expenses and reports.
+This version uses Supabase Auth for account login and a dedicated account_properties membership table for multi-property ownership.
 
 ## Version Archive
-- **V.1.3** — current version: CCTV menu and management, login-link support, dashboard CCTV shortcuts, and build/type fixes.
+- **V.1.4** — Created Database and Database Login flow, multi-property account mapping, and property storage bucket preparation.
