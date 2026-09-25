@@ -52,7 +52,7 @@ export default function CCTVPage() {
     setCameras(loadCameras());
   }, []);
 
-  const onlineCount = cameras.length;
+  const registeredCount = cameras.length;
   const previewCamera = useMemo(
     () => cameras.find(camera => camera.id === previewId) || null,
     [cameras, previewId]
