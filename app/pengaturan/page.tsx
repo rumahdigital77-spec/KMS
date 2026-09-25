@@ -15,13 +15,27 @@ export default function Pengaturan(){
    try{
     const {data:{user}}=await supabase.auth.getUser();
     if(!active)return;
-    if(!user){setEmail('');setDatabaseCreated(false);setMsg('');return;}
+    if(!user){
+     setEmail('');
+     setDatabaseCreated(false);
+     setMsg('');
+     return;
+    }
     setEmail(user.email||'');
     const {data}=await supabase.from('account_properties').select('property_id').eq('user_id',user.id).limit(1).maybeSingle();
-    if(active&&data?.property_id){setDatabaseCreated(true);setMsg('✓ Database sudah dibuat untuk account ini.');}
-    else if(active){setDatabaseCreated(false);}
+    if(!active)return;
+    if(data?.property_id){
+     setDatabaseCreated(true);
+     setMsg('✓ Database sudah dibuat untuk account ini.');
+    }else{
+     setDatabaseCreated(false);
+    }
    }catch{}
   };
+  try{
+   const x=localStorage.getItem('kostpro_settings');
+   if(x)setF({...d,...JSON.parse(x)});
+  }catch{}
   syncDatabaseState();
   const {data:listener}=supabase.auth.onAuthStateChange((event)=>{
    if(event==='SIGNED_OUT'){
@@ -31,10 +45,10 @@ export default function Pengaturan(){
     setMsg('');
     return;
    }
-   if(event==='SIGNED_IN' || event==='TOKEN_REFRESHED') syncDatabaseState();
+   if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')syncDatabaseState();
   });
   return()=>{active=false;listener.subscription.unsubscribe()};
- },[]);try{const x=localStorage.getItem('kostpro_settings');if(x)setF({...d,...JSON.parse(x)})}catch{};let active=true;(async()=>{try{const {data:{user}}=await supabase.auth.getUser();if(!user||!active)return;setEmail(user.email||'');const {data}=await supabase.from('account_properties').select('property_id').eq('user_id',user.id).limit(1).maybeSingle();if(active&&data?.property_id){setDatabaseCreated(true);setMsg('✓ Database sudah dibuat untuk account ini.');}}catch{}})();return()=>{active=false}},[]);
+ },[]);
  const set=(k:keyof S,v:string|number)=>setF(x=>({...x,[k]:v}));
  const image=(k:'logo'|'signature')=>(e:React.ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file)return;if(file.size>1024*1024)return alert('File maksimal 1 MB.');const r=new FileReader();r.onload=()=>set(k,String(r.result));r.readAsDataURL(file)};
  const save=()=>{localStorage.setItem('kostpro_settings',JSON.stringify(f));setSaved(true);setTimeout(()=>setSaved(false),2500)};
