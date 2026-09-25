@@ -41,7 +41,7 @@ export default function Kwitansi() {
     } catch {}
 
     const queryId = new URLSearchParams(window.location.search).get('id');
-    if (queryId) setId(queryId);
+    if (queryId) setId(queryId);\n    if (queryId && new URLSearchParams(window.location.search).get('print') === '1') {\n      window.setTimeout(() => window.print(), 700);\n    }
   }, []);
 
   const payment =
