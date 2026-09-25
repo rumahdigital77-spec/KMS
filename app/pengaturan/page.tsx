@@ -23,14 +23,38 @@ export default function Pengaturan(){
 
    // Provisioning is performed by one SECURITY DEFINER transaction so RLS cannot
    // leave the owner with a partially-created property/account.
-   const {data:propertyId,error:provisionError}=await supabase.rpc('provision_owner_property',{
-     p_property_name:propertyName,
+   const rpcArgs={
      p_address:f.address||null,
-     p_phone:f.phone||null,
+     p_email:ownerEmail,
      p_full_name:f.ownerName||null,
-     p_email:ownerEmail
-   });
-   if(provisionError) throw new Error(`Database provisioning gagal: ${provisionError.message}`);
+     p_phone:f.phone||null,
+     p_property_name:propertyName
+   };
+   let propertyId:string|null=null;
+   const {data:rpcPropertyId,error:provisionError}=await supabase.rpc('provision_owner_property',rpcArgs);
+   if(!provisionError) propertyId=rpcPropertyId;
+
+   // Some PostgREST instances can temporarily keep an old function schema cache
+   // after a function is replaced. If that happens, finish provisioning through
+   // the normal RLS-protected tables instead of creating a second database.
+   if(provisionError?.code==='PGRST202'){
+     const {data:existing}=await supabase.from('properties').select('id').eq('owner_user_id',user.id).order('created_at',{ascending:true}).limit(1).maybeSingle();
+     if(existing?.id){
+       propertyId=existing.id;
+     }else{
+       const {data:created,error:createError}=await supabase.from('properties').insert({name:propertyName,address:f.address||null,phone:f.phone||null,owner_user_id:user.id}).select('id').single();
+       if(createError) throw new Error(`Database provisioning gagal: ${createError.message}`);
+       propertyId=created.id;
+     }
+     const {error:accessError}=await supabase.from('account_properties').upsert({user_id:user.id,property_id:propertyId,role:'owner'},{onConflict:'user_id,property_id'});
+     if(accessError) throw new Error(`Database access gagal: ${accessError.message}`);
+     const {error:accountError}=await supabase.from('user_accounts').upsert({user_id:user.id,email:ownerEmail,full_name:f.ownerName||null,property_id:propertyId,role:'owner',status:'active'},{onConflict:'user_id'});
+     if(accountError) throw new Error(`Account owner gagal disimpan: ${accountError.message}`);
+     const {error:licenseError}=await supabase.from('licenses').upsert({user_id:user.id,plan:'standard',status:'active'},{onConflict:'user_id'});
+     if(licenseError && !/relation .*licenses.* does not exist/i.test(licenseError.message)) throw new Error(`License gagal disimpan: ${licenseError.message}`);
+   }else if(provisionError){
+     throw new Error(`Database provisioning gagal: ${provisionError.message}`);
+   }
    if(!propertyId) throw new Error('Database provisioning gagal: property ID tidak dikembalikan.');
 
    setDatabaseCreated(true);setMsg('✓ Database + account owner + property + akses berhasil dibuat. Pembuatan database berikutnya dinonaktifkan.');setPassword('');
