@@ -47,77 +47,24 @@ export async function POST(req: Request) {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    // Idempotent provisioning. The unique owner index prevents a second property
-    // for the same owner; all related records are upserted to the same property.
-    const { data: existing, error: existingError } = await admin
-      .from('properties')
-      .select('id')
-      .eq('owner_user_id', user.id)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (existingError) throw existingError;
-
-    let propertyId = existing?.id as string | undefined;
-
-    if (!propertyId) {
-      const { data: inserted, error } = await admin
-        .from('properties')
-        .insert({
-          name: propertyName,
-          address: body.p_address?.trim() || null,
-          phone: body.p_phone?.trim() || null,
-          owner_user_id: user.id
-        })
-        .select('id')
-        .single();
-      if (error) {
-        // A concurrent request may have won the unique owner race.
-        if (error.code !== '23505') throw error;
-        const retry = await admin
-          .from('properties')
-          .select('id')
-          .eq('owner_user_id', user.id)
-          .order('created_at', { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        if (retry.error || !retry.data?.id) throw retry.error || new Error('PROPERTY_CREATE_RACE');
-        propertyId = retry.data.id;
-      } else {
-        propertyId = inserted.id;
+    // IMPORTANT: do not use admin.from(...) here.
+    // The REST table endpoint can fail when PostgREST's table schema cache is stale
+    // even though the PostgreSQL table exists. The database function executes
+    // atomically inside PostgreSQL and therefore avoids that failure mode.
+    const { data: propertyId, error: provisioningError } = await admin.rpc(
+      'provision_owner_property_server',
+      {
+        p_user_id: user.id,
+        p_address: body.p_address?.trim() || null,
+        p_email: ownerEmail,
+        p_full_name: String(body.p_full_name || '').trim() || null,
+        p_phone: body.p_phone?.trim() || null,
+        p_property_name: propertyName
       }
-    }
+    );
 
-    const { error: membershipError } = await admin
-      .from('account_properties')
-      .upsert(
-        { user_id: user.id, property_id: propertyId, role: 'owner' },
-        { onConflict: 'user_id,property_id' }
-      );
-    if (membershipError) throw membershipError;
-
-    const { error: accountError } = await admin
-      .from('user_accounts')
-      .upsert({
-        user_id: user.id,
-        email: authEmail,
-        full_name: String(body.p_full_name || '').trim() || null,
-        property_id: propertyId,
-        role: 'owner',
-        status: 'active',
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
-    if (accountError) throw accountError;
-
-    const { error: licenseError } = await admin
-      .from('licenses')
-      .upsert({
-        user_id: user.id,
-        plan: 'standard',
-        status: 'active'
-      }, { onConflict: 'user_id', ignoreDuplicates: true });
-    if (licenseError) throw licenseError;
-
+    if (provisioningError) throw provisioningError;
+    if (!propertyId) throw new Error('PROPERTY_ID_NOT_RETURNED');
     return NextResponse.json({ propertyId });
   } catch (error) {
     const e = error as { message?: unknown; code?: unknown; details?: unknown; hint?: unknown };
