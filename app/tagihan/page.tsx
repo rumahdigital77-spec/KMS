@@ -12,7 +12,8 @@ export default function Tagihan(){
   const paidAt=new Date().toISOString().slice(0,10);
   let receiptNo=current.receiptNo;
   try{const raw=localStorage.getItem('kostpro_settings');const s=raw?JSON.parse(raw):{};const next=Number(s.receiptNext||1);if(!receiptNo){receiptNo=(s.receiptPrefix||'KW')+'-'+new Date().getFullYear()+'-'+String(next).padStart(5,'0');localStorage.setItem('kostpro_settings',JSON.stringify({...s,receiptNext:next+1}))}}catch{}
-  setProcessing(true);\n  const paidPayment={...current,status:'paid' as const,paidAt,method,receiptNo};
+  setProcessing(true);
+  const paidPayment={...current,status:'paid' as const,paidAt,method,receiptNo};
   const n=p.filter(x=>x.id!==sel);
   const paymentHistory=loadData<Payment[]>('paymentHistory',[]);
   const historyWithoutDuplicate=paymentHistory.filter(x=>x.id!==paidPayment.id);
