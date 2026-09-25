@@ -16,57 +16,42 @@ export default function Pengaturan(){
  const save=()=>{localStorage.setItem('kostpro_settings',JSON.stringify(f));setSaved(true);setTimeout(()=>setSaved(false),2500)};
  const createDatabase=async(e:FormEvent)=>{e.preventDefault();if(databaseCreated||busy)return;setMsg('');let ownerEmail=email.trim().toLowerCase();const propertyName=f.name.trim();if(!ownerEmail||password.length<6||!propertyName){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);
   try{
-   // Authenticate the account used for provisioning. Do not rely on a stale browser JWT.
+   // Authenticate first so the server endpoint can verify the exact owner session.
    let auth=await supabase.auth.signInWithPassword({email:ownerEmail,password});
    let user=auth.data.user;
    if(auth.error){
      const sign=await supabase.auth.signUp({email:ownerEmail,password,options:{data:{full_name:f.ownerName||ownerEmail,property_name:propertyName}}});
      if(sign.error){
-       if(/already registered/i.test(sign.error.message||'')){
-         throw new Error('Email sudah terdaftar tetapi password tidak cocok. Gunakan Password Login account tersebut.');
-       }
+       if(/already registered/i.test(sign.error.message||'')) throw new Error('Email sudah terdaftar tetapi password tidak cocok. Gunakan Password Login account tersebut.');
        throw sign.error;
      }
      user=sign.data.user;
      if(!user) throw new Error('Account owner tidak berhasil dibuat.');
      if(!sign.data.session) throw new Error('Account berhasil dibuat, tetapi session belum tersedia. Jika Confirm email aktif, konfirmasi email terlebih dahulu lalu gunakan Database Login.');
-     auth={data:{user},error:null};
    }
-   if(auth.error||!user) throw new Error(auth.error?.message||'Auth session missing!');
+   if(!user) throw new Error('Auth session missing!');
    const refreshed=await supabase.auth.refreshSession();
-   if(refreshed.error||!refreshed.data.session){
-     throw new Error('Auth session missing! Silakan gunakan Database Login terlebih dahulu, lalu ulangi CREATE DATABASE.');
-   }
+   if(refreshed.error||!refreshed.data.session) throw new Error('Auth session missing! Silakan gunakan Database Login terlebih dahulu, lalu ulangi CREATE DATABASE.');
    user=refreshed.data.user||user;
    ownerEmail=(user.email||ownerEmail).trim().toLowerCase();
 
-   // Provisioning is performed by one SECURITY DEFINER transaction so RLS cannot
-   // leave the owner with a partially-created property/account.
-   const rpcArgs={
-     p_address:f.address||null,
-     p_email:ownerEmail,
-     p_full_name:f.ownerName||null,
-     p_phone:f.phone||null,
-     p_property_name:propertyName
-   };
-   let propertyId:string|null=null;
-   const {data:rpcPropertyId,error:provisionError}=await supabase.rpc('provision_owner_property',rpcArgs);
-   if(!provisionError) propertyId=rpcPropertyId;
-
-   // Provision ONLY through the atomic RPC. Never fall back to direct table writes:
-   // a stale PostgREST cache must not create a second/partial property.
-   if(provisionError){
-     let lastError=provisionError;
-     for(let attempt=1;attempt<=3;attempt++){
-       if(lastError.code!=='PGRST202'&&lastError.code!=='PGRST205') break;
-       await new Promise(resolve=>setTimeout(resolve,700*attempt));
-       const retry=await supabase.rpc('provision_owner_property',rpcArgs);
-       if(!retry.error){ propertyId=retry.data; lastError=null as any; break; }
-       lastError=retry.error;
-     }
-     if(lastError) throw new Error(`Database provisioning gagal: ${lastError.message}`);
-   }
-   if(!propertyId) throw new Error('Database provisioning gagal: property ID tidak dikembalikan.');
+   // Do not call supabase.rpc here. The provisioning endpoint is server-side,
+   // authenticated from the bearer token, and uses the service key only on the server.
+   const session=refreshed.data.session;
+   const response=await fetch('/api/provision-owner',{
+     method:'POST',
+     headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+     body:JSON.stringify({
+       p_address:f.address||null,
+       p_email:ownerEmail,
+       p_full_name:f.ownerName||null,
+       p_phone:f.phone||null,
+       p_property_name:propertyName
+     })
+   });
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok) throw new Error(`Database provisioning gagal: ${result.error||'Server provisioning gagal.'}`);
+   if(!result.propertyId) throw new Error('Database provisioning gagal: property ID tidak dikembalikan.');
 
    setDatabaseCreated(true);setMsg('✓ Database + account owner + property + akses berhasil dibuat. Pembuatan database berikutnya dinonaktifkan.');setPassword('');
    setTimeout(()=>{window.location.href='/';},700);
