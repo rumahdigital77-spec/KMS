@@ -42,10 +42,15 @@ export default function Pengaturan(){
    const {data:rpcPropertyId,error:provisionError}=await supabase.rpc('provision_owner_property',rpcArgs);
    if(!provisionError) propertyId=rpcPropertyId;
 
-   // Some PostgREST instances can temporarily keep an old function schema cache
-   // after a function is replaced. If that happens, finish provisioning through
-   // the normal RLS-protected tables instead of creating a second database.
-   if(provisionError?.code==='PGRST202'||provisionError?.code==='PGRST205'){
+   // Some PostgREST instances can temporarily keep an old schema cache.
+   // Retry the idempotent RPC once before using the RLS fallback.
+   if(provisionError?.code==='PGRST205'){
+     await new Promise(resolve=>setTimeout(resolve,500));
+     const retry=await supabase.rpc('provision_owner_property',rpcArgs);
+     if(!retry.error) propertyId=retry.data;
+     else throw retry.error;
+   }
+   if(provisionError?.code==='PGRST202'){
      const {data:existing}=await supabase.from('properties').select('id').eq('owner_user_id',user.id).order('created_at',{ascending:true}).limit(1).maybeSingle();
      if(existing?.id){
        propertyId=existing.id;
