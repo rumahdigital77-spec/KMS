@@ -222,7 +222,7 @@ export default function Kwitansi() {
         </div>
       </div>
 
-      {payment && (
+      {!payment && <div className="card no-print">Pembayaran tidak ditemukan. Pilih pembayaran yang sudah lunas dari daftar.</div>}\n\n      {payment && (
         <>
           {!isPaid && (
             <div className="card no-print" style={{ marginBottom: 18 }}>
