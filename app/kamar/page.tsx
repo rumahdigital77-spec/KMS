@@ -259,7 +259,7 @@ export default function Kamar() {
             <div className="field">
               <label>Status Pembayaran Awal</label>
               <select
-                value={hasTenant ? paymentStatus : 'unpaid'}
+                value={tenantName.trim() ? paymentStatus : 'unpaid'}
                 disabled={!tenantName.trim()}
                 onChange={(e) => setPaymentStatus(e.target.value as 'unpaid' | 'paid')}
               >
