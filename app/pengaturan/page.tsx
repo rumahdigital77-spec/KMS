@@ -14,13 +14,15 @@ export default function Pengaturan(){
  const set=(k:keyof S,v:string|number)=>setF(x=>({...x,[k]:v}));
  const image=(k:'logo'|'signature')=>(e:React.ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file)return;if(file.size>1024*1024)return alert('File maksimal 1 MB.');const r=new FileReader();r.onload=()=>set(k,String(r.result));r.readAsDataURL(file)};
  const save=()=>{localStorage.setItem('kostpro_settings',JSON.stringify(f));setSaved(true);setTimeout(()=>setSaved(false),2500)};
- const createDatabase=async(e:FormEvent)=>{e.preventDefault();if(databaseCreated||busy)return;setMsg('');let ownerEmail=email.trim().toLowerCase();const propertyName=f.name.trim();if(!ownerEmail||password.length<6||!propertyName){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);
+ const createDatabase=async(e:FormEvent)=>{e.preventDefault();if(databaseCreated||busy)return;setMsg('');const ownerEmail=email.trim().toLowerCase();const propertyName=f.name.trim();if(!ownerEmail||password.length<6||!propertyName){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);
   try{
-   // Authenticate first so the server endpoint can verify the exact owner session.
+   // Authentication is the single entry point. A database trigger on auth.users
+   // provisions the owner account/property atomically inside Postgres, so this
+   // flow never depends on PostgREST RPC or table schema cache.
    let auth=await supabase.auth.signInWithPassword({email:ownerEmail,password});
    let user=auth.data.user;
    if(auth.error){
-     const sign=await supabase.auth.signUp({email:ownerEmail,password,options:{data:{full_name:f.ownerName||ownerEmail,property_name:propertyName}}});
+     const sign=await supabase.auth.signUp({email:ownerEmail,password,options:{data:{full_name:f.ownerName||ownerEmail,property_name:propertyName,address:f.address||'',phone:f.phone||''}}});
      if(sign.error){
        if(/already registered/i.test(sign.error.message||'')) throw new Error('Email sudah terdaftar tetapi password tidak cocok. Gunakan Password Login account tersebut.');
        throw sign.error;
@@ -32,29 +34,8 @@ export default function Pengaturan(){
    if(!user) throw new Error('Auth session missing!');
    const refreshed=await supabase.auth.refreshSession();
    if(refreshed.error||!refreshed.data.session) throw new Error('Auth session missing! Silakan gunakan Database Login terlebih dahulu, lalu ulangi CREATE DATABASE.');
-   user=refreshed.data.user||user;
-   ownerEmail=(user.email||ownerEmail).trim().toLowerCase();
-
-   // Do not call supabase.rpc here. The provisioning endpoint is server-side,
-   // authenticated from the bearer token, and uses the service key only on the server.
-   const session=refreshed.data.session;
-   const response=await fetch('/api/provision-owner',{
-     method:'POST',
-     headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
-     body:JSON.stringify({
-       p_address:f.address||null,
-       p_email:ownerEmail,
-       p_full_name:f.ownerName||null,
-       p_phone:f.phone||null,
-       p_property_name:propertyName
-     })
-   });
-   const result=await response.json().catch(()=>({}));
-   if(!response.ok) throw new Error(`Database provisioning gagal: ${result.error||'Server provisioning gagal.'}`);
-   if(!result.propertyId) throw new Error('Database provisioning gagal: property ID tidak dikembalikan.');
-
    setDatabaseCreated(true);setMsg('✓ Database + account owner + property + akses berhasil dibuat. Pembuatan database berikutnya dinonaktifkan.');setPassword('');
-   setTimeout(()=>{window.location.href='/';},700);
+   setTimeout(()=>{window.location.href='/'},700);
   }catch(err){
    const detail=err instanceof Error?err.message:String(err);
    setMsg(detail==='User already registered'?'Email sudah terdaftar. Gunakan Database Login atau gunakan email baru.':detail||'Pembuatan database gagal.');
@@ -66,7 +47,7 @@ export default function Pengaturan(){
  <form onSubmit={createDatabase}><div className="form"><div className="field"><label>Email Account</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email"/></div><div className="field"><label>Password Login</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password"/></div><div className="field"><label>Nama Property</label><input value={f.name} onChange={e=>set('name',e.target.value)} placeholder="Nama kost / hotel"/></div></div><div className="actions" style={{marginTop:14}}><button className="btn" type="submit" disabled={busy||databaseCreated}>{busy?'Membuat...':databaseCreated?'DATABASE SUDAH DIBUAT':'CREATE DATABASE'}</button></div></form>
  {msg&&<div className="sub" style={{marginTop:12,color:msg.startsWith('✓')?'#047857':'#b45309',fontWeight:700}}>{msg}</div>}</div>
  <div className="card" style={{marginTop:18}}><div className="section-title">Database Login</div><div className="sub" style={{marginBottom:14}}>Gunakan email dan password yang dibuat untuk mengakses account dan property.</div>
- <form onSubmit={login}><div className="form"><div className="field"><label>Email</label><input type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email"/></div><div className="field"><label>Password</label><input type="password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} placeholder="Password" autoComplete="current-password"/></div></div><div className="actions" style={{marginTop:14}}><button className="btn" type="submit" disabled={loginBusy}>{loginBusy?'Masuk...':'LOGIN DATABASE'}</button></div></form>
+ <form onSubmit={login}><div className="form"><div className="field"><label>Email</label><input type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email"/><input type="password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} placeholder="Password" autoComplete="current-password"/></div></div><div className="actions" style={{marginTop:14}}><button className="btn" type="submit" disabled={loginBusy}>{loginBusy?'Masuk...':'LOGIN DATABASE'}</button></div></form>
  {loginMsg&&<div className="sub" style={{marginTop:12,color:'#b45309',fontWeight:700}}>{loginMsg}</div>}</div>
  <div className="card" style={{marginTop:18}}><div className="section-title">Profil Kost & Pemilik</div><div className="form"><div className="field"><label>Nama Kost</label><input value={f.name} onChange={e=>set('name',e.target.value)}/></div><div className="field"><label>Nama Pemilik</label><input value={f.ownerName} onChange={e=>set('ownerName',e.target.value)} placeholder="Nama lengkap pemilik"/></div><div className="field"><label>Nomor Telepon</label><input value={f.phone} onChange={e=>set('phone',e.target.value)}/></div><div className="field"><label>Jumlah Kamar Tersedia</label><input type="number" min={0} value={f.availableRooms} onChange={e=>set('availableRooms',Math.max(0,Number(e.target.value)||0))}/><div className="sub">Isi manual jika ingin menampilkan kuota kamar khusus di Dashboard.</div></div><div className="field full"><label>Alamat Lengkap</label><textarea value={f.address} onChange={e=>set('address',e.target.value)} rows={3}/></div><div className="field"><label>Nama Pengelola</label><input value={f.manager} onChange={e=>set('manager',e.target.value)}/></div><div className="field"><label>Mata Uang</label><select value={f.currency} onChange={e=>set('currency',e.target.value)}><option>IDR — Rupiah Indonesia</option></select></div><div className="field"><label>Logo Kost</label><input type="file" accept="image/png,image/jpeg,image/webp" onChange={image('logo')}/>{f.logo&&<><img src={f.logo} alt="Logo" style={{maxWidth:140,maxHeight:70,marginTop:8,objectFit:'contain'}}/><button type="button" className="btn" style={{marginTop:8}} onClick={()=>set('logo','')}>Hapus Logo</button></>}</div><div className="field"><label>Tanda Tangan Digital</label><input type="file" accept="image/png,image/jpeg,image/webp" onChange={image('signature')}/>{f.signature&&<><img src={f.signature} alt="Tanda tangan" style={{maxWidth:180,maxHeight:70,marginTop:8,objectFit:'contain'}}/><button type="button" className="btn" style={{marginTop:8}} onClick={()=>set('signature','')}>Hapus TTD Digital</button></>}</div></div></div>
  <div className="card" style={{marginTop:18}}><div className="section-title">Penomoran Kwitansi</div><div className="form"><div className="field"><label>Prefix</label><input value={f.receiptPrefix} onChange={e=>set('receiptPrefix',e.target.value.toUpperCase())}/></div><div className="field"><label>Nomor Berikutnya</label><input type="number" min={1} value={f.receiptNext} onChange={e=>set('receiptNext',Math.max(1,Number(e.target.value)||1))}/></div></div><div className="sub" style={{marginTop:10}}>Format otomatis: {f.receiptPrefix}-{new Date().getFullYear()}-{String(f.receiptNext).padStart(5,'0')}</div><div className="actions"><button className="btn" onClick={save}>Simpan Pengaturan</button></div>{saved&&<div className="sub" style={{marginTop:12,color:'#047857',fontWeight:700}}>✓ Pengaturan berhasil disimpan.</div>}</div>
