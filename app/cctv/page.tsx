@@ -1,3 +1,4 @@
+// CCTV login validation fixed: plain HTTP/HTTPS URL validation.
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
