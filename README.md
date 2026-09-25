@@ -36,7 +36,7 @@ Open http://localhost:3000
 
 ## Supabase
 For a new database, run `supabase/schema.sql` in Supabase SQL Editor.
-For the existing project, `supabase/migration_account_property_provisioning.sql` contains the account/property access hardening.
+For the existing project, `supabase/migration_account_property_provisioning.sql` contains the account/property access hardening. Run `supabase/migration_one_time_database_provisioning.sql` once to install the idempotent provisioning function. After that, pressing **CREATE DATABASE** repeatedly cannot create a second initial property for the same account; the database function reuses the existing property and the UI disables the button after detection.
 
 This version uses Supabase Auth for account login and a dedicated account_properties membership table for multi-property ownership.
 
