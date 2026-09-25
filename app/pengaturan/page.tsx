@@ -1,6 +1,6 @@
 /* KMS production build fix: 2026-09-25 */
 'use client';
-import { FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { createClient } from '../../lib/supabase-browser';
 
 type S={name:string;phone:string;address:string;currency:string;manager:string;ownerName:string;availableRooms:number;logo:string;signature:string;receiptPrefix:string;receiptNext:number};
@@ -18,7 +18,7 @@ export default function Pengaturan(){
   return()=>{active=false;listener.subscription.unsubscribe()};
  },[]);
  const set=(k:keyof S,v:string|number)=>setF(x=>({...x,[k]:v}));
- const image=(k:'logo'|'signature')=>(e:React.ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file)return;if(file.size>1024*1024)return alert('File maksimal 1 MB.');const r=new FileReader();r.onload=()=>set(k,String(r.result));r.readAsDataURL(file)};
+ const image=(k:'logo'|'signature')=(e:ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file)return;if(file.size>1024*1024)return alert('File maksimal 1 MB.');const r=new FileReader();r.onload=()=>set(k,String(r.result));r.readAsDataURL(file)};
  const save=()=>{localStorage.setItem('kostpro_settings',JSON.stringify(f));setSaved(true);setTimeout(()=>setSaved(false),2500)};
  const createDatabase=async(e:FormEvent)=>{e.preventDefault();if(databaseCreated||busy)return;setMsg('');const ownerEmail=email.trim().toLowerCase(),propertyName=f.name.trim();if(!ownerEmail||password.length<6||!propertyName){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);try{
   let {data:{user}}=await supabase.auth.getUser();
