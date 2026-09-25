@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, DoorOpen, Users, Receipt, Wallet, BarChart3, Settings, FileText, Camera, Menu, X } from 'lucide-react';
+import { LayoutDashboard, DoorOpen, Users, Receipt, Wallet, BarChart3, Settings, FileText, Camera, Menu, X, UserCircle } from 'lucide-react';
+import { createClient } from '../lib/supabase-browser';
 
 const items = [
   ['/', 'Dashboard', LayoutDashboard],
@@ -13,6 +14,7 @@ const items = [
   ['/cctv', 'CCTV', Camera],
   ['/laporan', 'Laporan', BarChart3],
   ['/pengaturan', 'Pengaturan', Settings],
+  ['/user', 'User & Database', UserCircle],
 ] as const;
 
 export default function Sidebar() {
@@ -20,6 +22,7 @@ export default function Sidebar() {
   const [open, setOpen] = useState(false);
   const [laporanOpen, setLaporanOpen] = useState(false);
   const [logo, setLogo] = useState('');
+  const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
     setOpen(false);
@@ -33,6 +36,8 @@ export default function Sidebar() {
     } catch {
       setLogo('');
     }
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email || ''));
   }, []);
 
   useEffect(() => {
@@ -99,7 +104,10 @@ export default function Sidebar() {
             )
           ))}
         </nav>
-        <div style={{ marginTop: 'auto', padding: '14px 16px 4px', textAlign: 'center', fontSize: 11, color: '#98a2b3', fontWeight: 700, letterSpacing: .5 }}>KOSTPRO • V.1.3</div>
+        <div style={{ marginTop: 'auto', padding: '14px 16px 4px', textAlign: 'center', fontSize: 11, color: '#98a2b3', fontWeight: 700, letterSpacing: .5 }}>
+          {userEmail ? <div title={userEmail} style={{ marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis' }}>👤 {userEmail}</div> : null}
+          KOSTPRO • V.1.4
+        </div>
       </aside>
     </>
   );
