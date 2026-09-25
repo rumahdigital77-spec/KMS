@@ -16,29 +16,29 @@ export default function Pengaturan(){
  const save=()=>{localStorage.setItem('kostpro_settings',JSON.stringify(f));setSaved(true);setTimeout(()=>setSaved(false),2500)};
  const createDatabase=async(e:FormEvent)=>{e.preventDefault();if(databaseCreated||busy)return;setMsg('');let ownerEmail=email.trim().toLowerCase();const propertyName=f.name.trim();if(!ownerEmail||password.length<6||!propertyName){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);
   try{
-   let current=await supabase.auth.getUser();
-   if(current.error && /sub claim|does not exist/i.test(current.error.message||'')){
-     await supabase.auth.signOut();
-     const relogin=await supabase.auth.signInWithPassword({email:ownerEmail,password});
-     if(!relogin.error) current={data:{user:relogin.data.user},error:null};
-   }
-   if(current.error) throw current.error;
-   let user=current.data.user;
-   if(!user){
+   // Authenticate the account used for provisioning. Do not rely on a stale browser JWT.
+   let auth=await supabase.auth.signInWithPassword({email:ownerEmail,password});
+   let user=auth.data.user;
+   if(auth.error){
      const sign=await supabase.auth.signUp({email:ownerEmail,password,options:{data:{full_name:f.ownerName||ownerEmail,property_name:propertyName}}});
-     if(sign.error) throw sign.error;
+     if(sign.error){
+       if(/already registered/i.test(sign.error.message||'')){
+         throw new Error('Email sudah terdaftar tetapi password tidak cocok. Gunakan Password Login account tersebut.');
+       }
+       throw sign.error;
+     }
      user=sign.data.user;
      if(!user) throw new Error('Account owner tidak berhasil dibuat.');
-     if(!sign.data.session) throw new Error('Email confirmation masih aktif. Pastikan Confirm email = OFF pada Authentication → Sign In / Providers → Email.');
-   }else{
-     ownerEmail=(user.email||ownerEmail).trim().toLowerCase();
+     if(!sign.data.session) throw new Error('Account berhasil dibuat, tetapi session belum tersedia. Jika Confirm email aktif, konfirmasi email terlebih dahulu lalu gunakan Database Login.');
+     auth={data:{user},error:null};
    }
+   if(auth.error||!user) throw new Error(auth.error?.message||'Auth session missing!');
    const refreshed=await supabase.auth.refreshSession();
-   if(refreshed.error && /sub claim|does not exist/i.test(refreshed.error.message||'')){
-     await supabase.auth.signOut();
-     throw new Error('Sesi login lama tidak valid. Silakan klik CREATE DATABASE lagi untuk login ulang.');
+   if(refreshed.error||!refreshed.data.session){
+     throw new Error('Auth session missing! Silakan gunakan Database Login terlebih dahulu, lalu ulangi CREATE DATABASE.');
    }
-   if(refreshed.data.user) user=refreshed.data.user;
+   user=refreshed.data.user||user;
+   ownerEmail=(user.email||ownerEmail).trim().toLowerCase();
 
    // Provisioning is performed by one SECURITY DEFINER transaction so RLS cannot
    // leave the owner with a partially-created property/account.
