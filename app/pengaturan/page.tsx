@@ -53,31 +53,18 @@ export default function Pengaturan(){
    const {data:rpcPropertyId,error:provisionError}=await supabase.rpc('provision_owner_property',rpcArgs);
    if(!provisionError) propertyId=rpcPropertyId;
 
-   // Some PostgREST instances can temporarily keep an old schema cache.
-   // Retry the idempotent RPC once before using the RLS fallback.
-   if(provisionError?.code==='PGRST205'){
-     await new Promise(resolve=>setTimeout(resolve,500));
-     const retry=await supabase.rpc('provision_owner_property',rpcArgs);
-     if(!retry.error) propertyId=retry.data;
-     else throw retry.error;
-   }
-   if(provisionError?.code==='PGRST202'){
-     const {data:existing}=await supabase.from('properties').select('id').eq('owner_user_id',user.id).order('created_at',{ascending:true}).limit(1).maybeSingle();
-     if(existing?.id){
-       propertyId=existing.id;
-     }else{
-       const {data:created,error:createError}=await supabase.from('properties').insert({name:propertyName,address:f.address||null,phone:f.phone||null,owner_user_id:user.id}).select('id').single();
-       if(createError) throw new Error(`Database provisioning gagal: ${createError.message}`);
-       propertyId=created.id;
+   // Provision ONLY through the atomic RPC. Never fall back to direct table writes:
+   // a stale PostgREST cache must not create a second/partial property.
+   if(provisionError){
+     let lastError=provisionError;
+     for(let attempt=1;attempt<=3;attempt++){
+       if(lastError.code!=='PGRST202'&&lastError.code!=='PGRST205') break;
+       await new Promise(resolve=>setTimeout(resolve,700*attempt));
+       const retry=await supabase.rpc('provision_owner_property',rpcArgs);
+       if(!retry.error){ propertyId=retry.data; lastError=null as any; break; }
+       lastError=retry.error;
      }
-     const {error:accessError}=await supabase.from('account_properties').upsert({user_id:user.id,property_id:propertyId,role:'owner'},{onConflict:'user_id,property_id'});
-     if(accessError) throw new Error(`Database access gagal: ${accessError.message}`);
-     const {error:accountError}=await supabase.from('user_accounts').upsert({user_id:user.id,email:ownerEmail,full_name:f.ownerName||null,property_id:propertyId,role:'owner',status:'active'},{onConflict:'user_id'});
-     if(accountError) throw new Error(`Account owner gagal disimpan: ${accountError.message}`);
-     const {error:licenseError}=await supabase.from('licenses').upsert({user_id:user.id,plan:'standard',status:'active'},{onConflict:'user_id'});
-     if(licenseError && !/relation .*licenses.* does not exist/i.test(licenseError.message)) throw new Error(`License gagal disimpan: ${licenseError.message}`);
-   }else if(provisionError){
-     throw new Error(`Database provisioning gagal: ${provisionError.message}`);
+     if(lastError) throw new Error(`Database provisioning gagal: ${lastError.message}`);
    }
    if(!propertyId) throw new Error('Database provisioning gagal: property ID tidak dikembalikan.');
 
