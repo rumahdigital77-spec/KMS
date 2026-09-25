@@ -16,7 +16,7 @@ export default function Pengaturan(){
  const save=()=>{localStorage.setItem('kostpro_settings',JSON.stringify(f));setSaved(true);setTimeout(()=>setSaved(false),2500)};
  const createDatabase=async(e:FormEvent)=>{e.preventDefault();if(databaseCreated||busy)return;setMsg('');let ownerEmail=email.trim().toLowerCase();const propertyName=f.name.trim();if(!ownerEmail||password.length<6||!propertyName){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);
   try{
-   const current=await supabase.auth.getUser();
+   let current=await supabase.auth.getUser();
    if(current.error) throw current.error;
    let user=current.data.user;
    if(!user){
