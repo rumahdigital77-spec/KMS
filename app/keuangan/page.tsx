@@ -1,15 +1,15 @@
 'use client';
 import{useEffect,useState}from'react';
-import{defaultTransactions,loadData,money,saveData,Transaction}from'@/lib/store';
+import{defaultTransactions,loadData,money,saveData,syncPaymentTransactions,Transaction}from'@/lib/store';
 
 export default function Keuangan(){
   const[x,setX]=useState<Transaction[]>(defaultTransactions),[show,setShow]=useState(false),[type,setType]=useState<Transaction['type']>('expense'),[desc,setDesc]=useState(''),[cat,setCat]=useState('Operasional'),[amt,setAmt]=useState(''),[msg,setMsg]=useState(''),[logo,setLogo]=useState(''),[property,setProperty]=useState('Kost Harmoni'),[owner,setOwner]=useState('');
   useEffect(()=>{
-    setX(loadData('transactions',defaultTransactions));
+    setX(syncPaymentTransactions());
     try{const s=JSON.parse(localStorage.getItem('kostpro_settings')||'{}');setLogo(typeof s.logo==='string'?s.logo:'');setProperty(s.name||'Kost Harmoni');setOwner(s.ownerName||s.manager||'')}catch{}
     if(new URLSearchParams(location.search).get('aksi')==='tambah')setShow(true)
   },[]);
-  const inc=x.filter(a=>a.type==='income'),exp=x.filter(a=>a.type==='expense');
+  const journal=[...x].sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id)),inc=journal.filter(a=>a.type==='income'),exp=journal.filter(a=>a.type==='expense');
   const incTotal=inc.reduce((a,b)=>a+b.amount,0),expTotal=exp.reduce((a,b)=>a+b.amount,0),net=incTotal-expTotal;
   const add=()=>{
     if(!desc||!amt)return setMsg('Keterangan dan nominal wajib diisi.');
@@ -29,7 +29,7 @@ export default function Keuangan(){
       </div>
       <div className="card finance-journal-card">
         <div className="finance-journal-head"><div><div className="section-title">Jurnal Keuangan</div><div className="sub">Setiap transaksi dikelompokkan sebagai Kredit atau Debet agar mudah dibaca.</div></div><div className="finance-journal-period">{property}</div></div>
-        <div className="finance-journal-table-wrap"><table className="finance-journal-table"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Akun / Kategori</th><th className="journal-debit">DEBET</th><th className="journal-credit">KREDIT</th><th className="journal-balance">SALDO</th></tr></thead><tbody>{x.map((a,i)=>{const balance=x.slice(0,i+1).reduce((s,t)=>s+(t.type==='income'?t.amount:-t.amount),0);return <tr key={a.id}><td>{a.date}</td><td><strong>{a.description}</strong><span className="journal-type">{a.type==='income'?'Kredit':'Debet'}</span></td><td>{a.category}</td><td className="journal-debit">{a.type==='expense'?money(a.amount):'—'}</td><td className="journal-credit">{a.type==='income'?money(a.amount):'—'}</td><td className="journal-balance">{money(balance)}</td></tr>})}{!x.length&&<tr><td colSpan={6} className="finance-journal-empty">Belum ada transaksi.</td></tr>}</tbody><tfoot><tr><td colSpan={3}>TOTAL</td><td className="journal-debit">{money(expTotal)}</td><td className="journal-credit">{money(incTotal)}</td><td className="journal-balance">{money(net)}</td></tr></tfoot></table></div>
+        <div className="finance-journal-table-wrap"><table className="finance-journal-table"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Akun / Kategori</th><th className="journal-debit">DEBET</th><th className="journal-credit">KREDIT</th><th className="journal-balance">SALDO</th></tr></thead><tbody>{journal.map((a,i)=>{const balance=journal.slice(0,i+1).reduce((s,t)=>s+(t.type==='income'?t.amount:-t.amount),0);return <tr key={a.id}><td>{a.date}</td><td><strong>{a.description}</strong><span className="journal-type">{a.type==='income'?'Kredit':'Debet'}</span></td><td>{a.category}</td><td className="journal-debit">{a.type==='expense'?money(a.amount):'—'}</td><td className="journal-credit">{a.type==='income'?money(a.amount):'—'}</td><td className="journal-balance">{money(balance)}</td></tr>})}{!x.length&&<tr><td colSpan={6} className="finance-journal-empty">Belum ada transaksi.</td></tr>}</tbody><tfoot><tr><td colSpan={3}>TOTAL</td><td className="journal-debit">{money(expTotal)}</td><td className="journal-credit">{money(incTotal)}</td><td className="journal-balance">{money(net)}</td></tr></tfoot></table></div>
       </div>
       <div className="finance-profit-layout">
         <div className="card"><div className="section-title">Rugi Laba · Kredit</div><div className="finance-ledger-row"><span>Total Pendapatan</span><strong>{money(incTotal)}</strong></div><div className="sub">Seluruh pemasukan yang tercatat.</div></div>
