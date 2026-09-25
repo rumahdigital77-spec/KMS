@@ -165,7 +165,7 @@ export default function CCTVPage() {
       <div className="cctv-summary">
         <div>
           <div className="cctv-summary-label"><Radio size={16} /> CCTV Terdaftar</div>
-          <div className="cctv-summary-number">{onlineCount}</div>
+          <div className="cctv-summary-number">{registeredCount}</div>
           <div className="sub" style={{ color: '#dbeafe' }}>Koneksi dikelola langsung oleh kamera/NVR Anda.</div>
         </div>
         <div className="cctv-summary-icon"><Camera size={42} /></div>
