@@ -13,24 +13,32 @@ export default function Pengaturan(){
  const set=(k:keyof S,v:string|number)=>setF(x=>({...x,[k]:v}));
  const image=(k:'logo'|'signature')=>(e:React.ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file)return;if(file.size>1024*1024)return alert('File maksimal 1 MB.');const r=new FileReader();r.onload=()=>set(k,String(r.result));r.readAsDataURL(file)};
  const save=()=>{localStorage.setItem('kostpro_settings',JSON.stringify(f));setSaved(true);setTimeout(()=>setSaved(false),2500)};
- const createDatabase=async(e:FormEvent)=>{e.preventDefault();setMsg('');const ownerEmail=email.trim().toLowerCase();if(!ownerEmail||password.length<6||!f.name.trim()){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);
+ const createDatabase=async(e:FormEvent)=>{e.preventDefault();setMsg('');const ownerEmail=email.trim().toLowerCase();const propertyName=f.name.trim();if(!ownerEmail||password.length<6||!propertyName){setMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');return}setBusy(true);
   try{
-   // IMPORTANT: Supabase Auth must have "Confirm email" disabled for the requested
-   // owner-first onboarding flow. When disabled, signUp returns a live session.
-   const sign=await supabase.auth.signUp({email:ownerEmail,password,options:{data:{full_name:f.ownerName||ownerEmail,property_name:f.name.trim()}}});
+   const sign=await supabase.auth.signUp({email:ownerEmail,password,options:{data:{full_name:f.ownerName||ownerEmail,property_name:propertyName}}});
    if(sign.error) throw sign.error;
-   const user=sign.data.user; const session=sign.data.session;
+   const user=sign.data.user;
    if(!user) throw new Error('Account owner tidak berhasil dibuat.');
-   if(!session) throw new Error('Email confirmation masih aktif di Supabase. Matikan Authentication → Providers → Email → Confirm email agar CREATE DATABASE langsung aktif tanpa verifikasi email.');
-   const {data:prop,error:pe}=await supabase.from('properties').insert({name:f.name.trim(),address:f.address||null,phone:f.phone||null,owner_user_id:user.id}).select('id').single();
-   if(pe)throw pe;
-   const {error:ae}=await supabase.from('account_properties').insert({user_id:user.id,property_id:prop.id,role:'owner'});
-   if(ae && !/duplicate key/i.test(ae.message))throw ae;
-   const {data:ua}=await supabase.from('user_accounts').select('user_id').eq('user_id',user.id).maybeSingle();
-   if(!ua){const {error:ue}=await supabase.from('user_accounts').insert({user_id:user.id,email:ownerEmail,full_name:f.ownerName||null,property_id:prop.id,role:'owner',status:'active'});if(ue)throw ue}
-   setMsg('✓ Database + login + property aktif. Owner langsung masuk ke KMS.');setPassword('');
+   if(!sign.data.session) throw new Error('Email confirmation masih aktif. Pastikan Confirm email = OFF pada Authentication → Sign In / Providers → Email.');
+
+   // Provisioning is performed by one SECURITY DEFINER transaction so RLS cannot
+   // leave the owner with a partially-created property/account.
+   const {data:propertyId,error:provisionError}=await supabase.rpc('provision_owner_property',{
+     p_property_name:propertyName,
+     p_address:f.address||null,
+     p_phone:f.phone||null,
+     p_full_name:f.ownerName||null,
+     p_email:ownerEmail
+   });
+   if(provisionError) throw new Error(`Database provisioning gagal: ${provisionError.message}`);
+   if(!propertyId) throw new Error('Database provisioning gagal: property ID tidak dikembalikan.');
+
+   setMsg('✓ Database + account owner + property + akses berhasil dibuat.');setPassword('');
    setTimeout(()=>{window.location.href='/';},700);
-  }catch(err){setMsg(err instanceof Error?err.message:'Pembuatan database gagal.')}finally{setBusy(false)}
+  }catch(err){
+   const detail=err instanceof Error?err.message:String(err);
+   setMsg(detail==='User already registered'?'Email sudah terdaftar. Gunakan Database Login atau gunakan email baru.':detail||'Pembuatan database gagal.');
+  }finally{setBusy(false)}
  };
  const login=async(e:FormEvent)=>{e.preventDefault();setLoginMsg('');setLoginBusy(true);try{const {error}=await supabase.auth.signInWithPassword({email:loginEmail.trim().toLowerCase(),password:loginPassword});if(error)throw error;window.location.href='/'}catch(err){setLoginMsg(err instanceof Error?err.message:'Login gagal.')}finally{setLoginBusy(false)}};
  return <><div className="top"><div><div className="title">Pengaturan</div><div className="sub">Profil pemilik, property, database dan akses login</div></div></div>
