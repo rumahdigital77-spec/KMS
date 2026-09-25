@@ -47,14 +47,11 @@ export async function POST(req: Request) {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    // IMPORTANT: do not use admin.from(...) here.
-    // The REST table endpoint can fail when PostgREST's table schema cache is stale
-    // even though the PostgreSQL table exists. The database function executes
-    // atomically inside PostgreSQL and therefore avoids that failure mode.
+    // Use the original, already-published RPC signature. Do not call the
+    // PostgREST table endpoints from this provisioning route.
     const { data: propertyId, error: provisioningError } = await admin.rpc(
-      'provision_owner_property_server',
+      'provision_owner_property',
       {
-        p_user_id: user.id,
         p_address: body.p_address?.trim() || null,
         p_email: ownerEmail,
         p_full_name: String(body.p_full_name || '').trim() || null,
