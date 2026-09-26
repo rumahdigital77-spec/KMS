@@ -14,7 +14,7 @@ const items = [
   ['/cctv', 'CCTV', Camera],
   ['/laporan', 'Laporan', BarChart3],
   ['/pengaturan', 'Pengaturan', Settings],
-  ['/user', 'User & Database', UserCircle],
+  ['/user', 'User & Akses', UserCircle],
 ] as const;
 
 export default function Sidebar() {
