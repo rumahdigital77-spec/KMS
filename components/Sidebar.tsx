@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, DoorOpen, Users, Receipt, Wallet, BarChart3, Settings, FileText, Camera, Menu, X } from 'lucide-react';
+import { LayoutDashboard, DoorOpen, Users, Receipt, Wallet, BarChart3, Settings, FileText, Camera, Menu, X, UserRound } from 'lucide-react';
 
 const items = [
   ['/', 'Dashboard', LayoutDashboard],
@@ -13,6 +13,7 @@ const items = [
   ['/cctv', 'CCTV', Camera],
   ['/laporan', 'Laporan', BarChart3],
   ['/pengaturan', 'Pengaturan', Settings],
+  ['/user', 'User & Akses', UserRound],
 ] as const;
 
 export default function Sidebar() {
