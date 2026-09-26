@@ -19,7 +19,7 @@ type Booking = {
 const today = new Date().toISOString().slice(0, 10);
 
 export default function BookingPage() {
-  const [rooms, setRooms] = useState<Room[]>(defaultRooms);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [roomId, setRoomId] = useState('');
   const [name, setName] = useState('');
