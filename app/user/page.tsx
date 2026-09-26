@@ -1,5 +1,7 @@
 'use client';
 
+// Supabase client is created lazily inside browser-side handlers.
+
 import { FormEvent, useEffect, useState } from 'react';
 import { createClient } from '../../lib/supabase-browser';
 
