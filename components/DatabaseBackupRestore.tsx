@@ -35,15 +35,19 @@ export default function DatabaseBackupRestore() {
 
   useEffect(() => {
     let active = true;
-    supabase
-      .from('account_properties')
-      .select('property_id')
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }: { data: { property_id: string } | null }) => {
-        if (active) setPropertyId(data?.property_id || '');
-      });
+    const loadPropertyId = async () => {
+      const result = await supabase
+        .from('account_properties')
+        .select('property_id')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      const data: { property_id: string } | null = result.data;
+      if (active) setPropertyId(data?.property_id || '');
+    };
+
+    void loadPropertyId();
     return () => { active = false; };
   }, []);
 
