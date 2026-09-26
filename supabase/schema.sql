@@ -481,3 +481,28 @@ begin
   end if;
   return jsonb_build_object('success',true,'property_id',p_target_property_id,'restored_at',now());
 end; $$;
+
+drop policy if exists kost_rooms_member_select on public.kost_rooms;
+create policy kost_rooms_member_select on public.kost_rooms for select to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_rooms.property_id));
+drop policy if exists kost_rooms_member_insert on public.kost_rooms;
+create policy kost_rooms_member_insert on public.kost_rooms for insert to authenticated
+with check(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_rooms.property_id));
+drop policy if exists kost_rooms_member_update on public.kost_rooms;
+create policy kost_rooms_member_update on public.kost_rooms for update to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_rooms.property_id))
+with check(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_rooms.property_id));
+drop policy if exists kost_rooms_member_delete on public.kost_rooms;
+create policy kost_rooms_member_delete on public.kost_rooms for delete to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_rooms.property_id));
+
+drop policy if exists kost_bookings_member_select on public.kost_bookings;
+create policy kost_bookings_member_select on public.kost_bookings for select to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_bookings.property_id));
+drop policy if exists kost_bookings_member_update on public.kost_bookings;
+create policy kost_bookings_member_update on public.kost_bookings for update to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_bookings.property_id))
+with check(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_bookings.property_id));
+drop policy if exists kost_bookings_member_delete on public.kost_bookings;
+create policy kost_bookings_member_delete on public.kost_bookings for delete to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_bookings.property_id));
