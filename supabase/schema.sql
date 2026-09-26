@@ -286,9 +286,13 @@ using(exists(select 1 from public.account_properties ap where ap.user_id=(select
 with check(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=expenses.property_id));
 
 drop policy if exists "public read available rooms" on public.kost_rooms;
-create policy "public read available rooms" on public.kost_rooms for select to anon,authenticated using(status='available');
+create policy "public read available rooms" on public.kost_rooms for select to anon using(status='available');
 drop policy if exists "public create booking" on public.kost_bookings;
-create policy "public create booking" on public.kost_bookings for insert to anon,authenticated with check(true);
+create policy "public create booking" on public.kost_bookings for insert to anon,authenticated with check(
+  property_id is not null
+  and exists(select 1 from public.kost_rooms r where r.id=kost_bookings.room_id and r.property_id=kost_bookings.property_id and r.status='available')
+  and ((select auth.uid()) is null or exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_bookings.property_id))
+);
 
 revoke all on function public.get_database_provisioning_status() from public,anon;
 grant execute on function public.get_database_provisioning_status() to authenticated;
