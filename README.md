@@ -54,3 +54,5 @@ The latest hardening migration removes client-side INSERT/UPDATE/DELETE access t
 
 ## Version
 KOSTPRO V.1.4
+
+<!-- Vercel production deployment trigger: 2026-09-26 -->
