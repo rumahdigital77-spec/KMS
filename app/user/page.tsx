@@ -252,7 +252,7 @@ export default function UserPage() {
             )}
           </div>
         </>
-      )}
+      ) : null}
 
       {message && <div className="sub" style={{ marginTop: 12, color: '#047857', fontWeight: 700 }}>{message}</div>}
       {error && <div className="sub" style={{ marginTop: 12, color: '#b45309', fontWeight: 700 }}>{error}</div>}
