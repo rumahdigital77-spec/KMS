@@ -26,10 +26,11 @@ function downloadJson(data: BackupFile) {
   URL.revokeObjectURL(url);
 }
 
-export default function DatabaseBackupRestore() {
+export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' }: { propertyId?: string }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const [propertyId, setPropertyId] = useState('');
+  const [detectedPropertyId, setDetectedPropertyId] = useState('');
+  const propertyId = propertyIdProp || detectedPropertyId;
   const ready = Boolean(propertyId);
 
   const supabase = createClient();
@@ -42,7 +43,7 @@ export default function DatabaseBackupRestore() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-          if (active) setPropertyId('');
+          if (active) setDetectedPropertyId('');
           return;
         }
 
@@ -55,10 +56,10 @@ export default function DatabaseBackupRestore() {
           .maybeSingle();
 
         if (error) throw error;
-        if (active) setPropertyId(data?.property_id || '');
+        if (active) setDetectedPropertyId(data?.property_id || '');
       } catch (err) {
         if (active) {
-          setPropertyId('');
+          setDetectedPropertyId('');
           setMessage(err instanceof Error ? `Gagal membaca property database: ${err.message}` : 'Gagal membaca property database.');
         }
       }
