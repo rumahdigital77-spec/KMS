@@ -149,26 +149,22 @@ for each row execute function public.touch_updated_at();
 
 create or replace function public.get_database_provisioning_status()
 returns boolean language sql security invoker set search_path=public as $$
-  select exists(select 1 from public.account_properties where user_id=(select auth.uid()));
+  select exists(select 1 from public.user_accounts ua where ua.user_id=(select auth.uid()) and ua.status='active' and ua.property_id is not null);
 $$;
 
 create or replace function public.provision_owner_property(
   p_address text,p_email text,p_full_name text,p_phone text,p_property_name text
 ) returns uuid language plpgsql security invoker set search_path=public as $$
-declare
-  v_user_id uuid := auth.uid();
-  v_property_id uuid;
-  v_email text;
+declare v_user_id uuid:=auth.uid(); v_property_id uuid; v_email text;
 begin
   if v_user_id is null then raise exception 'OWNER_NOT_AUTHENTICATED'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_user_id::text,0));
   select lower(email) into v_email from auth.users where id=v_user_id;
   if v_email is null then raise exception 'OWNER_EMAIL_NOT_FOUND'; end if;
   if p_email is not null and lower(trim(p_email))<>v_email then raise exception 'OWNER_EMAIL_MISMATCH'; end if;
   if nullif(trim(p_property_name),'') is null then raise exception 'PROPERTY_NAME_REQUIRED'; end if;
-  select ap.property_id into v_property_id from public.account_properties ap
-    where ap.user_id=v_user_id order by ap.created_at limit 1;
+  select ua.property_id into v_property_id from public.user_accounts ua where ua.user_id=v_user_id and ua.property_id is not null;
   if v_property_id is not null then raise exception 'DATABASE_ALREADY_PROVISIONED'; end if;
-
   insert into public.properties(name,address,phone,owner_user_id)
   values(trim(p_property_name),nullif(trim(coalesce(p_address,'')),''),nullif(trim(coalesce(p_phone,'')),''),v_user_id)
   returning id into v_property_id;
@@ -513,3 +509,6 @@ with check(exists(select 1 from public.account_properties ap where ap.user_id=(s
 drop policy if exists kost_bookings_member_delete on public.kost_bookings;
 create policy kost_bookings_member_delete on public.kost_bookings for delete to authenticated
 using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_bookings.property_id));
+
+revoke execute on function public.touch_updated_at() from anon;
+grant execute on function public.touch_updated_at() to authenticated;
