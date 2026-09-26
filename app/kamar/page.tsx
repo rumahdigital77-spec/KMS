@@ -1,5 +1,6 @@
 'use client';
 
+import { createClient } from '@/lib/supabase-browser';
 import { useEffect, useState } from 'react';
 import {
   defaultPayments,
@@ -41,7 +42,11 @@ export default function Kamar() {
     const load = async () => {
       const local = loadData<Room[]>('rooms', defaultRooms);
       try {
-        const res = await fetch('/api/rooms', { cache: 'no-store' });
+        const { data: { session } } = await createClient().auth.getSession();
+        const res = await fetch('/api/rooms', {
+          cache: 'no-store',
+          headers: session?.access_token ? { Authorization: 'Bearer ' + session.access_token } : {},
+        });
         const data = await res.json();
         if (res.ok && Array.isArray(data.rooms) && data.rooms.length) {
           setRooms(data.rooms);
