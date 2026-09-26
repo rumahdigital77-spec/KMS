@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { createClient } from '../lib/supabase-browser';
 import { Download, Upload, DatabaseBackup } from 'lucide-react';
 
@@ -32,6 +32,7 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
   const [detectedPropertyId, setDetectedPropertyId] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const authLoadSeq = useRef(0);
   const propertyId = propertyIdProp || detectedPropertyId;
   const supabase = createClient();
 
@@ -39,10 +40,11 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
     let active = true;
 
     const loadPropertyId = async () => {
+      const seq = ++authLoadSeq.current;
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          if (active) {
+          if (active && seq === authLoadSeq.current) {
             setDetectedPropertyId('');
             setAuthenticated(false);
             setAuthReady(true);
@@ -50,7 +52,7 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
           }
           return;
         }
-        if (active) setAuthenticated(true);
+        if (active && seq === authLoadSeq.current) setAuthenticated(true);
 
         const { data, error } = await supabase
           .from('user_accounts')
@@ -59,12 +61,12 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
           .maybeSingle();
 
         if (error) throw error;
-        if (active) {
+        if (active && seq === authLoadSeq.current) {
           setDetectedPropertyId(data?.property_id || '');
           setAuthReady(true);
         }
       } catch (err) {
-        if (active) {
+        if (active && seq === authLoadSeq.current) {
           setDetectedPropertyId('');
           setAuthenticated(false);
           setAuthReady(true);
@@ -75,8 +77,19 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
 
     void loadPropertyId();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
-      void loadPropertyId();
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        ++authLoadSeq.current;
+        setAuthenticated(false);
+        setDetectedPropertyId('');
+        setAuthReady(true);
+        setMessage('');
+        return;
+      }
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        setAuthReady(false);
+        void loadPropertyId();
+      }
     });
 
     return () => {
