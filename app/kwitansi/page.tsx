@@ -67,8 +67,7 @@ export default function Kwitansi() {
     setPayments(paid);
 
     try {
-      const raw = localStorage.getItem('kostpro_settings');
-      if (raw) setSettings({ ...defaults, ...JSON.parse(raw) });
+      setSettings({ ...defaults, ...loadData<Record<string, any>>('settings', {}) });
     } catch {}
 
     const query = new URLSearchParams(window.location.search);
