@@ -101,10 +101,11 @@ export default function UserPage() {
     let listener: { subscription: { unsubscribe: () => void } } | null = null;
     try {
       const result = getSupabase().auth.onAuthStateChange(() => {
-      window.setTimeout(() => {
-        void loadDatabaseStatus();
-        void loadAccount();
-      }, 0);
+        window.setTimeout(() => {
+          void loadDatabaseStatus();
+          void loadAccount();
+        }, 0);
+      });
       listener = result.data;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Konfigurasi database belum tersedia.');
