@@ -227,8 +227,6 @@ export default function UserPage() {
             </div>
           </div>
 
-          <DatabaseBackupRestore />
-
           <div className="card" style={{ marginTop: 18 }}>
             <div className="section-title">🗄️ Akses Property</div>
             <div className="sub" style={{ marginBottom: 14 }}>
@@ -251,6 +249,8 @@ export default function UserPage() {
           </div>
         </>
       )}
+
+      <DatabaseBackupRestore />
 
       {message && <div className="sub" style={{ marginTop: 12, color: '#047857', fontWeight: 700 }}>{message}</div>}
       {error && <div className="sub" style={{ marginTop: 12, color: '#b45309', fontWeight: 700 }}>{error}</div>}
