@@ -13,7 +13,7 @@ import {
 } from '@/lib/store';
 
 export default function Tagihan() {
-  const [payments, setPayments] = useState<Payment[]>(defaultPayments);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [processing, setProcessing] = useState(false);
   const [show, setShow] = useState(false);
   const [selectedId, setSelectedId] = useState('');
