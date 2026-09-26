@@ -67,8 +67,7 @@ export default function Tagihan() {
     let receiptNo = current.receiptNo;
 
     try {
-      const raw = localStorage.getItem('kostpro_settings');
-      const settings = raw ? JSON.parse(raw) : {};
+      const settings = loadData<Record<string, any>>('settings', {});
       const nextNumber = Number(settings.receiptNext || 1);
 
       if (!receiptNo) {
@@ -79,13 +78,7 @@ export default function Tagihan() {
           '-' +
           String(nextNumber).padStart(5, '0');
 
-        localStorage.setItem(
-          'kostpro_settings',
-          JSON.stringify({
-            ...settings,
-            receiptNext: nextNumber + 1,
-          })
-        );
+        saveData('settings', { ...settings, receiptNext: nextNumber + 1 });
       }
     } catch {
       // Receipt numbering failure must not prevent payment recording.
