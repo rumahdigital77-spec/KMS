@@ -1,5 +1,6 @@
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
+import PropertySessionGate from '@/components/PropertySessionGate';
 
 export const metadata = {
   title: 'KostPro — Kost Management System',
@@ -16,7 +17,7 @@ export default function RootLayout({
       <body>
         <div className="app">
           <Sidebar />
-          <main className="main">{children}</main>
+          <main className="main"><PropertySessionGate>{children}</PropertySessionGate></main>
         </div>
       </body>
     </html>
