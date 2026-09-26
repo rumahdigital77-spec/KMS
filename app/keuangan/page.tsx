@@ -198,13 +198,15 @@ export default function Keuangan() {
   );
 }
 
-/* Financial report: stay readable without horizontal page overflow */
-.report-sheet{max-width:100%;overflow:hidden}
-.report-grid{width:100%;max-width:100%;overflow:hidden}
-@media(max-width:560px){
-  .report-sheet{padding:14px!important}
-  .report-grid{font-size:11px!important;grid-template-columns:minmax(0,1fr) minmax(78px,92px) minmax(78px,92px)!important}
-  .report-grid>div{min-width:0;overflow-wrap:anywhere}
-  .report-sheet .section-title{font-size:18px!important}
-  .report-sheet .report-grid>div{padding-left:6px!important;padding-right:6px!important}
-}
+      <style jsx>{`
+        .report-sheet{max-width:100%;overflow:hidden}
+        .report-grid{width:100%;max-width:100%;overflow:hidden}
+        @media(max-width:560px){
+          .report-sheet{padding:14px!important}
+          .report-grid{font-size:11px!important;grid-template-columns:minmax(0,1fr) minmax(78px,92px) minmax(78px,92px)!important}
+          .report-grid>div{min-width:0;overflow-wrap:anywhere}
+          .report-sheet .section-title{font-size:18px!important}
+          .report-sheet .report-grid>div{padding-left:6px!important;padding-right:6px!important}
+        }
+      `}</style>
+
