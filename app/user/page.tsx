@@ -132,10 +132,21 @@ export default function UserPage() {
       if (!user) throw new Error('AUTH_USER_MISSING');
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) throw new Error('AUTH_SESSION_MISSING');
-      const { data: membership, error: membershipError } = await supabase.from('account_properties')
-        .select('property_id').eq('user_id', user.id).limit(1).maybeSingle();
-      if (membershipError) throw new Error('ACCOUNT_ACCESS_CHECK_FAILED: ' + membershipError.message);
-      if (!membership?.property_id) throw new Error('DATABASE_PROVISIONING_FAILED: account property belum terbentuk. Coba LOGIN DATABASE sekali lalu ulangi.');
+      const { data: provisionedPropertyId, error: provisionError } = await supabase.rpc('provision_owner_property', {
+        p_address: address.trim(),
+        p_email: email,
+        p_full_name: ownerName.trim() || email,
+        p_phone: phone.trim(),
+        p_property_name: name,
+      });
+      if (provisionError) {
+        const code = provisionError.message || '';
+        if (/DATABASE_ALREADY_PROVISIONED/i.test(code)) {
+          throw new Error('DATABASE_ALREADY_PROVISIONED: database sudah pernah dibuat. Gunakan LOGIN DATABASE.');
+        }
+        throw new Error('DATABASE_PROVISIONING_FAILED: ' + code);
+      }
+      if (!provisionedPropertyId) throw new Error('DATABASE_PROVISIONING_FAILED: property ID tidak dikembalikan server.');
       setCreateMsg('✓ Database + account owner + property + akses berhasil dibuat.');
       setDatabaseCreated(true);
       setCreatePassword('');
