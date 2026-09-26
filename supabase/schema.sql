@@ -359,3 +359,49 @@ end; $$;
 
 revoke all on function public.restore_property_database_backup(jsonb,uuid) from public,anon;
 grant execute on function public.restore_property_database_backup(jsonb,uuid) to authenticated;
+
+create table if not exists public.property_app_state(
+  property_id uuid primary key references public.properties(id) on delete cascade,
+  state jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table public.property_app_state enable row level security;
+drop policy if exists property_app_state_select on public.property_app_state;
+create policy property_app_state_select on public.property_app_state for select to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=property_app_state.property_id));
+drop policy if exists property_app_state_insert on public.property_app_state;
+create policy property_app_state_insert on public.property_app_state for insert to authenticated
+with check(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=property_app_state.property_id));
+drop policy if exists property_app_state_update on public.property_app_state;
+create policy property_app_state_update on public.property_app_state for update to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=property_app_state.property_id))
+with check(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=property_app_state.property_id));
+grant select,insert,update,delete on public.property_app_state to authenticated;
+
+create or replace function public.get_property_app_state()
+returns jsonb language plpgsql security invoker set search_path=public as $$
+declare v_user uuid:=auth.uid(); v_property uuid; v_state jsonb;
+begin
+  if v_user is null then raise exception 'AUTH_REQUIRED'; end if;
+  select ap.property_id into v_property from public.account_properties ap where ap.user_id=v_user order by ap.created_at limit 1;
+  if v_property is null then raise exception 'PROPERTY_NOT_FOUND'; end if;
+  select state into v_state from public.property_app_state where property_id=v_property;
+  if v_state is not null then return v_state; end if;
+  return jsonb_build_object(
+    'kostpro_settings',jsonb_build_object(
+      'name',(select p.name from public.properties p where p.id=v_property),
+      'address',(select p.address from public.properties p where p.id=v_property),
+      'phone',(select p.phone from public.properties p where p.id=v_property),
+      'ownerName',(select ua.full_name from public.user_accounts ua where ua.user_id=v_user),
+      'manager',(select ua.full_name from public.user_accounts ua where ua.user_id=v_user),
+      'availableRooms',(select count(*) from public.rooms r where r.property_id=v_property and r.status='available'),
+      'currency','IDR','logo','','signature','','receiptPrefix','KW','receiptNext',1
+    ),
+    'kostpro_rooms',coalesce((select jsonb_agg(jsonb_build_object('id',r.room_code,'tenant',coalesce((select t.name from public.tenants t where t.room_id=r.id and t.status='active' limit 1),'-'),'price',r.rent,'status',r.status) order by r.room_code) from public.rooms r where r.property_id=v_property),'[]'::jsonb),
+    'kostpro_tenants',coalesce((select jsonb_agg(jsonb_build_object('id',t.id,'name',t.name,'room',coalesce((select r.room_code from public.rooms r where r.id=t.room_id),''),'phone',coalesce(t.phone,''),'startDate',coalesce(t.start_date,current_date),'rent',t.monthly_rent,'status',case when t.status='active' then 'active' else 'history' end) order by t.created_at) from public.tenants t where t.property_id=v_property),'[]'::jsonb),
+    'kostpro_payments',coalesce((select jsonb_agg(jsonb_build_object('id',pay.id,'tenant',coalesce(t.name,''),'room',coalesce(r.room_code,''),'month',to_char(i.period,'FMMonth YYYY'),'amount',pay.amount,'status','paid','paidAt',pay.paid_at,'method',pay.method) order by pay.paid_at) from public.payments pay join public.invoices i on i.id=pay.invoice_id left join public.tenants t on t.id=i.tenant_id left join public.rooms r on r.id=t.room_id where i.property_id=v_property),'[]'::jsonb),
+    'kostpro_transactions',coalesce((select jsonb_agg(jsonb_build_object('id','PAY-'||pay.id,'date',coalesce(pay.paid_at::date,current_date),'description','Pembayaran '||coalesce(t.name,''),'category','Pendapatan sewa','amount',pay.amount,'type','income','referenceId',pay.invoice_id) order by pay.paid_at) from public.payments pay join public.invoices i on i.id=pay.invoice_id left join public.tenants t on t.id=i.tenant_id where i.property_id=v_property),'[]'::jsonb)
+  );
+end; $$;
+revoke all on function public.get_property_app_state() from public,anon;
+grant execute on function public.get_property_app_state() to authenticated;
