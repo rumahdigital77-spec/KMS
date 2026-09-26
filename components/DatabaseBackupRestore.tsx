@@ -30,6 +30,7 @@ export default function DatabaseBackupRestore() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [propertyId, setPropertyId] = useState('');
+  const ready = Boolean(propertyId);
 
   const supabase = createClient();
 
@@ -132,19 +133,19 @@ export default function DatabaseBackupRestore() {
         Simpan snapshot data property ke file JSON dan pulihkan kembali kapan saja. Backup tidak menyimpan password atau data auth.users.
       </div>
       <div className="actions" style={{ gap: 10, flexWrap: 'wrap' }}>
-        <button type="button" className="btn" onClick={backup} disabled={busy}>
+        <button type="button" className="btn" onClick={backup} disabled={busy || !ready} title={!ready ? 'Login database diperlukan' : undefined}>
           <Download size={16} style={{ verticalAlign: 'middle', marginRight: 7 }} />
           {busy ? 'Memproses...' : 'BACKUP DATABASE'}
         </button>
-        <label className="btn" style={{ cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1 }}>
+        <label className="btn" style={{ cursor: busy || !ready ? 'not-allowed' : 'pointer', opacity: busy || !ready ? .6 : 1 }} title={!ready ? 'Login database diperlukan' : undefined}>
           <Upload size={16} style={{ verticalAlign: 'middle', marginRight: 7 }} />
           RESTORE DATABASE
-          <input type="file" accept=".json,application/json" onChange={restore} disabled={busy} style={{ display: 'none' }} />
+          <input type="file" accept=".json,application/json" onChange={restore} disabled={busy || !ready} style={{ display: 'none' }} />
         </label>
       </div>
       <div className="sub" style={{ marginTop: 12 }}>
         <DatabaseBackup size={15} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-        Yang dicadangkan: property, kamar, penghuni, tagihan/invoice, pembayaran, dan pengeluaran.
+        {ready ? 'Yang dicadangkan: property, kamar, penghuni, tagihan/invoice, pembayaran, dan pengeluaran.' : '🔒 Login database diperlukan untuk mengaktifkan Backup & Restore.'}
       </div>
       {message && (
         <div className="sub" style={{ marginTop: 12, color: message.startsWith('✓') ? '#047857' : '#b45309', fontWeight: 700 }}>
