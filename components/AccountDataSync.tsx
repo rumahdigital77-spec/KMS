@@ -19,7 +19,13 @@ const clearLocalScope = () => {
 
 export default function AccountDataSync() {
   useEffect(() => {
-    const supabase = createClient();
+    let supabase: ReturnType<typeof createClient>;
+    try {
+      supabase = createClient();
+    } catch {
+      // Keep the application renderable when Supabase runtime configuration is unavailable.
+      return;
+    }
 
     const hydrate = async () => {
       clearLocalScope();
