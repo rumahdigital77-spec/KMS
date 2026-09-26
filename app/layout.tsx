@@ -1,5 +1,6 @@
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
+import AccountDataSync from '@/components/AccountDataSync';
 
 export const metadata = {
   title: 'KostPro — Kost Management System',
@@ -15,6 +16,7 @@ export default function RootLayout({
     <html lang="id">
       <body>
         <div className="app">
+          <AccountDataSync />
           <Sidebar />
           <main className="main">{children}</main>
         </div>
