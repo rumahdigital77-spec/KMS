@@ -207,8 +207,14 @@ export default function UserPage() {
           <div className="title">User & Akses</div>
           <div className="sub">Akses database mengikuti account dan property yang sedang aktif.</div>
         </div>
-        <button className="btn" type="button" onClick={account ? logout : () => { setLoginOpen(v => !v); setLoginMsg(''); }} disabled={busy || loginBusy}>
-          {account ? (busy ? 'Memproses...' : 'LOGOUT') : (loginOpen ? 'TUTUP LOGIN' : 'LOGIN')}
+        <button
+          className="btn"
+          type={account ? 'button' : loginOpen ? 'submit' : 'button'}
+          form={!account && loginOpen ? 'database-login-form' : undefined}
+          onClick={account ? logout : () => { if (!loginOpen) { setLoginOpen(true); setLoginMsg(''); } }}
+          disabled={busy || loginBusy}
+        >
+          {account ? (busy ? 'Memproses...' : 'LOGOUT') : 'LOGIN'}
         </button>
       </div>
 
@@ -223,13 +229,13 @@ export default function UserPage() {
             <div className="card">
               <div className="section-title">🔐 LOGIN DATABASE</div>
               <div className="sub" style={{ marginBottom: 14 }}>Masuk menggunakan account database yang sudah dibuat. Setelah berhasil, seluruh menu hanya membaca property account aktif.</div>
-              <form onSubmit={loginDatabase}>
+              <form id="database-login-form" onSubmit={loginDatabase}>
                 <div className="form">
                   <div className="field"><label>Email</label><input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" required /></div>
                   <div className="field"><label>Password</label><input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Password" autoComplete="current-password" required /></div>
                 </div>
                 {loginMsg && <div className="sub" style={{ marginTop: 12, color: '#b45309', fontWeight: 700 }}>{loginMsg}</div>}
-                <div className="sub" style={{ marginTop: 12 }}>Tekan tombol <b>LOGIN</b> di bagian atas untuk masuk.</div>
+                
               </form>
             </div>
           )}
