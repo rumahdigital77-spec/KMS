@@ -1,43 +1,282 @@
+-- KOSTPRO master Supabase schema
+-- Canonical schema for account/property isolation.
+-- Apply with Supabase migrations; this file is the source-of-truth for a fresh database.
+
 create extension if not exists pgcrypto;
-create table if not exists properties(id uuid primary key default gen_random_uuid(),name text not null,address text,phone text,created_at timestamptz default now());
-create table if not exists rooms(id uuid primary key default gen_random_uuid(),property_id uuid references properties(id) on delete cascade,room_code text not null,rent numeric(14,2) not null default 0,status text not null default 'available' check(status in ('available','occupied','maintenance')),created_at timestamptz default now(),unique(property_id,room_code));
-create table if not exists tenants(id uuid primary key default gen_random_uuid(),property_id uuid references properties(id) on delete cascade,room_id uuid references rooms(id) on delete set null,name text not null,phone text,email text,start_date date,monthly_rent numeric(14,2) not null default 0,status text default 'active',created_at timestamptz default now());
-create table if not exists invoices(id uuid primary key default gen_random_uuid(),property_id uuid references properties(id) on delete cascade,tenant_id uuid references tenants(id) on delete cascade,period date not null,amount numeric(14,2) not null,status text not null default 'unpaid' check(status in ('unpaid','paid','partial','cancelled')),due_date date,created_at timestamptz default now());
-create table if not exists payments(id uuid primary key default gen_random_uuid(),invoice_id uuid references invoices(id) on delete cascade,amount numeric(14,2) not null,paid_at timestamptz default now(),method text default 'cash',note text);
-create table if not exists expenses(id uuid primary key default gen_random_uuid(),property_id uuid references properties(id) on delete cascade,category text not null,description text,amount numeric(14,2) not null,spent_at date default current_date,created_at timestamptz default now());
-create index if not exists rooms_property_idx on rooms(property_id); create index if not exists tenants_property_idx on tenants(property_id); create index if not exists invoices_property_idx on invoices(property_id);
 
+create table if not exists public.properties(
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  address text,
+  phone text,
+  created_at timestamptz not null default now(),
+  owner_user_id uuid references auth.users(id) on delete set null
+);
+alter table public.properties add column if not exists owner_user_id uuid references auth.users(id) on delete set null;
 
--- Live booking tables used by the web booking flow
-create table if not exists public.kost_rooms (
-  id text primary key,
-  tenant text not null default '-',
-  price numeric not null default 0,
-  status text not null check (status in ('available','occupied','maintenance')),
+create table if not exists public.user_accounts(
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  email text not null unique,
+  full_name text,
+  property_id uuid references public.properties(id) on delete set null,
+  role text not null default 'owner' check(role in ('owner','manager','staff','admin')),
+  status text not null default 'active' check(status in ('active','suspended')),
+  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.kost_bookings (
+create table if not exists public.account_properties(
+  user_id uuid not null references auth.users(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
+  role text not null default 'owner' check(role in ('owner','admin','manager','staff')),
+  created_at timestamptz not null default now(),
+  primary key(user_id,property_id)
+);
+
+create table if not exists public.licenses(
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  plan text not null default 'standard',
+  status text not null default 'active' check(status in ('active','expired','suspended','cancelled')),
+  starts_at timestamptz not null default now(),
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.rooms(
+  id uuid primary key default gen_random_uuid(),
+  property_id uuid references public.properties(id) on delete cascade,
+  room_code text not null,
+  rent numeric(14,2) not null default 0,
+  status text not null default 'available' check(status in ('available','occupied','maintenance')),
+  created_at timestamptz not null default now(),
+  unique(property_id,room_code)
+);
+
+create table if not exists public.tenants(
+  id uuid primary key default gen_random_uuid(),
+  property_id uuid references public.properties(id) on delete cascade,
+  room_id uuid references public.rooms(id) on delete set null,
+  name text not null,
+  phone text,
+  email text,
+  start_date date,
+  monthly_rent numeric(14,2) not null default 0,
+  status text default 'active',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.invoices(
+  id uuid primary key default gen_random_uuid(),
+  property_id uuid references public.properties(id) on delete cascade,
+  tenant_id uuid references public.tenants(id) on delete cascade,
+  period date not null,
+  amount numeric(14,2) not null,
+  status text not null default 'unpaid' check(status in ('unpaid','paid','partial','cancelled')),
+  due_date date,
+  created_at timestamptz not null default now(),
+  unique(tenant_id,period)
+);
+
+create table if not exists public.payments(
+  id uuid primary key default gen_random_uuid(),
+  invoice_id uuid references public.invoices(id) on delete cascade,
+  amount numeric(14,2) not null check(amount > 0),
+  paid_at timestamptz default now(),
+  method text default 'cash',
+  note text
+);
+
+create table if not exists public.expenses(
+  id uuid primary key default gen_random_uuid(),
+  property_id uuid references public.properties(id) on delete cascade,
+  category text not null,
+  description text,
+  amount numeric(14,2) not null check(amount >= 0),
+  spent_at date default current_date,
+  created_at timestamptz not null default now()
+);
+
+-- Legacy booking transport tables retained for compatibility with the current UI.
+-- They must always be scoped by property_id.
+create table if not exists public.kost_rooms(
+  id text primary key,
+  property_id uuid references public.properties(id) on delete cascade,
+  tenant text not null default '-',
+  price numeric not null default 0,
+  status text not null check(status in ('available','occupied','maintenance')),
+  updated_at timestamptz not null default now()
+);
+alter table public.kost_rooms add column if not exists property_id uuid references public.properties(id) on delete cascade;
+
+create table if not exists public.kost_bookings(
   id bigint generated by default as identity primary key,
+  property_id uuid references public.properties(id) on delete cascade,
   room_id text not null references public.kost_rooms(id),
   name text not null,
   phone text not null,
   start_date date not null,
   duration text not null default '1 bulan',
-  status text not null default 'pending' check (status in ('pending','confirmed','cancelled')),
+  status text not null default 'pending' check(status in ('pending','confirmed','cancelled')),
   created_at timestamptz not null default now()
 );
+alter table public.kost_bookings add column if not exists property_id uuid references public.properties(id) on delete cascade;
 
-create index if not exists kost_bookings_room_idx on public.kost_bookings(room_id);
-create index if not exists kost_bookings_created_idx on public.kost_bookings(created_at desc);
+create index if not exists rooms_property_idx on public.rooms(property_id);
+create index if not exists tenants_property_idx on public.tenants(property_id);
+create index if not exists invoices_property_idx on public.invoices(property_id);
+create index if not exists expenses_property_idx on public.expenses(property_id);
+create index if not exists kost_rooms_property_idx on public.kost_rooms(property_id);
+create index if not exists kost_bookings_property_idx on public.kost_bookings(property_id);
 
+-- One owner property per account. Additional properties can later be granted through account_properties.
+create unique index if not exists properties_one_owner_idx on public.properties(owner_user_id) where owner_user_id is not null;
+
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql set search_path=public as $$
+begin new.updated_at=now(); return new; end; $$;
+
+drop trigger if exists user_accounts_touch_updated_at on public.user_accounts;
+create trigger user_accounts_touch_updated_at before update on public.user_accounts
+for each row execute function public.touch_updated_at();
+
+drop trigger if exists licenses_touch_updated_at on public.licenses;
+create trigger licenses_touch_updated_at before update on public.licenses
+for each row execute function public.touch_updated_at();
+
+create or replace function public.get_database_provisioning_status()
+returns boolean language sql security definer set search_path=public as $$
+  select exists(select 1 from public.account_properties where user_id=(select auth.uid()));
+$$;
+
+create or replace function public.provision_owner_property(
+  p_address text,p_email text,p_full_name text,p_phone text,p_property_name text
+) returns uuid language plpgsql security definer set search_path=public as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_property_id uuid;
+  v_email text;
+begin
+  if v_user_id is null then raise exception 'OWNER_NOT_AUTHENTICATED'; end if;
+  select lower(email) into v_email from auth.users where id=v_user_id;
+  if v_email is null then raise exception 'OWNER_EMAIL_NOT_FOUND'; end if;
+  if p_email is not null and lower(trim(p_email))<>v_email then raise exception 'OWNER_EMAIL_MISMATCH'; end if;
+  if nullif(trim(p_property_name),'') is null then raise exception 'PROPERTY_NAME_REQUIRED'; end if;
+  select ap.property_id into v_property_id from public.account_properties ap
+    where ap.user_id=v_user_id order by ap.created_at limit 1;
+  if v_property_id is not null then raise exception 'DATABASE_ALREADY_PROVISIONED'; end if;
+
+  insert into public.properties(name,address,phone,owner_user_id)
+  values(trim(p_property_name),nullif(trim(coalesce(p_address,'')),''),nullif(trim(coalesce(p_phone,'')),''),v_user_id)
+  returning id into v_property_id;
+  insert into public.account_properties(user_id,property_id,role) values(v_user_id,v_property_id,'owner');
+  insert into public.user_accounts(user_id,email,full_name,property_id,role,status)
+  values(v_user_id,v_email,nullif(trim(p_full_name),''),v_property_id,'owner','active')
+  on conflict(user_id) do update set email=excluded.email,full_name=coalesce(excluded.full_name,public.user_accounts.full_name),
+    property_id=excluded.property_id,role='owner',status='active',updated_at=now();
+  insert into public.licenses(user_id,plan,status,starts_at,created_at,updated_at)
+  values(v_user_id,'standard','active',now(),now(),now()) on conflict(user_id) do nothing;
+  return v_property_id;
+end; $$;
+
+create or replace function public.export_property_database_backup()
+returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_user uuid:=auth.uid(); v_property uuid;
+begin
+  if v_user is null then raise exception 'AUTH_REQUIRED'; end if;
+  select ap.property_id into v_property from public.account_properties ap
+    where ap.user_id=v_user order by ap.created_at limit 1;
+  if v_property is null then raise exception 'PROPERTY_NOT_FOUND'; end if;
+  return jsonb_build_object(
+    'version',1,'property_id',v_property,
+    'tables',jsonb_build_object(
+      'properties',coalesce((select jsonb_agg(to_jsonb(p) order by p.created_at) from public.properties p where p.id=v_property),'[]'::jsonb),
+      'rooms',coalesce((select jsonb_agg(to_jsonb(r) order by r.created_at) from public.rooms r where r.property_id=v_property),'[]'::jsonb),
+      'tenants',coalesce((select jsonb_agg(to_jsonb(t) order by t.created_at) from public.tenants t where t.property_id=v_property),'[]'::jsonb),
+      'invoices',coalesce((select jsonb_agg(to_jsonb(i) order by i.created_at) from public.invoices i where i.property_id=v_property),'[]'::jsonb),
+      'payments',coalesce((select jsonb_agg(to_jsonb(pay) order by pay.paid_at) from public.payments pay join public.invoices i on i.id=pay.invoice_id where i.property_id=v_property),'[]'::jsonb),
+      'expenses',coalesce((select jsonb_agg(to_jsonb(e) order by e.created_at) from public.expenses e where e.property_id=v_property),'[]'::jsonb)
+    )
+  );
+end; $$;
+
+-- Restore function is deliberately omitted here if the target schema is already provisioned;
+-- keep the live implementation under migration control to avoid accidental destructive restore logic.
+
+alter table public.properties enable row level security;
+alter table public.user_accounts enable row level security;
+alter table public.account_properties enable row level security;
+alter table public.licenses enable row level security;
+alter table public.rooms enable row level security;
+alter table public.tenants enable row level security;
+alter table public.invoices enable row level security;
+alter table public.payments enable row level security;
+alter table public.expenses enable row level security;
 alter table public.kost_rooms enable row level security;
 alter table public.kost_bookings enable row level security;
 
-drop policy if exists "public read available rooms" on public.kost_rooms;
-create policy "public read available rooms" on public.kost_rooms
-  for select using (status = 'available');
+drop policy if exists properties_owner_select on public.properties;
+create policy properties_owner_select on public.properties for select to authenticated
+using(owner_user_id=(select auth.uid()) or exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=properties.id));
 
+drop policy if exists properties_owner_insert on public.properties;
+create policy properties_owner_insert on public.properties for insert to authenticated
+with check(owner_user_id=(select auth.uid()));
+
+drop policy if exists properties_owner_update on public.properties;
+create policy properties_owner_update on public.properties for update to authenticated
+using(owner_user_id=(select auth.uid())) with check(owner_user_id=(select auth.uid()));
+
+drop policy if exists properties_owner_delete on public.properties;
+create policy properties_owner_delete on public.properties for delete to authenticated
+using(owner_user_id=(select auth.uid()));
+
+drop policy if exists user_accounts_self_select on public.user_accounts;
+create policy user_accounts_self_select on public.user_accounts for select to authenticated
+using(user_id=(select auth.uid()));
+
+drop policy if exists account_properties_self_select on public.account_properties;
+create policy account_properties_self_select on public.account_properties for select to authenticated
+using(user_id=(select auth.uid()));
+
+drop policy if exists licenses_self_select on public.licenses;
+create policy licenses_self_select on public.licenses for select to authenticated
+using(user_id=(select auth.uid()));
+
+drop policy if exists rooms_member_all on public.rooms;
+create policy rooms_member_all on public.rooms for all to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=rooms.property_id))
+with check(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=rooms.property_id));
+
+drop policy if exists tenants_member_all on public.tenants;
+create policy tenants_member_all on public.tenants for all to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=tenants.property_id))
+with check(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=tenants.property_id));
+
+drop policy if exists invoices_member_all on public.invoices;
+create policy invoices_member_all on public.invoices for all to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=invoices.property_id))
+with check(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=invoices.property_id));
+
+drop policy if exists payments_member_all on public.payments;
+create policy payments_member_all on public.payments for all to authenticated
+using(exists(select 1 from public.invoices i join public.account_properties ap on ap.property_id=i.property_id where i.id=payments.invoice_id and ap.user_id=(select auth.uid())))
+with check(exists(select 1 from public.invoices i join public.account_properties ap on ap.property_id=i.property_id where i.id=payments.invoice_id and ap.user_id=(select auth.uid())));
+
+drop policy if exists expenses_member_all on public.expenses;
+create policy expenses_member_all on public.expenses for all to authenticated
+using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=expenses.property_id))
+with check(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=expenses.property_id));
+
+drop policy if exists "public read available rooms" on public.kost_rooms;
+create policy "public read available rooms" on public.kost_rooms for select to anon,authenticated using(status='available');
 drop policy if exists "public create booking" on public.kost_bookings;
-create policy "public create booking" on public.kost_bookings
-  for insert with check (true);
+create policy "public create booking" on public.kost_bookings for insert to anon,authenticated with check(true);
+
+revoke all on function public.get_database_provisioning_status() from public,anon;
+grant execute on function public.get_database_provisioning_status() to authenticated;
+revoke all on function public.provision_owner_property(text,text,text,text,text) from public,anon;
+grant execute on function public.provision_owner_property(text,text,text,text,text) to authenticated;
+revoke all on function public.export_property_database_backup() from public,anon;
+grant execute on function public.export_property_database_backup() to authenticated;
