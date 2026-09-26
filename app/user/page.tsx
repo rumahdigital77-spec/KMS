@@ -39,6 +39,16 @@ export default function UserPage() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginMsg, setLoginMsg] = useState('');
+  const [databaseCreated, setDatabaseCreated] = useState(false);
+
+  const loadDatabaseStatus = async () => {
+    try {
+      const { data, error: statusError } = await supabase.rpc('get_database_provisioning_status');
+      if (!statusError) setDatabaseCreated(Boolean(data));
+    } catch {
+      // Keep the create UI available only when the status cannot be checked.
+    }
+  };
 
   const loadAccount = async () => {
     setLoading(true);
@@ -82,6 +92,7 @@ export default function UserPage() {
   };
 
   useEffect(() => {
+    void loadDatabaseStatus();
     loadAccount();
     const { data: listener } = supabase.auth.onAuthStateChange(() => loadAccount());
     return () => listener.subscription.unsubscribe();
@@ -126,6 +137,7 @@ export default function UserPage() {
       if (membershipError) throw new Error('ACCOUNT_ACCESS_CHECK_FAILED: ' + membershipError.message);
       if (!membership?.property_id) throw new Error('DATABASE_PROVISIONING_FAILED: account property belum terbentuk. Coba LOGIN DATABASE sekali lalu ulangi.');
       setCreateMsg('✓ Database + account owner + property + akses berhasil dibuat.');
+      setDatabaseCreated(true);
       setCreatePassword('');
       await loadAccount();
     } catch (err) {
@@ -184,6 +196,17 @@ export default function UserPage() {
         <>
           <div className="card">
             <div className="section-title">🗄️ CREATE DATABASE</div>
+            {databaseCreated ? (
+              <>
+                <div className="sub" style={{ marginBottom: 14 }}>
+                  ✓ Database sudah pernah dibuat. CREATE DATABASE dikunci permanen untuk mencegah pembuatan database/property kedua.
+                </div>
+                <button className="btn" type="button" disabled style={{ opacity: 0.55, cursor: 'not-allowed' }}>
+                  DATABASE SUDAH DIBUAT — TERKUNCI
+                </button>
+              </>
+            ) : (
+            <>
             <div className="sub" style={{ marginBottom: 14 }}>Buat account owner dan database/property pertama.</div>
             <form onSubmit={createDatabase}>
               <div className="form">
@@ -197,6 +220,8 @@ export default function UserPage() {
               <div className="actions" style={{ marginTop: 14 }}><button className="btn" type="submit" disabled={createBusy}>{createBusy ? 'Membuat...' : 'CREATE DATABASE'}</button></div>
             </form>
             {createMsg && <div className="sub" style={{ marginTop: 12, color: createMsg.startsWith('✓') ? '#047857' : '#b45309', fontWeight: 700 }}>{createMsg}</div>}
+            </>
+            )}
           </div>
 
           <div className="card" style={{ marginTop: 18 }}>
