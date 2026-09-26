@@ -178,43 +178,41 @@ export default function UserPage() {
         </div>
       </div>
 
-
-      {!account && (
+      {loading ? (
+        <div className="card">Memeriksa sesi login...</div>
+      ) : !account ? (
         <>
           <div className="card">
             <div className="section-title">🗄️ CREATE DATABASE</div>
-            <div className="sub" style={{marginBottom:14}}>Buat account owner dan database/property pertama.</div>
+            <div className="sub" style={{ marginBottom: 14 }}>Buat account owner dan database/property pertama.</div>
             <form onSubmit={createDatabase}>
               <div className="form">
-                <div className="field"><label>Email Account</label><input type="email" value={createEmail} onChange={e=>setCreateEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" /></div>
-                <div className="field"><label>Password Login</label><input type="password" value={createPassword} onChange={e=>setCreatePassword(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password" /></div>
-                <div className="field"><label>Nama Property</label><input value={propertyName} onChange={e=>setPropertyName(e.target.value)} placeholder="Nama kost / hotel" /></div>
-                <div className="field"><label>Nama Pemilik</label><input value={ownerName} onChange={e=>setOwnerName(e.target.value)} placeholder="Nama lengkap pemilik" /></div>
-                <div className="field"><label>Nomor Telepon</label><input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Nomor telepon" /></div>
-                <div className="field full"><label>Alamat Property</label><textarea value={address} onChange={e=>setAddress(e.target.value)} rows={2} /></div>
+                <div className="field"><label>Email Account</label><input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" /></div>
+                <div className="field"><label>Password Login</label><input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password" /></div>
+                <div className="field"><label>Nama Property</label><input value={propertyName} onChange={e => setPropertyName(e.target.value)} placeholder="Nama kost / hotel" /></div>
+                <div className="field"><label>Nama Pemilik</label><input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Nama lengkap pemilik" /></div>
+                <div className="field"><label>Nomor Telepon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Nomor telepon" /></div>
+                <div className="field full"><label>Alamat Property</label><textarea value={address} onChange={e => setAddress(e.target.value)} rows={2} /></div>
               </div>
-              <div className="actions" style={{marginTop:14}}><button className="btn" type="submit" disabled={createBusy}>{createBusy?'Membuat...':'CREATE DATABASE'}</button></div>
+              <div className="actions" style={{ marginTop: 14 }}><button className="btn" type="submit" disabled={createBusy}>{createBusy ? 'Membuat...' : 'CREATE DATABASE'}</button></div>
             </form>
-            {createMsg && <div className="sub" style={{marginTop:12,color:createMsg.startsWith('✓')?'#047857':'#b45309',fontWeight:700}}>{createMsg}</div>}
+            {createMsg && <div className="sub" style={{ marginTop: 12, color: createMsg.startsWith('✓') ? '#047857' : '#b45309', fontWeight: 700 }}>{createMsg}</div>}
           </div>
-          <div className="card" style={{marginTop:18}}>
+
+          <div className="card" style={{ marginTop: 18 }}>
             <div className="section-title">🔐 LOGIN DATABASE</div>
-            <div className="sub" style={{marginBottom:14}}>Masuk menggunakan email dan password account database yang sudah dibuat.</div>
+            <div className="sub" style={{ marginBottom: 14 }}>Masuk menggunakan email dan password account database yang sudah dibuat.</div>
             <form onSubmit={loginDatabase}>
               <div className="form">
-                <div className="field"><label>Email</label><input type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" /></div>
-                <div className="field"><label>Password</label><input type="password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} placeholder="Password" autoComplete="current-password" /></div>
+                <div className="field"><label>Email</label><input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" /></div>
+                <div className="field"><label>Password</label><input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Password" autoComplete="current-password" /></div>
               </div>
-              <div className="actions" style={{marginTop:14}}><button className="btn" type="submit" disabled={loginBusy}>{loginBusy?'Masuk...':'LOGIN DATABASE'}</button></div>
+              <div className="actions" style={{ marginTop: 14 }}><button className="btn" type="submit" disabled={loginBusy}>{loginBusy ? 'Masuk...' : 'LOGIN DATABASE'}</button></div>
             </form>
-            {loginMsg && <div className="sub" style={{marginTop:12,color:'#b45309',fontWeight:700}}>{loginMsg}</div>}
+            {loginMsg && <div className="sub" style={{ marginTop: 12, color: '#b45309', fontWeight: 700 }}>{loginMsg}</div>}
           </div>
         </>
-      )}
-
-      {loading ? (
-        <div className="card">Memeriksa sesi login...</div>
-      ) : account ? (
+      ) : (
         <>
           <div className="card">
             <div className="section-title">👤 Account Aktif</div>
@@ -252,10 +250,9 @@ export default function UserPage() {
             )}
           </div>
         </>
-      ) : null}
+      )}
 
       {message && <div className="sub" style={{ marginTop: 12, color: '#047857', fontWeight: 700 }}>{message}</div>}
       {error && <div className="sub" style={{ marginTop: 12, color: '#b45309', fontWeight: 700 }}>{error}</div>}
     </>
-  );
-}
+  );}
