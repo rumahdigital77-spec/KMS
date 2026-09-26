@@ -155,11 +155,10 @@ export default function Kamar() {
     if (paymentStatus === 'paid') {
       let receiptNo = payment.receiptNo;
       try {
-        const raw = localStorage.getItem('kostpro_settings');
-        const settings = raw ? JSON.parse(raw) : {};
+        const settings = loadData<Record<string, any>>('settings', {});
         const nextNumber = Number(settings.receiptNext || 1);
         receiptNo = (settings.receiptPrefix || 'KW') + '-' + new Date().getFullYear() + '-' + String(nextNumber).padStart(5, '0');
-        localStorage.setItem('kostpro_settings', JSON.stringify({ ...settings, receiptNext: nextNumber + 1 }));
+        saveData('settings', { ...settings, receiptNext: nextNumber + 1 });
       } catch {}
 
       payment.receiptNo = receiptNo;
