@@ -33,3 +33,6 @@ This version uses demo data in the UI so it can render immediately. The schema i
 
 ## Version Archive
 - **V.1.3** — current version: CCTV menu and management, login-link support, dashboard CCTV shortcuts, and build/type fixes.
+
+## Production
+- V.1.3 restored as the production baseline on 2026-09-26.
