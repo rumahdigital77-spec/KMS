@@ -1,12 +1,15 @@
 
 import { createClient as createSupabaseClient } from '@/lib/supabase-browser';
 
+let cloudSyncQueue: Promise<void> = Promise.resolve();
+
 const CLOUD_KEYS = new Set([
   'settings','rooms','tenants','payments','transactions','tenantHistory','paymentHistory','bookings','cctv'
 ]);
 
 async function syncLocalStateToCloud(name: string, value: unknown) {
   if (!CLOUD_KEYS.has(name) || typeof window === 'undefined') return;
+  cloudSyncQueue = cloudSyncQueue.then(async () => {
   try {
     const supabase = createSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -35,9 +38,11 @@ async function syncLocalStateToCloud(name: string, value: unknown) {
       state,
       updated_at: new Date().toISOString(),
     });
-  } catch {
-    // Local cache remains usable if the network is temporarily unavailable.
-  }
+    } catch {
+      // Local cache remains usable if the network is temporarily unavailable.
+    }
+  });
+  await cloudSyncQueue;
 }
 
 export type RoomStatus='occupied'|'available'|'maintenance';export type Room={id:string;tenant:string;price:number;status:RoomStatus};export type Payment={receiptNo?:string;id:string;tenant:string;room:string;month:string;amount:number;status:'paid'|'unpaid';paidAt?:string;method?:string};export type Tenant={id:string;name:string;room:string;phone:string;startDate:string;rent:number;endDate?:string;status?:'active'|'history';checkoutReason?:'checkout'|'expired'|'transferred'};export type Transaction={id:string;date:string;description:string;category:string;amount:number;type:'income'|'expense';referenceId?:string};
