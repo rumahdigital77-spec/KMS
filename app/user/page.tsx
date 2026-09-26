@@ -78,7 +78,7 @@ export default function UserPage() {
         role: 'owner',
         status: 'active',
       });
-      setAccess((memberships || []).map((row: any) => ({
+      setAccess((memberships || []).map((row: { property_id: string; role: string; properties: PropertyAccess['property'] | PropertyAccess['property'][] | null }) => ({
         property_id: row.property_id,
         role: row.role,
         property: Array.isArray(row.properties) ? row.properties[0] || null : row.properties || null,
@@ -92,8 +92,13 @@ export default function UserPage() {
 
   useEffect(() => {
     void loadDatabaseStatus();
-    loadAccount();
-    const { data: listener } = supabase.auth.onAuthStateChange(() => loadAccount());
+    void loadAccount();
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      window.setTimeout(() => {
+        void loadDatabaseStatus();
+        void loadAccount();
+      }, 0);
+    });
     return () => listener.subscription.unsubscribe();
   }, []);
 
