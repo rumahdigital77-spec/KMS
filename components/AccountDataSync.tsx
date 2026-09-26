@@ -9,43 +9,55 @@ const KEYS = [
   'kostpro_bookings','kostpro_cctv'
 ];
 
+const clearLocalScope = () => {
+  KEYS.forEach(key => localStorage.removeItem(key));
+  sessionStorage.removeItem('kostpro-active-user');
+  Object.keys(sessionStorage)
+    .filter(key => key.startsWith('kostpro-hydrated-user:'))
+    .forEach(key => sessionStorage.removeItem(key));
+};
+
 export default function AccountDataSync() {
   useEffect(() => {
     const supabase = createClient();
 
     const hydrate = async () => {
+      clearLocalScope();
+
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          KEYS.forEach(key => localStorage.removeItem(key));
-          Object.keys(sessionStorage).filter(key => key.startsWith('kostpro-hydrated-user:')).forEach(key => sessionStorage.removeItem(key));
+          window.dispatchEvent(new Event('kostpro:data-scope-changed'));
           return;
         }
 
         const { data: state, error } = await supabase.rpc('get_property_app_state');
-        if (error || !state || typeof state !== 'object') return;
+        if (error || !state || typeof state !== 'object') {
+          window.dispatchEvent(new Event('kostpro:data-scope-changed'));
+          return;
+        }
 
         for (const key of KEYS) {
           if (Object.prototype.hasOwnProperty.call(state, key)) {
             localStorage.setItem(key, JSON.stringify((state as Record<string, unknown>)[key]));
           }
         }
-        const marker = 'kostpro-hydrated-user:' + user.id;
-        if (sessionStorage.getItem(marker) !== '1') {
-          sessionStorage.setItem(marker, '1');
-          window.location.reload();
-          return;
-        }
-        window.dispatchEvent(new Event('kostpro:data-synced'));
+
+        sessionStorage.setItem('kostpro-active-user', user.id);
+        sessionStorage.setItem('kostpro-hydrated-user:' + user.id, '1');
+        window.dispatchEvent(new Event('kostpro:data-scope-changed'));
       } catch {
-        // Keep the current local cache if the database is temporarily unavailable.
+        clearLocalScope();
+        window.dispatchEvent(new Event('kostpro:data-scope-changed'));
       }
     };
 
     void hydrate();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
-      window.setTimeout(() => void hydrate(), 0);
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        window.setTimeout(() => void hydrate(), 0);
+      }
     });
 
     return () => listener.subscription.unsubscribe();
