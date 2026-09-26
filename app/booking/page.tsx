@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarCheck, MessageCircle, CheckCircle2, Copy } from 'lucide-react';
 import { defaultRooms, loadData, money, Room, saveData } from '@/lib/store';
+import { createClient } from '@/lib/supabase-browser';
 
 type Booking = {
   id: string;
@@ -43,7 +44,7 @@ export default function BookingPage() {
     fetch('/api/rooms',{cache:'no-store'}).then(r=>r.json()).then(data=>{
       if(Array.isArray(data.rooms) && data.rooms.length){setRooms(data.rooms);saveData('rooms',data.rooms);}
     }).catch(()=>{});
-    fetch('/api/bookings',{cache:'no-store'}).then(r=>r.json()).then(data=>{
+    (async()=>{const {data:{session}}=await createClient().auth.getSession();return fetch('/api/bookings',{cache:'no-store',headers:session?.access_token?{Authorization:'Bearer '+session.access_token}:{}})})().then(r=>r.json()).then(data=>{
       if(Array.isArray(data.bookings)){
         const mapped=data.bookings.map((x:any)=>({id:String(x.id),room:x.room_id,name:x.name,phone:x.phone,startDate:x.start_date,duration:x.duration,createdAt:x.created_at,status:x.status}));
         setBookings(mapped);saveData('bookings',mapped);
