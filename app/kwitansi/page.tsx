@@ -28,6 +28,7 @@ const defaults: Settings = {
 
 export default function Kwitansi() {
   const [payments, setPayments] = useState<Payment[]>(defaultPayments);
+  const [transactions, setTransactions] = useState<import('@/lib/store').Transaction[]>([]);
   const [id, setId] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -39,6 +40,8 @@ export default function Kwitansi() {
       const raw = localStorage.getItem('kostpro_settings');
       if (raw) setSettings({ ...defaults, ...JSON.parse(raw) });
     } catch {}
+
+    setTransactions(loadData<import('@/lib/store').Transaction[]>('transactions', []));
 
     const queryId = new URLSearchParams(window.location.search).get('id');
     if (queryId) setId(queryId);
@@ -219,6 +222,49 @@ export default function Kwitansi() {
               Kembali ke Pelunasan
             </button>
           )}
+        </div>
+      </div>
+
+      <div className="card no-print" style={{ marginTop: 24 }}>
+        <div className="section-title">Laporan Rugi Laba — Jurnal Akuntansi</div>
+        <div className="sub" style={{ marginBottom: 16 }}>
+          Pendapatan dicatat pada sisi <b>Kredit</b>, sedangkan beban/pengeluaran pada sisi <b>Debet</b>. Laporan ini menampilkan hasil operasi berdasarkan transaksi yang tercatat di KOSTPRO.
+        </div>
+        <div className="grid" style={{ marginBottom: 18 }}>
+          <div className="card" style={{ borderLeft: '5px solid #15803d' }}>
+            <div className="label">TOTAL KREDIT — PENDAPATAN</div>
+            <div className="metric" style={{ fontSize: 22, color: '#15803d' }}>{money(transactions.filter(x => x.type === 'income').reduce((a, b) => a + b.amount, 0))}</div>
+          </div>
+          <div className="card" style={{ borderLeft: '5px solid #b91c1c' }}>
+            <div className="label">TOTAL DEBET — BEBAN</div>
+            <div className="metric" style={{ fontSize: 22, color: '#b91c1c' }}>{money(transactions.filter(x => x.type === 'expense').reduce((a, b) => a + b.amount, 0))}</div>
+          </div>
+          <div className="card" style={{ borderLeft: '5px solid #123456' }}>
+            <div className="label">HASIL LABA / RUGI</div>
+            <div className="metric" style={{ fontSize: 22 }}>{money(transactions.filter(x => x.type === 'income').reduce((a, b) => a + b.amount, 0) - transactions.filter(x => x.type === 'expense').reduce((a, b) => a + b.amount, 0))}</div>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table className="table">
+            <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Akun / Kategori</th><th style={{ textAlign: 'right' }}>Debet</th><th style={{ textAlign: 'right' }}>Kredit</th></tr></thead>
+            <tbody>
+              {transactions.slice().sort((a, b) => b.date.localeCompare(a.date)).map(x => (
+                <tr key={x.id}>
+                  <td>{x.date}</td><td><b>{x.description}</b></td><td>{x.category}</td>
+                  <td style={{ textAlign: 'right', fontWeight: x.type === 'expense' ? 700 : 400 }}>{x.type === 'expense' ? money(x.amount) : '—'}</td>
+                  <td style={{ textAlign: 'right', fontWeight: x.type === 'income' ? 700 : 400 }}>{x.type === 'income' ? money(x.amount) : '—'}</td>
+                </tr>
+              ))}
+              {!transactions.length && <tr><td colSpan={5} style={{ textAlign: 'center' }}>Belum ada transaksi untuk menyusun laporan rugi laba.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 10, background: '#f7f9fc', border: '1px solid #e5e7eb' }}>
+          <div style={{ fontWeight: 800, fontSize: 16 }}>HASIL AKHIR</div>
+          <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>
+            {money(transactions.filter(x => x.type === 'income').reduce((a, b) => a + b.amount, 0) - transactions.filter(x => x.type === 'expense').reduce((a, b) => a + b.amount, 0))}
+          </div>
+          <div className="sub">Laba jika Kredit Pendapatan &gt; Debet Beban; Rugi jika Debet Beban &gt; Kredit Pendapatan.</div>
         </div>
       </div>
 
