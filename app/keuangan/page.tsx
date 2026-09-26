@@ -134,14 +134,14 @@ export default function Keuangan() {
           <button className="btn secondary" onClick={() => window.print()}>Cetak Laporan</button>
         </div>
 
-        <div style={{ border: '1px solid #dfe3e8', borderRadius: 12, background: '#fff', padding: '22px 20px' }}>
+        <div className="report-sheet" style={{ border: '1px solid #dfe3e8', borderRadius: 12, background: '#fff', padding: '22px 20px' }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.2, color: '#6b7280' }}>KOSTPRO • LAPORAN KEUANGAN</div>
             <div style={{ fontSize: 24, fontWeight: 800, marginTop: 5 }}>LAPORAN LABA RUGI</div>
             <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>Berdasarkan transaksi yang tercatat dalam sistem</div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 0, borderTop: '2px solid #111827', borderBottom: '1px solid #111827', fontSize: 13 }}>
+          <div className="report-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(90px,130px) minmax(90px,130px)', gap: 0, borderTop: '2px solid #111827', borderBottom: '1px solid #111827', fontSize: 13 }}>
             <div style={{ padding: '11px 8px', fontWeight: 800 }}>URAIAN</div>
             <div style={{ padding: '11px 8px', fontWeight: 800, textAlign: 'right', minWidth: 130 }}>DEBET</div>
             <div style={{ padding: '11px 8px', fontWeight: 800, textAlign: 'right', minWidth: 130 }}>KREDIT</div>
@@ -193,23 +193,17 @@ export default function Keuangan() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: 18 }}>
-        <div className="section-title">Transaksi Terbaru</div>
-        <table className="table">
-          <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Jenis</th><th>Nominal</th></tr></thead>
-          <tbody>
-            {transactions.map((item) => (
-              <tr key={item.id}>
-                <td>{item.date}</td>
-                <td>{item.description}</td>
-                <td>{item.category}</td>
-                <td>{item.type === 'income' ? 'Pendapatan' : 'Beban'}</td>
-                <td>{item.type === 'expense' ? '-' : ''}{money(item.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </>
   );
+}
+
+/* Financial report: stay readable without horizontal page overflow */
+.report-sheet{max-width:100%;overflow:hidden}
+.report-grid{width:100%;max-width:100%;overflow:hidden}
+@media(max-width:560px){
+  .report-sheet{padding:14px!important}
+  .report-grid{font-size:11px!important;grid-template-columns:minmax(0,1fr) minmax(78px,92px) minmax(78px,92px)!important}
+  .report-grid>div{min-width:0;overflow-wrap:anywhere}
+  .report-sheet .section-title{font-size:18px!important}
+  .report-sheet .report-grid>div{padding-left:6px!important;padding-right:6px!important}
 }
