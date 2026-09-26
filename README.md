@@ -36,3 +36,6 @@ This version uses demo data in the UI so it can render immediately. The schema i
 
 ## Production
 - V.1.3 restored as the production baseline on 2026-09-26.
+
+
+<!-- deployment trigger: restore User & Akses -->
