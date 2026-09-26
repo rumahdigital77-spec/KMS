@@ -19,7 +19,7 @@ type PropertyAccess = {
 };
 
 export default function UserPage() {
-  const supabase = createClient();
+  const getSupabase = () => createClient();
   const [account, setAccount] = useState<UserAccount | null>(null);
   const [access, setAccess] = useState<PropertyAccess[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +43,7 @@ export default function UserPage() {
 
   const loadDatabaseStatus = async () => {
     try {
-      const { data, error: statusError } = await supabase.rpc('get_database_provisioning_status');
+      const { data, error: statusError } = await getSupabase().rpc('get_database_provisioning_status');
       if (!statusError) setDatabaseCreated(Boolean(data));
     } catch {
       // Keep the create UI available only when the status cannot be checked.
@@ -54,7 +54,7 @@ export default function UserPage() {
     setLoading(true);
     setError('');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getSupabase().auth.getUser();
       if (!user) {
         setAccount(null);
         setAccess([]);
@@ -95,7 +95,7 @@ export default function UserPage() {
   useEffect(() => {
     void loadDatabaseStatus();
     void loadAccount();
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+    const { data: listener } = getSupabase().auth.onAuthStateChange(() => {
       window.setTimeout(() => {
         void loadDatabaseStatus();
         void loadAccount();
@@ -117,16 +117,16 @@ export default function UserPage() {
     }
     setCreateBusy(true);
     try {
-      let { data: { user } } = await supabase.auth.getUser();
-      if (user?.email?.toLowerCase() !== email) { await supabase.auth.signOut(); user = null; }
+      let { data: { user } } = await getSupabase().auth.getUser();
+      if (user?.email?.toLowerCase() !== email) { await getSupabase().auth.signOut(); user = null; }
       if (!user) {
-        const sign = await supabase.auth.signUp({
+        const sign = await getSupabase().auth.signUp({
           email, password: createPassword,
           options: { data: { full_name: ownerName || email, property_name: name, address, phone } }
         });
         if (sign.error) {
           if (/already registered|already exists/i.test(sign.error.message || '')) {
-            const login = await supabase.auth.signInWithPassword({ email, password: createPassword });
+            const login = await getSupabase().auth.signInWithPassword({ email, password: createPassword });
             if (login.error) throw new Error('Email sudah terdaftar tetapi password tidak cocok. Gunakan Database Login.');
             user = login.data.user;
           } else throw sign.error;
@@ -136,9 +136,9 @@ export default function UserPage() {
         }
       }
       if (!user) throw new Error('AUTH_USER_MISSING');
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData } = await getSupabase().auth.getSession();
       if (!sessionData.session) throw new Error('AUTH_SESSION_MISSING');
-      const { data: provisionedPropertyId, error: provisionError } = await supabase.rpc('provision_owner_property', {
+      const { data: provisionedPropertyId, error: provisionError } = await getSupabase().rpc('provision_owner_property', {
         p_address: address.trim(),
         p_email: email,
         p_full_name: ownerName.trim() || email,
@@ -169,7 +169,7 @@ export default function UserPage() {
     setLoginMsg('');
     setLoginBusy(true);
     try {
-      const { error: loginError } = await supabase.auth.signInWithPassword({
+      const { error: loginError } = await getSupabase().auth.signInWithPassword({
         email: loginEmail.trim().toLowerCase(), password: loginPassword
       });
       if (loginError) throw loginError;
@@ -187,7 +187,7 @@ export default function UserPage() {
     setError('');
     setMessage('');
     try {
-      const { error: logoutError } = await supabase.auth.signOut();
+      const { error: logoutError } = await getSupabase().auth.signOut();
       if (logoutError) throw logoutError;
       setAccount(null);
       setAccess([]);
