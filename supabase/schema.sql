@@ -510,5 +510,5 @@ drop policy if exists kost_bookings_member_delete on public.kost_bookings;
 create policy kost_bookings_member_delete on public.kost_bookings for delete to authenticated
 using(exists(select 1 from public.account_properties ap where ap.user_id=(select auth.uid()) and ap.property_id=kost_bookings.property_id));
 
-revoke execute on function public.touch_updated_at() from anon;
+revoke execute on function public.touch_updated_at() from public;
 grant execute on function public.touch_updated_at() to authenticated;
