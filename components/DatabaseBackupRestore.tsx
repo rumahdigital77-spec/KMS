@@ -31,8 +31,6 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
   const [message, setMessage] = useState('');
   const [detectedPropertyId, setDetectedPropertyId] = useState('');
   const propertyId = propertyIdProp || detectedPropertyId;
-  const ready = Boolean(propertyId);
-
   const supabase = createClient();
 
   useEffect(() => {
@@ -41,18 +39,15 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
     const loadPropertyId = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-
         if (!user) {
           if (active) setDetectedPropertyId('');
           return;
         }
 
         const { data, error } = await supabase
-          .from('account_properties')
+          .from('user_accounts')
           .select('property_id')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: true })
-          .limit(1)
           .maybeSingle();
 
         if (error) throw error;
@@ -78,10 +73,14 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
   }, []);
 
   const backup = async () => {
-    if (!ready || busy) return;
+    if (busy) return;
     setBusy(true);
     setMessage('');
+
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Login database diperlukan untuk Backup.');
+
       const { data, error } = await supabase.rpc('export_property_database_backup');
       if (error) throw error;
       if (!data || typeof data !== 'object') throw new Error('Data backup kosong atau tidak valid.');
@@ -92,10 +91,10 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
         try { appSettings = JSON.parse(rawSettings); } catch { appSettings = undefined; }
       }
 
-      const payload = {
+      const payload: BackupFile = {
         ...(data as Omit<BackupFile, 'format' | 'created_at' | 'app_settings'>),
-        format: 'KMS_DATABASE_BACKUP' as const,
-        version: 1 as const,
+        format: 'KMS_DATABASE_BACKUP',
+        version: 1,
         created_at: new Date().toISOString(),
         app_settings: appSettings,
       };
@@ -118,7 +117,7 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
     event.target.value = '';
     if (!file) return;
 
-    if (!ready || busy) {
+    if (!propertyId || busy) {
       setMessage('Login database diperlukan untuk Restore.');
       return;
     }
@@ -127,7 +126,11 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
 
     setBusy(true);
     setMessage('');
+
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Login database diperlukan untuk Restore.');
+
       const fileText = await file.text();
       const parsed = JSON.parse(fileText) as BackupFile;
 
@@ -161,6 +164,9 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
     }
   };
 
+  const backupReady = !busy;
+  const restoreReady = Boolean(propertyId) && !busy;
+
   return (
     <div className="card" style={{ marginTop: 18 }}>
       <div className="section-title">Backup & Restore Database</div>
@@ -168,19 +174,19 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
         Simpan snapshot data property ke file JSON dan pulihkan kembali kapan saja. Backup tidak menyimpan password atau data auth.users.
       </div>
       <div className="actions" style={{ gap: 10, flexWrap: 'wrap' }}>
-        <button type="button" className="btn" onClick={backup} disabled={busy || !ready} title={!ready ? 'Login database diperlukan' : undefined}>
+        <button type="button" className="btn" onClick={backup} disabled={!backupReady}>
           <Download size={16} style={{ verticalAlign: 'middle', marginRight: 7 }} />
           {busy ? 'Memproses...' : 'BACKUP DATABASE'}
         </button>
-        <label className="btn" style={{ cursor: busy || !ready ? 'not-allowed' : 'pointer', opacity: busy || !ready ? .6 : 1 }} title={!ready ? 'Login database diperlukan' : undefined}>
+        <label className="btn" style={{ cursor: restoreReady ? 'pointer' : 'not-allowed', opacity: restoreReady ? 1 : .6 }} title={!restoreReady ? 'Login database diperlukan' : undefined}>
           <Upload size={16} style={{ verticalAlign: 'middle', marginRight: 7 }} />
           RESTORE DATABASE
-          <input type="file" accept=".json,application/json" onChange={restore} disabled={busy || !ready} style={{ display: 'none' }} />
+          <input type="file" accept=".json,application/json" onChange={restore} disabled={!restoreReady} style={{ display: 'none' }} />
         </label>
       </div>
       <div className="sub" style={{ marginTop: 12 }}>
         <DatabaseBackup size={15} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-        {ready ? 'Yang dicadangkan: property, kamar, penghuni, tagihan/invoice, pembayaran, dan pengeluaran.' : '🔒 Login database diperlukan untuk mengaktifkan Backup & Restore.'}
+        {propertyId ? 'Yang dicadangkan: property, kamar, penghuni, tagihan/invoice, pembayaran, dan pengeluaran.' : 'Backup menggunakan property aktif dari session database.'}
       </div>
       {message && (
         <div className="sub" style={{ marginTop: 12, color: message.startsWith('✓') ? '#047857' : '#b45309', fontWeight: 700 }}>
