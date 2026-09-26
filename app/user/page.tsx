@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { createClient } from '../../lib/supabase-browser';
 import DatabaseBackupRestore from '../../components/DatabaseBackupRestore';
+import { clearActivePropertyScope, setActivePropertyScope } from '../../lib/store';
 
 type UserAccount = {
   user_id: string;
@@ -61,6 +62,7 @@ export default function UserPage() {
       if (!user) {
         setAccount(null);
         setAccess([]);
+        clearActivePropertyScope();
         return;
       }
 
@@ -107,6 +109,8 @@ export default function UserPage() {
       }
 
       if (seq !== accountLoadSeq.current) return;
+      const activePropertyId = fallbackPropertyId || mapped[0]?.property_id || null;
+      if (activePropertyId) setActivePropertyScope(user.id, activePropertyId); else clearActivePropertyScope();
       setAccount(profile || {
         user_id: user.id,
         email: user.email || '',
@@ -132,6 +136,7 @@ export default function UserPage() {
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
         ++accountLoadSeq.current;
+        clearActivePropertyScope();
         setAccount(null);
         setAccess([]);
         setLoading(false);
@@ -231,6 +236,7 @@ export default function UserPage() {
     try {
       const { error: logoutError } = await supabase.auth.signOut();
       if (logoutError) throw logoutError;
+      clearActivePropertyScope();
       setAccount(null);
       setAccess([]);
       setMessage('✓ Anda sudah logout.');
