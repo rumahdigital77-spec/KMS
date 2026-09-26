@@ -1,37 +1,78 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerSupabaseClient, getAuthenticatedPropertyId } from '@/lib/supabase-server';
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-function db() {
-  if (!url || !key) throw new Error('Supabase environment variables are not configured.');
-  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
-}
-
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const { data, error } = await db().from('kost_rooms').select('*').order('id');
+    const supabase = createServerSupabaseClient();
+    const url = new URL(req.url);
+    const publicMode = url.searchParams.get('public') === '1';
+    const requestedProperty = url.searchParams.get('property_id');
+
+    if (publicMode) {
+      if (!requestedProperty) return NextResponse.json({ error: 'PROPERTY_REQUIRED' }, { status: 400 });
+      const { data, error } = await supabase
+        .from('kost_rooms')
+        .select('id,room_code,price,status,tenant,updated_at')
+        .eq('property_id', requestedProperty)
+        .eq('status', 'available')
+        .order('room_code');
+      if (error) throw error;
+      return NextResponse.json({
+        rooms: (data || []).map(room => ({ id: room.room_code, tenant: room.tenant, price: Number(room.price), status: room.status, updated_at: room.updated_at })),
+      });
+    }
+
+    const scope = await getAuthenticatedPropertyId(supabase);
+    if (!scope.propertyId) return NextResponse.json({ error: scope.error || 'AUTH_REQUIRED' }, { status: 401 });
+
+    const { data, error } = await supabase
+      .from('kost_rooms')
+      .select('id,room_code,price,status,tenant,updated_at')
+      .eq('property_id', scope.propertyId)
+      .order('room_code');
     if (error) throw error;
-    return NextResponse.json({ rooms: data ?? [] });
+
+    return NextResponse.json({
+      rooms: (data || []).map(room => ({ id: room.room_code, tenant: room.tenant, price: Number(room.price), status: room.status, updated_at: room.updated_at })),
+    });
   } catch (e) {
-    return NextResponse.json({ error: 'Database belum terhubung.' }, { status: 503 });
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Database belum terhubung.' }, { status: 503 });
   }
 }
 
 export async function POST(req: Request) {
   try {
+    const supabase = createServerSupabaseClient();
+    const scope = await getAuthenticatedPropertyId(supabase);
+    if (!scope.propertyId) return NextResponse.json({ error: scope.error || 'AUTH_REQUIRED' }, { status: 401 });
+
     const body = await req.json();
     const room = body?.room;
     if (!room?.id || !['available','occupied','maintenance'].includes(room.status)) {
       return NextResponse.json({ error: 'Data kamar tidak valid.' }, { status: 400 });
     }
-    const { data, error } = await db().from('kost_rooms').upsert({
-      id: room.id, tenant: room.tenant || '-', price: Number(room.price) || 0, status: room.status, updated_at: new Date().toISOString()
-    }).select().single();
+
+    const roomCode = String(room.id).trim().toUpperCase();
+    const internalId = scope.propertyId + ':' + roomCode;
+    const payload = {
+      id: internalId,
+      property_id: scope.propertyId,
+      room_code: roomCode,
+      tenant: room.tenant || '-',
+      price: Number(room.price) || 0,
+      status: room.status,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('kost_rooms')
+      .upsert(payload, { onConflict: 'id' })
+      .select('id,room_code,price,status,tenant,updated_at')
+      .single();
     if (error) throw error;
-    return NextResponse.json({ room: data });
+
+    return NextResponse.json({ room: { id: data.room_code, tenant: data.tenant, price: Number(data.price), status: data.status, updated_at: data.updated_at } });
   } catch (e) {
-    return NextResponse.json({ error: 'Gagal menyimpan kamar.' }, { status: 500 });
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Gagal menyimpan kamar.' }, { status: 500 });
   }
 }
