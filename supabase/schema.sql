@@ -146,13 +146,13 @@ create trigger licenses_touch_updated_at before update on public.licenses
 for each row execute function public.touch_updated_at();
 
 create or replace function public.get_database_provisioning_status()
-returns boolean language sql security definer set search_path=public as $$
+returns boolean language sql security invoker set search_path=public as $$
   select exists(select 1 from public.account_properties where user_id=(select auth.uid()));
 $$;
 
 create or replace function public.provision_owner_property(
   p_address text,p_email text,p_full_name text,p_phone text,p_property_name text
-) returns uuid language plpgsql security definer set search_path=public as $$
+) returns uuid language plpgsql security invoker set search_path=public as $$
 declare
   v_user_id uuid := auth.uid();
   v_property_id uuid;
@@ -181,7 +181,7 @@ begin
 end; $$;
 
 create or replace function public.export_property_database_backup()
-returns jsonb language plpgsql security definer set search_path='' as $$
+returns jsonb language plpgsql security invoker set search_path='' as $$
 declare v_user uuid:=auth.uid(); v_property uuid;
 begin
   if v_user is null then raise exception 'AUTH_REQUIRED'; end if;
@@ -236,6 +236,20 @@ drop policy if exists user_accounts_self_select on public.user_accounts;
 create policy user_accounts_self_select on public.user_accounts for select to authenticated
 using(user_id=(select auth.uid()));
 
+drop policy if exists account_properties_self_insert on public.account_properties;
+create policy account_properties_self_insert on public.account_properties for insert to authenticated
+with check(user_id=(select auth.uid()) and exists(select 1 from public.properties p where p.id=account_properties.property_id and p.owner_user_id=(select auth.uid())));
+drop policy if exists account_properties_self_delete on public.account_properties;
+create policy account_properties_self_delete on public.account_properties for delete to authenticated using(user_id=(select auth.uid()));
+
+drop policy if exists user_accounts_self_insert on public.user_accounts;
+create policy user_accounts_self_insert on public.user_accounts for insert to authenticated with check(user_id=(select auth.uid()));
+drop policy if exists user_accounts_self_update on public.user_accounts;
+create policy user_accounts_self_update on public.user_accounts for update to authenticated using(user_id=(select auth.uid())) with check(user_id=(select auth.uid()));
+
+drop policy if exists licenses_self_insert on public.licenses;
+create policy licenses_self_insert on public.licenses for insert to authenticated with check(user_id=(select auth.uid()));
+
 drop policy if exists account_properties_self_select on public.account_properties;
 create policy account_properties_self_select on public.account_properties for select to authenticated
 using(user_id=(select auth.uid()));
@@ -283,7 +297,7 @@ grant execute on function public.export_property_database_backup() to authentica
 
 
 create or replace function public.restore_property_database_backup(p_backup jsonb,p_target_property_id uuid)
-returns jsonb language plpgsql security definer set search_path='' as $$
+returns jsonb language plpgsql security invoker set search_path='' as $$
 declare
   v_user uuid:=auth.uid();
 begin
