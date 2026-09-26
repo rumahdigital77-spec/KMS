@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { createClient } from '../../lib/supabase-browser';
 import DatabaseBackupRestore from '../../components/DatabaseBackupRestore';
 
@@ -40,6 +40,7 @@ export default function UserPage() {
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginMsg, setLoginMsg] = useState('');
   const [databaseCreated, setDatabaseCreated] = useState(false);
+  const accountLoadSeq = useRef(0);
 
   const loadDatabaseStatus = async () => {
     try {
@@ -51,50 +52,98 @@ export default function UserPage() {
   };
 
   const loadAccount = async () => {
+    const seq = ++accountLoadSeq.current;
     setLoading(true);
     setError('');
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (seq !== accountLoadSeq.current) return;
       if (!user) {
         setAccount(null);
         setAccess([]);
         return;
       }
+
       const { data: profile, error: profileError } = await supabase
         .from('user_accounts')
         .select('user_id,email,full_name,property_id,role,status')
         .eq('user_id', user.id)
         .maybeSingle();
       if (profileError) throw profileError;
+      if (seq !== accountLoadSeq.current) return;
+
       const { data: memberships, error: membershipError } = await supabase
         .from('account_properties')
         .select('property_id,role,properties(id,name,address,phone)')
         .eq('user_id', user.id);
       if (membershipError) throw membershipError;
+      if (seq !== accountLoadSeq.current) return;
+
+      const fallbackPropertyId = profile?.property_id || null;
+      const rows = memberships || [];
+      const mapped: PropertyAccess[] = rows.map((row: {
+        property_id: string;
+        role: string;
+        properties?: PropertyAccess['property'] | PropertyAccess['property'][] | null;
+      }) => ({
+        property_id: row.property_id,
+        role: row.role,
+        property: Array.isArray(row.properties) ? row.properties[0] || null : row.properties || null,
+      }));
+
+      if (fallbackPropertyId && !mapped.some(item => item.property_id === fallbackPropertyId)) {
+        const { data: property, error: propertyError } = await supabase
+          .from('properties')
+          .select('id,name,address,phone')
+          .eq('id', fallbackPropertyId)
+          .maybeSingle();
+        if (!propertyError && property) {
+          mapped.unshift({
+            property_id: property.id,
+            role: profile?.role || 'owner',
+            property,
+          });
+        }
+      }
+
+      if (seq !== accountLoadSeq.current) return;
       setAccount(profile || {
         user_id: user.id,
         email: user.email || '',
         full_name: (user.user_metadata?.full_name as string) || null,
-        property_id: null,
+        property_id: fallbackPropertyId,
         role: 'owner',
         status: 'active',
       });
-      setAccess((memberships || []).map((row: any) => ({
-        property_id: row.property_id,
-        role: row.role,
-        property: Array.isArray(row.properties) ? row.properties[0] || null : row.properties || null,
-      })));
+      setAccess(mapped);
     } catch (e) {
+      if (seq !== accountLoadSeq.current) return;
+      setAccount(null);
+      setAccess([]);
       setError(e instanceof Error ? e.message : 'Gagal membaca akses account.');
     } finally {
-      setLoading(false);
+      if (seq === accountLoadSeq.current) setLoading(false);
     }
   };
 
   useEffect(() => {
     void loadDatabaseStatus();
-    loadAccount();
-    const { data: listener } = supabase.auth.onAuthStateChange(() => loadAccount());
+    void loadAccount();
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        ++accountLoadSeq.current;
+        setAccount(null);
+        setAccess([]);
+        setLoading(false);
+        setError('');
+        setMessage('✓ Anda sudah logout.');
+        return;
+      }
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        setMessage('');
+        void loadAccount();
+      }
+    });
     return () => listener.subscription.unsubscribe();
   }, []);
 
