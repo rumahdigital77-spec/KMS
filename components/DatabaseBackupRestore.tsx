@@ -30,6 +30,8 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [detectedPropertyId, setDetectedPropertyId] = useState('');
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const propertyId = propertyIdProp || detectedPropertyId;
   const supabase = createClient();
 
@@ -40,9 +42,15 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          if (active) setDetectedPropertyId('');
+          if (active) {
+            setDetectedPropertyId('');
+            setAuthenticated(false);
+            setAuthReady(true);
+            setMessage('');
+          }
           return;
         }
+        if (active) setAuthenticated(true);
 
         const { data, error } = await supabase
           .from('user_accounts')
@@ -51,10 +59,15 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
           .maybeSingle();
 
         if (error) throw error;
-        if (active) setDetectedPropertyId(data?.property_id || '');
+        if (active) {
+          setDetectedPropertyId(data?.property_id || '');
+          setAuthReady(true);
+        }
       } catch (err) {
         if (active) {
           setDetectedPropertyId('');
+          setAuthenticated(false);
+          setAuthReady(true);
           setMessage(err instanceof Error ? `Gagal membaca property database: ${err.message}` : 'Gagal membaca property database.');
         }
       }
@@ -79,7 +92,11 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Login database diperlukan untuk Backup.');
+      if (!user) {
+        setAuthenticated(false);
+        setMessage('Login database diperlukan untuk Backup.');
+        return;
+      }
 
       const { data, error } = await supabase.rpc('export_property_database_backup');
       if (error) throw error;
@@ -164,8 +181,8 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
     }
   };
 
-  const backupReady = !busy;
-  const restoreReady = Boolean(propertyId) && !busy;
+  const backupReady = authReady && authenticated && !busy;
+  const restoreReady = authReady && authenticated && Boolean(propertyId) && !busy;
 
   return (
     <div className="card" style={{ marginTop: 18 }}>
@@ -186,7 +203,7 @@ export default function DatabaseBackupRestore({ propertyId: propertyIdProp = '' 
       </div>
       <div className="sub" style={{ marginTop: 12 }}>
         <DatabaseBackup size={15} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-        {propertyId ? 'Yang dicadangkan: property, kamar, penghuni, tagihan/invoice, pembayaran, dan pengeluaran.' : 'Backup menggunakan property aktif dari session database.'}
+        {!authReady ? 'Memeriksa session database...' : authenticated ? (propertyId ? 'Yang dicadangkan: property, kamar, penghuni, tagihan/invoice, pembayaran, dan pengeluaran.' : 'Backup menggunakan property aktif dari session database.') : 'Login database diperlukan untuk menggunakan Backup & Restore.'}
       </div>
       {message && (
         <div className="sub" style={{ marginTop: 12, color: message.startsWith('✓') ? '#047857' : '#b45309', fontWeight: 700 }}>
