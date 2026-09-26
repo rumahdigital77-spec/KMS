@@ -1,4 +1,5 @@
 'use client';
+// Responsive report layout hardened for small screens.
 
 import { useEffect, useMemo, useState } from 'react';
 import { defaultTransactions, loadData, money, saveData, Transaction } from '@/lib/store';
