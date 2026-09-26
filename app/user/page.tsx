@@ -97,13 +97,19 @@ export default function UserPage() {
   useEffect(() => {
     void loadDatabaseStatus();
     void loadAccount();
-    const { data: listener } = getSupabase().auth.onAuthStateChange(() => {
+
+    let listener: { subscription: { unsubscribe: () => void } } | null = null;
+    try {
+      const result = getSupabase().auth.onAuthStateChange(() => {
       window.setTimeout(() => {
         void loadDatabaseStatus();
         void loadAccount();
       }, 0);
-    });
-    return () => listener.subscription.unsubscribe();
+      listener = result.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Konfigurasi database belum tersedia.');
+    }
+    return () => listener?.subscription.unsubscribe();
   }, []);
 
 
