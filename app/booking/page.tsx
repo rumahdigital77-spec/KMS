@@ -56,15 +56,20 @@ export default function BookingPage() {
       };
       void loadProperty();
     }
-    fetch('/api/rooms',{cache:'no-store'}).then(r=>r.json()).then(data=>{
+    const roomsEndpoint = publicPropertyId
+      ? '/api/rooms?public=1&property_id=' + encodeURIComponent(publicPropertyId)
+      : '/api/rooms';
+    fetch(roomsEndpoint,{cache:'no-store'}).then(r=>r.json()).then(data=>{
       if(Array.isArray(data.rooms) && data.rooms.length){setRooms(data.rooms);saveData('rooms',data.rooms);}
     }).catch(()=>{});
-    fetch('/api/bookings',{cache:'no-store'}).then(r=>r.json()).then(data=>{
-      if(Array.isArray(data.bookings)){
-        const mapped=data.bookings.map((x:any)=>({id:String(x.id),room:x.room_id,name:x.name,phone:x.phone,startDate:x.start_date,duration:x.duration,createdAt:x.created_at,status:x.status}));
-        setBookings(mapped);saveData('bookings',mapped);
-      }
-    }).catch(()=>{});
+    if (!publicPropertyId) {
+      fetch('/api/bookings',{cache:'no-store'}).then(r=>r.json()).then(data=>{
+        if(Array.isArray(data.bookings)){
+          const mapped=data.bookings.map((x:any)=>({id:String(x.id),room:x.room_id,name:x.name,phone:x.phone,startDate:x.start_date,duration:x.duration,createdAt:x.created_at,status:x.status}));
+          setBookings(mapped);saveData('bookings',mapped);
+        }
+      }).catch(()=>{});
+    }
     const requestedRoom = new URLSearchParams(window.location.search).get('room');
     if (requestedRoom) {
       const room = loadedRooms.find(x => x.id === requestedRoom);
