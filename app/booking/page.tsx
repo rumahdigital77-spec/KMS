@@ -29,6 +29,7 @@ export default function BookingPage() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [publicMode, setPublicMode] = useState(false);
   const [managerPhone, setManagerPhone] = useState('');
+  const [propertyId, setPropertyId] = useState('');
 
   useEffect(() => {
     const loadedRooms = loadData<Room[]>('rooms', defaultRooms);
@@ -39,7 +40,22 @@ export default function BookingPage() {
       setManagerPhone(String(settings.phone || ''));
     } catch {}
     const query = new URLSearchParams(window.location.search);
+    const publicPropertyId = query.get('property_id') || '';
     setPublicMode(query.get('public') === '1');
+    setPropertyId(publicPropertyId);
+    if (query.get('public') !== '1') {
+      const loadProperty = async () => {
+        try {
+          const { createClient } = await import('@/lib/supabase-browser');
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          const { data } = await supabase.from('user_accounts').select('property_id').eq('user_id', user.id).maybeSingle();
+          if (data?.property_id) setPropertyId(data.property_id);
+        } catch {}
+      };
+      void loadProperty();
+    }
     fetch('/api/rooms',{cache:'no-store'}).then(r=>r.json()).then(data=>{
       if(Array.isArray(data.rooms) && data.rooms.length){setRooms(data.rooms);saveData('rooms',data.rooms);}
     }).catch(()=>{});
@@ -67,7 +83,7 @@ export default function BookingPage() {
   );
 
   const bookingUrl = (room: Room) =>
-    window.location.origin + '/booking?public=1&room=' + encodeURIComponent(room.id);
+    window.location.origin + '/booking?public=1&property_id=' + encodeURIComponent(propertyId) + '&room=' + encodeURIComponent(room.id);
 
   const shareLink = (room: Room) => {
     const url = bookingUrl(room);
@@ -95,7 +111,7 @@ export default function BookingPage() {
   };
 
   const submit = () => {
-    if (!roomId || !name.trim() || !phone.trim() || !startDate) {
+    if (!propertyId || !roomId || !name.trim() || !phone.trim() || !startDate) {
       setMsg('Kamar, nama, nomor WhatsApp, dan tanggal masuk wajib diisi.');
       return;
     }
@@ -108,7 +124,7 @@ export default function BookingPage() {
     const send=async()=>{
       try{
         setMsg('Mengirim booking...');
-        const response=await fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roomId:room.id,name:name.trim(),phone:phone.trim(),startDate,duration})});
+        const response=await fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({propertyId,roomId:room.id,name:name.trim(),phone:phone.trim(),startDate,duration})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok) throw new Error(data.error||'Database online belum terhubung. Silakan hubungkan Supabase di Vercel.');
         const booking:Booking={id:String(data.booking.id),room:data.booking.room_id,name:data.booking.name,phone:data.booking.phone,startDate:data.booking.start_date,duration:data.booking.duration,createdAt:data.booking.created_at,status:'pending'};
