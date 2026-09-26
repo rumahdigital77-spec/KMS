@@ -405,3 +405,8 @@ begin
 end; $$;
 revoke all on function public.get_property_app_state() from public,anon;
 grant execute on function public.get_property_app_state() to authenticated;
+
+grant select,insert,update,delete on public.properties,public.user_accounts,public.account_properties,public.licenses,
+  public.rooms,public.tenants,public.invoices,public.payments,public.expenses,public.property_app_state to authenticated;
+grant select on public.kost_rooms to anon,authenticated;
+grant insert on public.kost_bookings to anon,authenticated;
