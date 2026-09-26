@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '../../lib/supabase-browser';
 
 type UserAccount = {
@@ -20,8 +20,6 @@ type PropertyAccess = {
 
 export default function UserPage() {
   const supabase = createClient();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [account, setAccount] = useState<UserAccount | null>(null);
   const [access, setAccess] = useState<PropertyAccess[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,22 +37,17 @@ export default function UserPage() {
         setAccess([]);
         return;
       }
-
       const { data: profile, error: profileError } = await supabase
         .from('user_accounts')
         .select('user_id,email,full_name,property_id,role,status')
         .eq('user_id', user.id)
         .maybeSingle();
-
       if (profileError) throw profileError;
-
       const { data: memberships, error: membershipError } = await supabase
         .from('account_properties')
         .select('property_id,role,properties(id,name,address,phone)')
         .eq('user_id', user.id);
-
       if (membershipError) throw membershipError;
-
       setAccount(profile || {
         user_id: user.id,
         email: user.email || '',
@@ -63,14 +56,13 @@ export default function UserPage() {
         role: 'owner',
         status: 'active',
       });
-
       setAccess((memberships || []).map((row: any) => ({
         property_id: row.property_id,
         role: row.role,
         property: Array.isArray(row.properties) ? row.properties[0] || null : row.properties || null,
       })));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Gagal membaca akses database.');
+      setError(e instanceof Error ? e.message : 'Gagal membaca akses account.');
     } finally {
       setLoading(false);
     }
@@ -81,27 +73,6 @@ export default function UserPage() {
     const { data: listener } = supabase.auth.onAuthStateChange(() => loadAccount());
     return () => listener.subscription.unsubscribe();
   }, []);
-
-  const login = async (e: FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setError('');
-    setMessage('');
-    try {
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-      if (loginError) throw loginError;
-      setPassword('');
-      setMessage('✓ Login berhasil. Akses database sudah aktif.');
-      await loadAccount();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Login gagal.');
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const logout = async () => {
     setBusy(true);
@@ -124,8 +95,8 @@ export default function UserPage() {
     <>
       <div className="top">
         <div>
-          <div className="title">User & Akses Database</div>
-          <div className="sub">Login account, status akses, role, dan property yang dapat diakses.</div>
+          <div className="title">User & Akses</div>
+          <div className="sub">Informasi account, status login, role, dan property yang dapat diakses.</div>
         </div>
       </div>
 
@@ -147,9 +118,9 @@ export default function UserPage() {
           </div>
 
           <div className="card" style={{ marginTop: 18 }}>
-            <div className="section-title">🗄️ Akses Database / Property</div>
+            <div className="section-title">🗄️ Akses Property</div>
             <div className="sub" style={{ marginBottom: 14 }}>
-              Account ini hanya membaca property yang terhubung ke user melalui policy database.
+              Account ini hanya menampilkan property yang terhubung ke user melalui policy database.
             </div>
             {access.length ? (
               <div style={{ display: 'grid', gap: 10 }}>
@@ -158,7 +129,7 @@ export default function UserPage() {
                     <b>{item.property?.name || 'Property'}</b>
                     <div className="sub">{item.property?.address || 'Alamat belum diisi'}</div>
                     <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700 }}>Role: {item.role}</div>
-                    <div style={{ marginTop: 4, fontSize: 12, color: '#047857', fontWeight: 700 }}>✓ Database access aktif</div>
+                    <div style={{ marginTop: 4, fontSize: 12, color: '#047857', fontWeight: 700 }}>✓ Akses aktif</div>
                   </div>
                 ))}
               </div>
@@ -169,25 +140,11 @@ export default function UserPage() {
         </>
       ) : (
         <div className="card">
-          <div className="section-title">🔐 Login Database</div>
+          <div className="section-title">🔐 Account belum login</div>
           <div className="sub" style={{ marginBottom: 14 }}>
-            Masukkan email dan password account yang sudah dibuat melalui menu Pengaturan.
+            Pembuatan account, Create Database, dan Login Database sekarang dipusatkan di menu Pengaturan.
           </div>
-          <form onSubmit={login}>
-            <div className="form">
-              <div className="field">
-                <label>Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" required />
-              </div>
-              <div className="field">
-                <label>Password</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" autoComplete="current-password" required />
-              </div>
-            </div>
-            <div className="actions" style={{ marginTop: 14 }}>
-              <button className="btn" type="submit" disabled={busy}>{busy ? 'MASUK...' : 'LOGIN & AKSES DATABASE'}</button>
-            </div>
-          </form>
+          <a className="btn" href="/pengaturan">BUKA PENGATURAN</a>
         </div>
       )}
 
