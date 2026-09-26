@@ -18,6 +18,7 @@ export default function AccountDataSync() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           KEYS.forEach(key => localStorage.removeItem(key));
+          Object.keys(sessionStorage).filter(key => key.startsWith('kostpro-hydrated-user:')).forEach(key => sessionStorage.removeItem(key));
           return;
         }
 
@@ -28,6 +29,12 @@ export default function AccountDataSync() {
           if (Object.prototype.hasOwnProperty.call(state, key)) {
             localStorage.setItem(key, JSON.stringify((state as Record<string, unknown>)[key]));
           }
+        }
+        const marker = 'kostpro-hydrated-user:' + user.id;
+        if (sessionStorage.getItem(marker) !== '1') {
+          sessionStorage.setItem(marker, '1');
+          window.location.reload();
+          return;
         }
         window.dispatchEvent(new Event('kostpro:data-synced'));
       } catch {
