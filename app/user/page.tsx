@@ -192,7 +192,7 @@ export default function UserPage() {
   };
 
   return (
-    <>
+    <div>
       <div className="top">
         <div>
           <div className="title">User & Akses</div>
@@ -202,35 +202,37 @@ export default function UserPage() {
 
       {loading ? (
         <div className="card">Memeriksa sesi login...</div>
-      ) : !account ? (
-        <>
+      ) : account === null ? (
+        <div>
           <div className="card">
             <div className="section-title">🗄️ CREATE DATABASE</div>
             {databaseCreated ? (
-              <>
+              <div>
                 <div className="sub" style={{ marginBottom: 14 }}>
                   ✓ Database sudah pernah dibuat. CREATE DATABASE dikunci permanen untuk mencegah pembuatan database/property kedua.
                 </div>
                 <button className="btn" type="button" disabled style={{ opacity: 0.55, cursor: 'not-allowed' }}>
                   DATABASE SUDAH DIBUAT — TERKUNCI
                 </button>
-              </>
-            ) : (
-            <>
-            <div className="sub" style={{ marginBottom: 14 }}>Buat account owner dan database/property pertama.</div>
-            <form onSubmit={createDatabase}>
-              <div className="form">
-                <div className="field"><label>Email Account</label><input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" /></div>
-                <div className="field"><label>Password Login</label><input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password" /></div>
-                <div className="field"><label>Nama Property</label><input value={propertyName} onChange={e => setPropertyName(e.target.value)} placeholder="Nama kost / hotel" /></div>
-                <div className="field"><label>Nama Pemilik</label><input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Nama lengkap pemilik" /></div>
-                <div className="field"><label>Nomor Telepon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Nomor telepon" /></div>
-                <div className="field full"><label>Alamat Property</label><textarea value={address} onChange={e => setAddress(e.target.value)} rows={2} /></div>
               </div>
-              <div className="actions" style={{ marginTop: 14 }}><button className="btn" type="submit" disabled={createBusy}>{createBusy ? 'Membuat...' : 'CREATE DATABASE'}</button></div>
-            </form>
-            {createMsg && <div className="sub" style={{ marginTop: 12, color: createMsg.startsWith('✓') ? '#047857' : '#b45309', fontWeight: 700 }}>{createMsg}</div>}
-            </>
+            ) : (
+              <div>
+                <div className="sub" style={{ marginBottom: 14 }}>Buat account owner dan database/property pertama.</div>
+                <form onSubmit={createDatabase}>
+                  <div className="form">
+                    <div className="field"><label>Email Account</label><input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" /></div>
+                    <div className="field"><label>Password Login</label><input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password" /></div>
+                    <div className="field"><label>Nama Property</label><input value={propertyName} onChange={e => setPropertyName(e.target.value)} placeholder="Nama kost / hotel" /></div>
+                    <div className="field"><label>Nama Pemilik</label><input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Nama lengkap pemilik" /></div>
+                    <div className="field"><label>Nomor Telepon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Nomor telepon" /></div>
+                    <div className="field full"><label>Alamat Property</label><textarea value={address} onChange={e => setAddress(e.target.value)} rows={2} /></div>
+                  </div>
+                  <div className="actions" style={{ marginTop: 14 }}>
+                    <button className="btn" type="submit" disabled={createBusy}>{createBusy ? 'Membuat...' : 'CREATE DATABASE'}</button>
+                  </div>
+                </form>
+                {createMsg && <div className="sub" style={{ marginTop: 12, color: createMsg.startsWith('✓') ? '#047857' : '#b45309', fontWeight: 700 }}>{createMsg}</div>}
+              </div>
             )}
           </div>
 
@@ -242,13 +244,15 @@ export default function UserPage() {
                 <div className="field"><label>Email</label><input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" /></div>
                 <div className="field"><label>Password</label><input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Password" autoComplete="current-password" /></div>
               </div>
-              <div className="actions" style={{ marginTop: 14 }}><button className="btn" type="submit" disabled={loginBusy}>{loginBusy ? 'Masuk...' : 'LOGIN DATABASE'}</button></div>
+              <div className="actions" style={{ marginTop: 14 }}>
+                <button className="btn" type="submit" disabled={loginBusy}>{loginBusy ? 'Masuk...' : 'LOGIN DATABASE'}</button>
+              </div>
             </form>
             {loginMsg && <div className="sub" style={{ marginTop: 12, color: '#b45309', fontWeight: 700 }}>{loginMsg}</div>}
           </div>
-        </>
+        </div>
       ) : (
-        <>
+        <div>
           <div className="card">
             <div className="section-title">👤 Account Aktif</div>
             <div className="form">
@@ -267,7 +271,7 @@ export default function UserPage() {
             <div className="sub" style={{ marginBottom: 14 }}>
               Account ini hanya menampilkan property yang terhubung ke user melalui policy database.
             </div>
-            {access.length ? (
+            {access.length > 0 ? (
               <div style={{ display: 'grid', gap: 10 }}>
                 {access.map(item => (
                   <div key={item.property_id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14 }}>
@@ -282,7 +286,8 @@ export default function UserPage() {
               <div className="sub">Belum ada property yang terhubung ke account ini.</div>
             )}
           </div>
-        </>
+        </div>
       )}
-    </>
-  );}
+    </div>
+  );
+}
