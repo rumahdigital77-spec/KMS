@@ -1,6 +1,6 @@
 # KostPro — Kost Management System
 
-Starter production-ready Next.js application for managing boarding houses/kost.
+Production Next.js application for managing boarding houses/kost.
 
 ## Modules
 - Dashboard
@@ -10,15 +10,21 @@ Starter production-ready Next.js application for managing boarding houses/kost.
 - Keuangan
 - Laporan
 - Pengaturan
-- Supabase database schema
-- Created Database + Database Login
+- CCTV
+- User & Akses
+- Supabase database, Auth, RLS, backup & restore
 
 ## Account & Property
-- 1 email = 1 account.
-- 1 account can own multiple properties.
-- Property access is isolated by authenticated user and RLS.
-- Created Database creates the property and associates it with the logged-in account.
-- Database Login uses Supabase Auth; passwords are never stored in application tables.
+- Supabase Auth handles account login; passwords are never stored in application tables.
+- Property/account authorization is enforced by RLS and trusted provisioning functions.
+- Initial database/property provisioning is globally one-time safe at the database layer.
+- Client users cannot self-edit authorization records such as role or property membership.
+
+## Security
+- Private booking records require an authenticated session.
+- Public booking creation only accepts validated room/date/duration input.
+- Public room reads expose available rooms only; room management writes require authentication.
+- Database backup/restore is scoped to the authenticated property.
 
 ## Run locally
 ```powershell
@@ -27,18 +33,24 @@ npm run dev
 ```
 Open http://localhost:3000
 
-## Deploy to GitHub + Vercel
-1. Create a GitHub repository.
-2. Upload all project files (do not upload `.env.local`).
-3. Import the repository in Vercel.
-4. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel Environment Variables.
-5. Deploy.
+## Deploy
+1. Import the GitHub repository into Vercel.
+2. Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Configure `SUPABASE_SERVICE_ROLE_KEY` only as a server-side Vercel environment variable.
+4. Deploy the `main` branch.
 
 ## Supabase
-For a new database, run `supabase/schema.sql` in Supabase SQL Editor.
-For the existing project, `supabase/migration_account_property_provisioning.sql` contains the account/property access hardening. Run `supabase/migration_one_time_database_provisioning.sql` once to install the idempotent provisioning function. After that, pressing **CREATE DATABASE** repeatedly cannot create a second initial property for the same account; the database function reuses the existing property and the UI disables the button after detection.
+Production migrations currently include:
+- `create_kost_management_schema`
+- `provision_owner_property_rpc`
+- `fix_idempotent_owner_provisioning`
+- `repair_properties_data_api_exposure`
+- `harden_provisioning_and_indexes`
+- `database_backup_restore`
+- `lock_create_database_after_first_provisioning`
+- `harden_one_time_provisioning_and_account_policies`
 
-This version uses Supabase Auth for account login and a dedicated account_properties membership table for multi-property ownership.
+The latest hardening migration removes client-side INSERT/UPDATE/DELETE access to account authorization tables and makes provisioning reject a second global property/database.
 
-## Version Archive
-- **V.1.4** — Created Database and Database Login flow, multi-property account mapping, and property storage bucket preparation.
+## Version
+KOSTPRO V.1.4
