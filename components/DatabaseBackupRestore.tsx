@@ -36,33 +36,61 @@ export default function DatabaseBackupRestore() {
 
   useEffect(() => {
     let active = true;
-    const loadPropertyId = async () => {
-      const result = await supabase
-        .from('account_properties')
-        .select('property_id')
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
 
-      const data: { property_id: string } | null = result.data;
-      if (active) setPropertyId(data?.property_id || '');
+    const loadPropertyId = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          if (active) setPropertyId('');
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('account_properties')
+          .select('property_id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (active) setPropertyId(data?.property_id || '');
+      } catch (err) {
+        if (active) {
+          setPropertyId('');
+          setMessage(err instanceof Error ? `Gagal membaca property database: ${err.message}` : 'Gagal membaca property database.');
+        }
+      }
     };
 
     void loadPropertyId();
-    return () => { active = false; };
+
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      void loadPropertyId();
+    });
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const backup = async () => {
+    if (!ready || busy) return;
     setBusy(true);
     setMessage('');
     try {
       const { data, error } = await supabase.rpc('export_property_database_backup');
       if (error) throw error;
+      if (!data || typeof data !== 'object') throw new Error('Data backup kosong atau tidak valid.');
+
       const rawSettings = localStorage.getItem('kostpro_settings');
       let appSettings: unknown = undefined;
       if (rawSettings) {
         try { appSettings = JSON.parse(rawSettings); } catch { appSettings = undefined; }
       }
+
       const payload = {
         ...(data as Omit<BackupFile, 'format' | 'created_at' | 'app_settings'>),
         format: 'KMS_DATABASE_BACKUP' as const,
@@ -70,6 +98,11 @@ export default function DatabaseBackupRestore() {
         created_at: new Date().toISOString(),
         app_settings: appSettings,
       };
+
+      if (!payload.property_id || !payload.tables) {
+        throw new Error('Server mengembalikan backup yang tidak lengkap.');
+      }
+
       downloadJson(payload);
       setMessage('✓ Backup berhasil dibuat dan diunduh.');
     } catch (err) {
@@ -84,8 +117,8 @@ export default function DatabaseBackupRestore() {
     event.target.value = '';
     if (!file) return;
 
-    if (!propertyId) {
-      setMessage('Property aktif belum ditemukan. Login database terlebih dahulu.');
+    if (!ready || busy) {
+      setMessage('Login database diperlukan untuk Restore.');
       return;
     }
 
@@ -94,31 +127,32 @@ export default function DatabaseBackupRestore() {
     setBusy(true);
     setMessage('');
     try {
-      const text = await file.text();
-      const parsed = JSON.parse(text) as BackupFile;
+      const fileText = await file.text();
+      const parsed = JSON.parse(fileText) as BackupFile;
 
       if (parsed?.format !== 'KMS_DATABASE_BACKUP' || parsed?.version !== 1) {
         throw new Error('Format backup tidak dikenali atau versinya tidak didukung.');
       }
-      if (parsed.property_id !== propertyId) {
+      if (!parsed.property_id || parsed.property_id !== propertyId) {
         throw new Error('Backup ini berasal dari property/database berbeda. Restore dibatalkan untuk mencegah salah timpa data.');
       }
       if (!parsed.tables || typeof parsed.tables !== 'object') {
         throw new Error('Backup tidak memiliki data tabel yang valid.');
       }
 
-      const { error } = await supabase.rpc('restore_property_database_backup', {
+      const { data, error } = await supabase.rpc('restore_property_database_backup', {
         p_backup: parsed,
         p_target_property_id: propertyId,
       });
       if (error) throw error;
+      if (!data || typeof data !== 'object') throw new Error('Server tidak mengonfirmasi restore.');
 
       if (parsed.app_settings && typeof parsed.app_settings === 'object') {
         localStorage.setItem('kostpro_settings', JSON.stringify(parsed.app_settings));
       }
 
       setMessage('✓ Restore berhasil. Memuat ulang aplikasi...');
-      setTimeout(() => window.location.reload(), 800);
+      window.setTimeout(() => window.location.reload(), 800);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Restore gagal.');
     } finally {
