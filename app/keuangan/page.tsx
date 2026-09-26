@@ -194,9 +194,6 @@ export default function Keuangan() {
         </div>
       </div>
 
-    </>
-  );
-}
 
       <style jsx>{`
         .report-sheet{max-width:100%;overflow:hidden}
@@ -210,3 +207,8 @@ export default function Keuangan() {
         }
       `}</style>
 
+    </>
+  );
+}
+
+ 
