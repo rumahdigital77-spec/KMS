@@ -63,13 +63,13 @@ export default function UserPage() {
         setLoginOpen(false);
         return;
       }
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await getSupabase()
         .from('user_accounts')
         .select('user_id,email,full_name,property_id,role,status')
         .eq('user_id', user.id)
         .maybeSingle();
       if (profileError) throw profileError;
-      const { data: memberships, error: membershipError } = await supabase
+      const { data: memberships, error: membershipError } = await getSupabase()
         .from('account_properties')
         .select('property_id,role,properties(id,name,address,phone)')
         .eq('user_id', user.id);
