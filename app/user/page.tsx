@@ -38,6 +38,7 @@ export default function UserPage() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginMsg, setLoginMsg] = useState('');
+  const [loginOpen, setLoginOpen] = useState(false);
   const [databaseCreated, setDatabaseCreated] = useState(false);
 
   const loadDatabaseStatus = async () => {
@@ -57,6 +58,7 @@ export default function UserPage() {
       if (!user) {
         setAccount(null);
         setAccess([]);
+        setLoginOpen(false);
         return;
       }
       const { data: profile, error: profileError } = await supabase
@@ -172,7 +174,8 @@ export default function UserPage() {
       });
       if (loginError) throw loginError;
       setLoginPassword('');
-      setLoginMsg('✓ Login database berhasil.');
+      setLoginMsg('✓ Login berhasil. Data property aktif sedang dimuat.');
+      setLoginOpen(false);
       await loadAccount();
     } catch (err) {
       setLoginMsg(err instanceof Error ? err.message : 'Login database gagal.');
@@ -188,6 +191,7 @@ export default function UserPage() {
       if (logoutError) throw logoutError;
       setAccount(null);
       setAccess([]);
+      setLoginOpen(false);
       setMessage('✓ Anda sudah logout.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Logout gagal.');
@@ -198,27 +202,44 @@ export default function UserPage() {
 
   return (
     <div>
-      <div className="top">
+      <div className="top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
         <div>
           <div className="title">User & Akses</div>
-          <div className="sub">Informasi account, status login, role, dan property yang dapat diakses.</div>
+          <div className="sub">Akses database mengikuti account dan property yang sedang aktif.</div>
         </div>
+        <button className="btn" type="button" onClick={account ? logout : () => { setLoginOpen(v => !v); setLoginMsg(''); }} disabled={busy || loginBusy}>
+          {account ? (busy ? 'Memproses...' : 'LOGOUT') : (loginOpen ? 'TUTUP LOGIN' : 'LOGIN')}
+        </button>
       </div>
+
+      {message && <div className="card" style={{ marginTop: 14, color: '#047857', fontWeight: 700 }}>{message}</div>}
+      {error && <div className="card" style={{ marginTop: 14, color: '#b91c1c', fontWeight: 700 }}>{error}</div>}
 
       {loading ? (
         <div className="card">Memeriksa sesi login...</div>
       ) : account === null ? (
         <div>
-          <div className="card">
+          {loginOpen && (
+            <div className="card">
+              <div className="section-title">🔐 LOGIN DATABASE</div>
+              <div className="sub" style={{ marginBottom: 14 }}>Masuk menggunakan account database yang sudah dibuat. Setelah berhasil, seluruh menu hanya membaca property account aktif.</div>
+              <form onSubmit={loginDatabase}>
+                <div className="form">
+                  <div className="field"><label>Email</label><input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" required /></div>
+                  <div className="field"><label>Password</label><input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Password" autoComplete="current-password" required /></div>
+                </div>
+                {loginMsg && <div className="sub" style={{ marginTop: 12, color: '#b45309', fontWeight: 700 }}>{loginMsg}</div>}
+                <div className="sub" style={{ marginTop: 12 }}>Tekan tombol <b>LOGIN</b> di bagian atas untuk masuk.</div>
+              </form>
+            </div>
+          )}
+
+          <div className="card" style={{ marginTop: loginOpen ? 18 : 0 }}>
             <div className="section-title">🗄️ CREATE DATABASE</div>
             {databaseCreated ? (
               <div>
-                <div className="sub" style={{ marginBottom: 14 }}>
-                  ✓ Database sudah pernah dibuat. CREATE DATABASE dikunci permanen untuk mencegah pembuatan database/property kedua.
-                </div>
-                <button className="btn" type="button" disabled style={{ opacity: 0.55, cursor: 'not-allowed' }}>
-                  DATABASE SUDAH DIBUAT — TERKUNCI
-                </button>
+                <div className="sub" style={{ marginBottom: 14 }}>✓ Database sudah pernah dibuat. CREATE DATABASE dikunci untuk mencegah property kedua dibuat tanpa sengaja.</div>
+                <button className="btn" type="button" disabled style={{ opacity: 0.55, cursor: 'not-allowed' }}>DATABASE SUDAH DIBUAT — TERKUNCI</button>
               </div>
             ) : (
               <div>
@@ -240,21 +261,6 @@ export default function UserPage() {
               </div>
             )}
           </div>
-
-          <div className="card" style={{ marginTop: 18 }}>
-            <div className="section-title">🔐 LOGIN DATABASE</div>
-            <div className="sub" style={{ marginBottom: 14 }}>Masuk menggunakan email dan password account database yang sudah dibuat.</div>
-            <form onSubmit={loginDatabase}>
-              <div className="form">
-                <div className="field"><label>Email</label><input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" /></div>
-                <div className="field"><label>Password</label><input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Password" autoComplete="current-password" /></div>
-              </div>
-              <div className="actions" style={{ marginTop: 14 }}>
-                <button className="btn" type="submit" disabled={loginBusy}>{loginBusy ? 'Masuk...' : 'LOGIN DATABASE'}</button>
-              </div>
-            </form>
-            {loginMsg && <div className="sub" style={{ marginTop: 12, color: '#b45309', fontWeight: 700 }}>{loginMsg}</div>}
-          </div>
         </div>
       ) : (
         <div>
@@ -266,33 +272,22 @@ export default function UserPage() {
               <div className="field"><label>Role</label><input value={account.role} readOnly /></div>
               <div className="field"><label>Status</label><input value={account.status} readOnly /></div>
             </div>
-            <div className="actions" style={{ marginTop: 14 }}>
-              <button className="btn" type="button" onClick={logout} disabled={busy}>{busy ? 'Memproses...' : 'LOGOUT'}</button>
-            </div>
+            <div className="sub" style={{ marginTop: 12, color: '#047857', fontWeight: 700 }}>✓ Database aktif. Semua data aplikasi dibatasi ke property account ini.</div>
           </div>
 
           <div className="card" style={{ marginTop: 18 }}>
-            <div className="section-title">🗄️ Akses Property</div>
-            <div className="sub" style={{ marginBottom: 14 }}>
-              Account ini hanya menampilkan property yang terhubung ke user melalui policy database.
-            </div>
-            {access.length > 0 ? (
-              <div style={{ display: 'grid', gap: 10 }}>
-                {access.map(item => (
-                  <div key={item.property_id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14 }}>
-                    <b>{item.property?.name || 'Property'}</b>
-                    <div className="sub">{item.property?.address || 'Alamat belum diisi'}</div>
-                    <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700 }}>Role: {item.role}</div>
-                    <div style={{ marginTop: 4, fontSize: 12, color: '#047857', fontWeight: 700 }}>✓ Akses aktif</div>
-                  </div>
-                ))}
+            <div className="section-title">🗄️ Property Aktif</div>
+            <div className="sub" style={{ marginBottom: 14 }}>Property aktif yang dipakai seluruh menu aplikasi.</div>
+            {access.filter(item => item.property_id === account.property_id).map(item => (
+              <div key={item.property_id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14 }}>
+                <b>{item.property?.name || 'Property'}</b>
+                <div className="sub">{item.property?.address || 'Alamat belum diisi'}</div>
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700 }}>Role: {item.role}</div>
+                <div style={{ marginTop: 4, fontSize: 12, color: '#047857', fontWeight: 700 }}>✓ Akses aktif</div>
               </div>
-            ) : (
-              <div className="sub">Belum ada property yang terhubung ke account ini.</div>
-            )}
+            ))}
           </div>
         </div>
       )}
     </div>
   );
-}
