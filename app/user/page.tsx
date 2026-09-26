@@ -252,14 +252,6 @@ export default function UserPage() {
             )}
           </div>
         </>
-      ) : (
-        <div className="card">
-          <div className="section-title">🔐 Account belum login</div>
-          <div className="sub" style={{ marginBottom: 14 }}>
-            Pembuatan account, Create Database, Login Database, dan Backup & Restore Database sekarang dipusatkan di menu User & Akses.
-          </div>
-          <a className="btn" href="/user">BUKA USER & AKSES</a>
-        </div>
       )}
 
       {message && <div className="sub" style={{ marginTop: 12, color: '#047857', fontWeight: 700 }}>{message}</div>}
