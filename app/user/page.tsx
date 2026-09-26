@@ -275,7 +275,7 @@ export default function UserPage() {
         </>
       )}
 
-      <DatabaseBackupRestore />
+      <DatabaseBackupRestore propertyId={account?.property_id || access[0]?.property_id || ''} />
 
       {message && <div className="sub" style={{ marginTop: 12, color: '#047857', fontWeight: 700 }}>{message}</div>}
       {error && <div className="sub" style={{ marginTop: 12, color: '#b45309', fontWeight: 700 }}>{error}</div>}
