@@ -41,7 +41,7 @@ export default function DatabaseBackupRestore() {
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data }: { data: { property_id: string } | null }) => {
         if (active) setPropertyId(data?.property_id || '');
       });
     return () => { active = false; };
