@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { createClient } from '../../lib/supabase-browser';
+import DatabaseBackupRestore from '../../components/DatabaseBackupRestore';
 
 type UserAccount = {
   user_id: string;
@@ -228,6 +229,8 @@ export default function UserPage() {
             </div>
           </div>
 
+          <DatabaseBackupRestore />
+
           <div className="card" style={{ marginTop: 18 }}>
             <div className="section-title">🗄️ Akses Property</div>
             <div className="sub" style={{ marginBottom: 14 }}>
@@ -253,9 +256,9 @@ export default function UserPage() {
         <div className="card">
           <div className="section-title">🔐 Account belum login</div>
           <div className="sub" style={{ marginBottom: 14 }}>
-            Pembuatan account, Create Database, dan Login Database sekarang dipusatkan di menu Pengaturan.
+            Pembuatan account, Create Database, Login Database, dan Backup & Restore Database sekarang dipusatkan di menu User & Akses.
           </div>
-          <a className="btn" href="/pengaturan">BUKA PENGATURAN</a>
+          <a className="btn" href="/user">BUKA USER & AKSES</a>
         </div>
       )}
 
