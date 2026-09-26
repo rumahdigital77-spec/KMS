@@ -1,44 +1,63 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerSupabaseClient, getAuthenticatedPropertyId } from '@/lib/supabase-server';
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-function db() {
-  if (!url || !key) throw new Error('Supabase environment variables are not configured.');
-  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
-}
-
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const { data, error } = await db().from('kost_bookings').select('*').order('created_at', { ascending: false });
+    const supabase = createServerSupabaseClient();
+    const scope = await getAuthenticatedPropertyId(supabase);
+    if (!scope.propertyId) return NextResponse.json({ error: scope.error || 'AUTH_REQUIRED' }, { status: 401 });
+
+    const { data, error } = await supabase
+      .from('kost_bookings')
+      .select('*')
+      .eq('property_id', scope.propertyId)
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return NextResponse.json({ bookings: data ?? [] });
-  } catch {
-    return NextResponse.json({ error: 'Database belum terhubung.' }, { status: 503 });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Database belum terhubung.' }, { status: 503 });
   }
 }
 
 export async function POST(req: Request) {
   try {
+    const supabase = createServerSupabaseClient();
     const body = await req.json();
     const name = String(body?.name || '').trim();
     const phone = String(body?.phone || '').trim();
-    const roomId = String(body?.roomId || '').trim();
+    const roomCode = String(body?.roomId || '').trim().toUpperCase();
     const startDate = String(body?.startDate || '').trim();
     const duration = String(body?.duration || '1 bulan').trim();
-    if (!name || !phone || !roomId || !startDate) return NextResponse.json({ error: 'Data booking belum lengkap.' }, { status: 400 });
+    const propertyId = String(body?.propertyId || '').trim();
 
-    const client = db();
-    const { data: room, error: roomError } = await client.from('kost_rooms').select('*').eq('id', roomId).maybeSingle();
+    if (!name || !phone || !roomCode || !startDate || !propertyId) {
+      return NextResponse.json({ error: 'Data booking belum lengkap.' }, { status: 400 });
+    }
+
+    const { data: room, error: roomError } = await supabase
+      .from('kost_rooms')
+      .select('id,room_code,property_id,price,status,tenant')
+      .eq('property_id', propertyId)
+      .eq('room_code', roomCode)
+      .maybeSingle();
     if (roomError) throw roomError;
-    if (!room || room.status !== 'available') return NextResponse.json({ error: 'Kamar sudah tidak tersedia.' }, { status: 409 });
+    if (!room || room.status !== 'available') {
+      return NextResponse.json({ error: 'Kamar sudah tidak tersedia.' }, { status: 409 });
+    }
 
-    const { data: booking, error } = await client.from('kost_bookings').insert({
-      room_id: room.id, name, phone, start_date: startDate, duration, status: 'pending'
+    const { data: booking, error } = await supabase.from('kost_bookings').insert({
+      property_id: propertyId,
+      room_id: room.id,
+      name,
+      phone,
+      start_date: startDate,
+      duration,
+      status: 'pending',
     }).select().single();
     if (error) throw error;
-    return NextResponse.json({ booking, room });
+
+    return NextResponse.json({ booking, room: { id: room.room_code, price: Number(room.price), status: room.status } });
   } catch (e) {
-    return NextResponse.json({ error: 'Gagal menyimpan booking.' }, { status: 500 });
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Gagal menyimpan booking.' }, { status: 500 });
   }
 }
