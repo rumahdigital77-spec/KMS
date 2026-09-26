@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { loadData, saveData } from '@/lib/store';
 import { Camera, ExternalLink, KeyRound, Pencil, Plus, Radio, Trash2, X } from 'lucide-react';
 
 type CameraItem = {
@@ -16,8 +17,6 @@ type CameraItem = {
   username: string;
 };
 
-const STORAGE_KEY = 'kostpro_cctv';
-
 const emptyForm = {
   name: '',
   location: '',
@@ -31,8 +30,7 @@ const emptyForm = {
 
 function loadCameras(): CameraItem[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const data = raw ? JSON.parse(raw) : [];
+    const data = loadData<CameraItem[]>('cctv', []);
     if (!Array.isArray(data)) return [];
     return data.map((camera: any) => ({ ...camera, loginRequired: Boolean(camera.loginRequired), loginUrl: typeof camera.loginUrl === 'string' ? camera.loginUrl : '', username: typeof camera.username === 'string' ? camera.username : '' }));
   } catch {
@@ -60,7 +58,7 @@ export default function CCTVPage() {
 
   function persist(next: CameraItem[]) {
     setCameras(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    saveData('cctv', next);
   }
 
   function openAdd() {
