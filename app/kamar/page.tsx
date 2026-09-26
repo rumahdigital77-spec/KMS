@@ -25,7 +25,7 @@ const statusMeta = {
 const statuses: Room['status'][] = ['occupied', 'available', 'maintenance'];
 
 export default function Kamar() {
-  const [rooms, setRooms] = useState<Room[]>(defaultRooms);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [add, setAdd] = useState(false);
   const [detail, setDetail] = useState<Room | null>(null);
   const [code, setCode] = useState('');
