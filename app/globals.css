@@ -293,3 +293,5 @@ input,select,textarea{font-size:16px}
   .kamar-status-actions{grid-template-columns:1fr}
   .kamar-status-actions .btn:last-child{grid-column:auto}
 }
+
+/* production redeploy retry */
