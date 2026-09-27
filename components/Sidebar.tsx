@@ -39,7 +39,7 @@ export default function Sidebar() {
         <button type="button" className={'nav-parent-link nav-parent ' + (p === href || p === '/tagihan' || p === '/keuangan' ? 'active' : '')} onClick={() => setLaporanOpen(v => !v)} aria-expanded={laporanOpen}><Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />{label}</button>
         {laporanOpen && <div className="nav-submenu"><Link className={p === '/tagihan' ? 'active' : ''} href="/tagihan"><Receipt size={15} />Tagihan</Link><Link className={p === '/keuangan' ? 'active' : ''} href="/keuangan"><Wallet size={15} />Keuangan</Link><Link className={p === '/laporan/bulanan' ? 'active' : ''} href="/laporan/bulanan"><BarChart3 size={15} />History Laporan Bulanan</Link></div>}
       </div> : <Link className={p === href ? 'active' : ''} href={href} key={href}><Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />{label}</Link>)}</nav>
-      <div style={{ marginTop: 'auto', padding: '14px 16px 4px', textAlign: 'center', fontSize: 11, color: '#98a2b3', fontWeight: 700, letterSpacing: .5 }}>KOSTPRO • V.1.3</div>
+      <div style={{ marginTop: 'auto', padding: '14px 16px 4px', textAlign: 'center', fontSize: 11, color: '#98a2b3', fontWeight: 700, letterSpacing: .5 }}>KOSTPRO • V.1.4</div>
     </aside>
   </>;
 }
