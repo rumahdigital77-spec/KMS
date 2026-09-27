@@ -35,10 +35,8 @@ export default function BookingPage() {
     const loadedRooms = loadData<Room[]>('rooms', defaultRooms);
     setRooms(loadedRooms);
     setBookings(loadData<Booking[]>('bookings', []));
-    try {
-      const settings = JSON.parse(localStorage.getItem('kostpro_settings') || '{}');
-      setManagerPhone(String(settings.phone || ''));
-    } catch {}
+    const settings = loadData<Record<string, unknown>>('settings', {});
+    setManagerPhone(String(settings.phone || ''));
     const query = new URLSearchParams(window.location.search);
     const publicPropertyId = query.get('property_id') || '';
     setPublicMode(query.get('public') === '1');
