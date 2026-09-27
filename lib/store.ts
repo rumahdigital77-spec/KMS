@@ -11,7 +11,7 @@ const PENDING_DRAFT_KEY = 'kostpro-pending-draft'; // scoped draft marker; never
 async function syncLocalStateToCloud(name: string, value: unknown) {
   if (!CLOUD_KEYS.has(name) || typeof window === 'undefined') return;
 
-  cloudSyncQueue = cloudSyncQueue.then(async () => {
+  cloudSyncQueue = cloudSyncQueue.catch(() => undefined).then(async () => {
     const supabase = createSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
 
