@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { defaultPayments, defaultRooms, defaultTenants, loadData, money, Payment, Room, Tenant, saveData } from '@/lib/store';
+import { defaultPayments, defaultRooms, defaultTenants, loadData, money, normalizeMoney, Payment, Room, Tenant, saveData } from '@/lib/store';
 
 export default function CheckInTamu() {
   const [rooms, setRooms] = useState<Room[]>(defaultRooms);
@@ -52,7 +52,7 @@ export default function CheckInTamu() {
     if (!startDate) return setMessage('Tanggal Check In wajib diisi.');
     if (!rent || Number(rent) <= 0) return setMessage('Harga kamar wajib diisi.');
 
-    const roomPrice = Number(rent);
+    const roomPrice = normalizeMoney(rent);
     setSaving(true);
 
     try {
