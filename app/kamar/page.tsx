@@ -31,7 +31,7 @@ useEffect(()=>{
   void load();
 },[]);
 const save=async()=>{if(!code.trim()||!price)return setMsg('Kode dan harga wajib diisi.');if(r.some(x=>x.id.toLowerCase()===code.trim().toLowerCase()))return setMsg('Kode kamar sudah ada.');const room={id:code.trim().toUpperCase(),tenant:'-',price:+price,status:'available' as const};
-const n=[...r,room];setR(n);saveData('rooms',n);
+const n=[...r,room];setR(n);
 
 try{await saveData('rooms',n);const response=await fetch('/api/rooms',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room})});if(!response.ok)throw new Error('Gagal menyinkronkan kamar ke database.');setCode('');setPrice('');setAdd(false);setMsg('Kamar berhasil ditambahkan sebagai Tersedia.')}catch(error){setMsg(error instanceof Error?`Kamar tersimpan lokal tetapi sinkronisasi gagal: ${error.message}`:'Gagal menyimpan kamar ke database.')}};
 const changeStatus=async(id:string,s:Room['status'])=>{const n=r.map(x=>x.id===id?{...x,status:s,tenant:s==='available'||s==='maintenance'?'-':x.tenant}:x);setR(n);saveData('rooms',n);
