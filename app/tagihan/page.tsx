@@ -11,7 +11,7 @@ export default function Tagihan(){
   if(current.status==='paid')return setMsg('Tagihan ini sudah lunas.');
   const paidAt=new Date().toISOString().slice(0,10);
   let receiptNo=current.receiptNo;
-  try{const s=loadData<Record<string,unknown>>('settings',{});const next=Number(s.receiptNext||1);if(!receiptNo){receiptNo=(String(s.receiptPrefix||'KW'))+'-'+new Date().getFullYear()+'-'+String(next).padStart(5,'0');saveData('settings',{...s,receiptNext:next+1})}}catch{}
+  try{const s=loadData<Record<string,unknown>>('settings',{});const next=Number(s.receiptNext||1);if(!receiptNo){receiptNo=(String(s.receiptPrefix||'KW'))+'-'+new Date().getFullYear()+'-'+String(next).padStart(5,'0');await saveData('settings',{...s,receiptNext:next+1})}}catch{}
   const paidPayment={...current,status:'paid' as const,paidAt,method,receiptNo};
   const n=p.filter(x=>x.id!==sel);
   const paymentHistory=loadData<Payment[]>('paymentHistory',[]);
@@ -21,7 +21,7 @@ export default function Tagihan(){
   const alreadyRecorded=existing.some(x=>x.referenceId===current.id);
   const tx:Transaction={id:'TR-'+Date.now(),date:paidAt,description:'Pelunasan sewa '+current.tenant+' — '+current.room+' — '+current.month,category:'Pendapatan sewa',amount:current.amount,type:'income',referenceId:current.id};
   const transactions=alreadyRecorded?existing:[...existing,tx];
-  setP(n);await Promise.all([saveData('payments',n),saveData('paymentHistory',nextPaymentHistory),saveData('transactions',transactions)]);setShow(false);setMsg(alreadyRecorded?'Tagihan lunas dan dipindahkan dari daftar tagihan aktif. Membuka kwitansi...':'Pelunasan berhasil. Tagihan dipindahkan ke History Payment dan nomor kwitansi sudah dicatat. Membuka kwitansi...');
+  try{setP(n);await Promise.all([saveData('payments',n),saveData('paymentHistory',nextPaymentHistory),saveData('transactions',transactions)]);}catch(error){setMsg(error instanceof Error?`Gagal menyimpan pelunasan: ${error.message}`:'Gagal menyimpan pelunasan ke database.');return;}setShow(false);setMsg(alreadyRecorded?'Tagihan lunas dan dipindahkan dari daftar tagihan aktif. Membuka kwitansi...':'Pelunasan berhasil. Tagihan dipindahkan ke History Payment dan nomor kwitansi sudah dicatat. Membuka kwitansi...');
   location.href='/kwitansi?id='+encodeURIComponent(current.id);
  };
  const openPay=(id:string)=>{setSel(id);setShow(true);setMsg('')};
