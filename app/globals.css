@@ -143,3 +143,31 @@ input,select,textarea{font-size:16px}
 @media print{
   input,select,textarea{font-size:inherit}
 }
+
+
+/* Penghuni Aktif: mobile-first presentation */
+.penghuni-mobile-cards{display:none}
+.penghuni-mobile-card{border:1px solid #e6eaf3;border-radius:16px;padding:14px;background:linear-gradient(180deg,#fff,#f8faff);box-shadow:0 7px 18px rgba(30,41,59,.07)}
+.penghuni-mobile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.penghuni-mobile-name{font-size:16px;font-weight:800;color:#172033;overflow-wrap:anywhere}
+.penghuni-mobile-room{margin-top:4px;font-size:12px;font-weight:700;color:#4f46e5}
+.penghuni-mobile-info{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px;padding-top:12px;border-top:1px solid #edf0f6}
+.penghuni-mobile-info div{display:grid;gap:3px;min-width:0}
+.penghuni-mobile-info span{font-size:10px;color:#8a94a6;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.penghuni-mobile-info b{font-size:12px;color:#344054;overflow-wrap:anywhere}
+.penghuni-mobile-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:14px}
+.penghuni-mobile-actions .btn{width:100%;min-width:0;white-space:normal;padding:10px 7px;font-size:12px;line-height:1.2}
+.penghuni-empty{padding:24px 8px;text-align:center;color:#667085;font-size:13px}
+@media(max-width:640px){
+  .penghuni-active-list{padding:11px}
+  .penghuni-desktop-table{display:none}
+  .penghuni-mobile-cards{display:grid;gap:10px}
+}
+@media(min-width:641px){
+  .penghuni-desktop-table{display:block}
+  .penghuni-mobile-cards{display:none}
+}
+@media(max-width:380px){
+  .penghuni-mobile-info{grid-template-columns:1fr}
+  .penghuni-mobile-actions{grid-template-columns:1fr}
+}
