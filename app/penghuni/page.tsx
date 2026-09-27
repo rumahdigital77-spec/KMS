@@ -36,6 +36,7 @@ export default function Penghuni() {
 
   useEffect(() => {
     const run = async () => {
+      await archiveOldCheckoutHistory();
       let tenants = loadData<Tenant[]>('tenants', defaultTenants);
       let history = loadData<Tenant[]>('tenantHistory', []);
       let rooms = loadData<Room[]>('rooms', defaultRooms);
@@ -156,6 +157,30 @@ export default function Penghuni() {
     } catch(error) {
       setMsg(error instanceof Error ? `Gagal menyimpan perubahan: ${error.message}` : 'Gagal menyimpan perubahan ke database.');
     }
+  };
+
+  const archiveOldCheckoutHistory = async () => {
+    let history = loadData<Tenant[]>('tenantHistory', []);
+    let monthly = loadData<Tenant[]>('tenantMonthlyHistory', []);
+    let paymentHistory = loadData<Payment[]>('paymentHistory', defaultPayments);
+    let monthlyPayments = loadData<Payment[]>('paymentMonthlyHistory', []);
+    const cutoff = new Date();
+    cutoff.setHours(0,0,0,0);
+    cutoff.setMonth(cutoff.getMonth() - 1);
+    const moving = history.filter(x => x.endDate && new Date(x.endDate + 'T00:00:00') <= cutoff);
+    if (!moving.length) return;
+    const ids = new Set(moving.map(x => x.id));
+    monthly = [...monthly, ...moving.filter(x => !monthly.some(m => m.id === x.id))];
+    history = history.filter(x => !ids.has(x.id));
+    const paid = paymentHistory.filter(p => moving.some(g => g.name === p.tenant && g.room === p.room));
+    monthlyPayments = [...monthlyPayments, ...paid.filter(p => !monthlyPayments.some(m => m.id === p.id))];
+    paymentHistory = paymentHistory.filter(p => !paid.some(x => x.id === p.id));
+    await Promise.all([
+      saveData('tenantHistory', history),
+      saveData('tenantMonthlyHistory', monthly),
+      saveData('paymentHistory', paymentHistory),
+      saveData('paymentMonthlyHistory', monthlyPayments),
+    ]);
   };
 
   const checkout = async (x:Tenant) => {
