@@ -181,20 +181,6 @@ export default function Keuangan() {
             <div style={{ padding: '14px 8px', textAlign: 'right', fontWeight: 900 }}>{result >= 0 ? money(result) : '—'}</div>
           </div>
 
-          <div style={{ marginTop: 20, padding: '14px 16px', borderRadius: 10, border: '1px solid #dfe3e8', background: '#f8fafc' }}>
-            <div style={{ fontWeight: 800, fontSize: 14 }}>Hasil periode: {result >= 0 ? 'LABA BERSIH' : 'RUGI BERSIH'}</div>
-            <div className="sub" style={{ marginTop: 4 }}>
-              Pendapatan (Kredit) {money(income)} dikurangi Beban (Debet) {money(expense)} = {money(result)}.
-            </div>
-          </div>
-
-          <div style={{ marginTop: 16, fontSize: 11, color: '#6b7280', lineHeight: 1.6 }}>
-            Catatan: penyajian Debet/Kredit di atas digunakan untuk klasifikasi pendapatan dan beban pada laporan laba rugi. Ini bukan jurnal umum berpasangan; transaksi jurnal lengkap memerlukan akun lawan seperti Kas/Bank.
-          </div>
-        </div>
-      </div>
-
-
       <style jsx>{`
         .report-sheet{max-width:100%;overflow:hidden}
         .report-grid{width:100%;max-width:100%;overflow:hidden}
