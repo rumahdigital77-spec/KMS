@@ -32,7 +32,7 @@ export default function EditRoomStatus() {
 
   const actions = (r: Room) => (
     <div className="kamar-status-actions">
-      <button className="btn" disabled={r.status === 'available'} onClick={() => change(r.id, 'available')}>
+      <button className="btn" disabled={r.status === 'available' || r.status === 'occupied'} onClick={() => change(r.id, 'available')}>
         Tersedia
       </button>
       <button className="btn secondary" disabled={r.status === 'maintenance'} onClick={() => change(r.id, 'maintenance')}>
