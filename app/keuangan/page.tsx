@@ -180,6 +180,8 @@ export default function Keuangan() {
             <div style={{ padding: '14px 8px', textAlign: 'right', fontWeight: 900 }}>{result < 0 ? money(Math.abs(result)) : '—'}</div>
             <div style={{ padding: '14px 8px', textAlign: 'right', fontWeight: 900 }}>{result >= 0 ? money(result) : '—'}</div>
           </div>
+        </div>
+      </div>
 
       <style jsx>{`
         .report-sheet{max-width:100%;overflow:hidden}
