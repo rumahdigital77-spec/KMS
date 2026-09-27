@@ -396,3 +396,57 @@ input,select,textarea{font-size:16px}
 @media(max-width:420px){
   .form{gap:10px}
 }
+
+
+/* Edit Room Status — modern, simple and mobile friendly */
+.kamar-status-editor{
+  border:1px solid #e3e8f4;
+  border-radius:18px;
+  background:linear-gradient(145deg,#fff 0%,#f8faff 100%);
+  box-shadow:0 10px 26px rgba(31,41,55,.07);
+}
+.kamar-status-editor-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  padding-bottom:14px;
+  border-bottom:1px solid #edf0f6;
+}
+.kamar-status-editor-sub{font-size:12px;color:#667085;font-weight:600}
+.kamar-status-count{
+  flex:0 0 auto;
+  padding:7px 11px;
+  border-radius:999px;
+  background:#eef2ff;
+  color:#4338ca;
+  font-size:11px;
+  font-weight:800;
+}
+.kamar-status-message{
+  margin-bottom:14px;
+  padding:11px 14px;
+  border:1px solid #d1fae5;
+  border-radius:12px;
+  background:#ecfdf3;
+  color:#047857;
+  font-size:12px;
+  font-weight:700;
+}
+.kamar-status-editor .kamar-status-cards{display:none}
+.kamar-status-editor .kamar-status-desktop{margin-top:14px}
+.kamar-status-desktop .kamar-status-actions{margin-top:0}
+.kamar-status-desktop .kamar-status-actions .btn{min-height:40px}
+@media(max-width:640px){
+  .kamar-status-editor{padding:14px;border-radius:16px}
+  .kamar-status-editor-head{align-items:center}
+  .kamar-status-editor .kamar-status-cards{display:grid;margin-top:14px}
+  .kamar-status-editor .kamar-status-desktop{display:none}
+  .kamar-status-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .kamar-status-card-head .badge{flex:0 0 auto}
+  .kamar-status-card .kamar-detail-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:420px){
+  .kamar-status-editor-head{display:grid}
+  .kamar-status-card .kamar-detail-grid{grid-template-columns:1fr}
+}
