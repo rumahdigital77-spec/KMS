@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase-browser';
 const KEYS = [
   'kostpro_settings','kostpro_rooms','kostpro_tenants','kostpro_payments',
   'kostpro_transactions','kostpro_tenantHistory','kostpro_paymentHistory',
-  'kostpro_bookings','kostpro_cctv'
+  'kostpro_tenantMonthlyHistory','kostpro_paymentMonthlyHistory','kostpro_bookings','kostpro_cctv'
 ];
 
 const ACTIVE_USER_KEY = 'kostpro-active-user';
