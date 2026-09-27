@@ -24,11 +24,13 @@ async function syncLocalStateToCloud(name: string, value: unknown) {
         window.dispatchEvent(new CustomEvent('kostpro:data-save-error',{
           detail:{name,message:error.message || 'Gagal menyimpan data ke database.'}
         }));
+        throw new Error(error.message || 'Gagal menyimpan data ke database.');
       }
     } catch (error) {
       window.dispatchEvent(new CustomEvent('kostpro:data-save-error',{
         detail:{name,message:error instanceof Error ? error.message : 'Gagal menyimpan data ke database.'}
       }));
+      throw error instanceof Error ? error : new Error('Gagal menyimpan data ke database.');
     }
   });
   await cloudSyncQueue;
