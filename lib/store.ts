@@ -6,7 +6,7 @@ const CLOUD_KEYS = new Set([
   'settings','rooms','tenants','payments','transactions','tenantHistory','paymentHistory','bookings','cctv'
 ]);
 
-const PENDING_DRAFT_KEY = 'kostpro-pending-draft';
+const PENDING_DRAFT_KEY = 'kostpro-pending-draft'; // scoped draft marker; never reused across authenticated properties
 
 async function syncLocalStateToCloud(name: string, value: unknown) {
   if (!CLOUD_KEYS.has(name) || typeof window === 'undefined') return;
