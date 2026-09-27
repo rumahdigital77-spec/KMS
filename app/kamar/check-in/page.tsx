@@ -125,8 +125,8 @@ export default function CheckInTamu() {
         </div>
       </div>
 
-      <div className="card" style={{ maxWidth: 900 }}>
-        <div className="section-title">Form Check In</div>
+      <div className="card kamar-checkin-card" style={{ maxWidth: 900 }}>
+        <div className="kamar-form-heading"><div><div className="section-title">Form Check In</div><div className="kamar-form-badge">● SIAP CHECK IN</div></div></div>
         <div className="sub" style={{ marginBottom: 14 }}>
           Harga Kamar menjadi nilai utama C.I. dan otomatis disinkronkan ke Penghuni Kamar,
           Manajemen Kamar, Tagihan, Keuangan, dan Kwitansi.
