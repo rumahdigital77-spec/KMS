@@ -36,7 +36,7 @@ const readLocalSnapshot = () => {
     try {
       snapshot[key] = JSON.parse(raw);
     } catch {
-      // Ignore one malformed local item; the authenticated cloud state remains authoritative.
+      // Ignore malformed local data; authenticated cloud state remains authoritative.
     }
   }
   return snapshot;
@@ -65,22 +65,16 @@ export default function AccountDataSync() {
           return;
         }
 
-        // If a different authenticated account takes over this browser session,
-        // immediately discard the previous account's local cache. This prevents
-        // another property's data from remaining visible while the new property's
-        // cloud state is being fetched. A failed cloud read must fail closed: no
-        // previous property's records may be exposed to the newly logged-in user.
-        const activeUser = sessionStorage.getItem(ACTIVE_USER_KEY);
-        if (activeUser && activeUser !== user.id) {
+        const previousUser = sessionStorage.getItem(ACTIVE_USER_KEY);
+        if (previousUser && previousUser !== user.id) {
           clearLocalScope();
         }
 
-        // NEVER clear local data for a brand-new account before the authenticated
-        // property state is read, because an explicitly marked pre-login draft may
-        // need to be migrated into that new property.
         const { data: state, error } = await supabase.rpc('get_property_app_state');
         if (error) {
-          // A transient cloud error must not erase the user's local data.
+          // Fail closed: if the authenticated property's state cannot be read,
+          // never leave another account's local records visible.
+          clearLocalDataOnly();
           window.dispatchEvent(new CustomEvent('kostpro:data-scope-error', {
             detail: { message: error.message || 'Gagal memuat data property.' }
           }));
@@ -97,12 +91,10 @@ export default function AccountDataSync() {
           Object.prototype.hasOwnProperty.call(cloudState, key)
         );
 
-        const activeUser = sessionStorage.getItem(ACTIVE_USER_KEY);
+        const currentUser = sessionStorage.getItem(ACTIVE_USER_KEY);
         const pendingDraft = sessionStorage.getItem(PENDING_DRAFT_KEY) === '1';
 
         if (hasCloudState) {
-          // The database is authoritative for an existing property.
-          // Clear every local key first so data from another property cannot survive.
           clearLocalDataOnly();
           for (const key of KEYS) {
             if (Object.prototype.hasOwnProperty.call(cloudState, key)) {
@@ -110,9 +102,7 @@ export default function AccountDataSync() {
             }
           }
           sessionStorage.removeItem(PENDING_DRAFT_KEY);
-        } else if (pendingDraft && !activeUser) {
-          // Only migrate an explicitly marked pre-login draft into a brand-new,
-          // authenticated property. Never migrate unmarked data from another user.
+        } else if (pendingDraft && !currentUser) {
           const snapshot = readLocalSnapshot();
           for (const key of KEYS) {
             if (!Object.prototype.hasOwnProperty.call(snapshot, key)) continue;
@@ -130,10 +120,6 @@ export default function AccountDataSync() {
         sessionStorage.setItem(HYDRATION_READY_KEY, '1');
         window.dispatchEvent(new Event('kostpro:data-scope-changed'));
 
-        // React pages read localStorage during their initial mount. They do not
-        // all subscribe to the scope event, so after a fresh login they could
-        // otherwise remain on the pre-login/default state. Reload exactly once
-        // after authenticated hydration; the ready marker prevents a loop.
         if (!sessionStorage.getItem('kostpro-post-hydration-reload')) {
           sessionStorage.setItem('kostpro-post-hydration-reload', '1');
           window.location.reload();
