@@ -142,10 +142,7 @@ export default function Keuangan() {
             <div style={{ gridColumn: '1 / -1', padding: '14px 8px 7px', fontWeight: 800, background: '#f8fafc' }}>PENDAPATAN</div>
             {incomeTransactions.length ? incomeTransactions.map((item) => (
               <div key={item.id} style={{ display: 'contents' }}>
-                <div style={{ padding: '7px 8px 7px 22px' }}>
-                  <div style={{ fontWeight: 700 }}>{item.description || 'Pendapatan tanpa keterangan'}</div>
-                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{item.date} · {item.category || 'Pendapatan Lainnya'} · ID {item.id}</div>
-                </div>
+                <div style={{ padding: '8px 8px 8px 22px', fontWeight: 700 }}>{item.description || 'Pendapatan'}</div>
                 <div style={{ padding: '7px 8px', textAlign: 'right' }}>—</div>
                 <div style={{ padding: '7px 8px', textAlign: 'right' }}>{money(item.amount)}</div>
               </div>
@@ -156,13 +153,10 @@ export default function Keuangan() {
             <div style={{ padding: '10px 8px', textAlign: 'right', borderTop: '1px solid #e5e7eb' }}>—</div>
             <div style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 800, borderTop: '1px solid #e5e7eb' }}>{money(income)}</div>
 
-            <div style={{ gridColumn: '1 / -1', padding: '14px 8px 7px', fontWeight: 800, background: '#f8fafc' }}>BEBAN / PENGELUARAN</div>
+            <div style={{ gridColumn: '1 / -1', padding: '14px 8px 7px', fontWeight: 800, background: '#f8fafc' }}>PENGELUARAN</div>
             {expenseTransactions.length ? expenseTransactions.map((item) => (
               <div key={item.id} style={{ display: 'contents' }}>
-                <div style={{ padding: '7px 8px 7px 22px' }}>
-                  <div style={{ fontWeight: 700 }}>{item.description || 'Pengeluaran tanpa keterangan'}</div>
-                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{item.date} · {item.category || 'Beban Lainnya'} · ID {item.id}</div>
-                </div>
+                <div style={{ padding: '8px 8px 8px 22px', fontWeight: 700 }}>{item.description || 'Pengeluaran'}</div>
                 <div style={{ padding: '7px 8px', textAlign: 'right' }}>{money(item.amount)}</div>
                 <div style={{ padding: '7px 8px', textAlign: 'right' }}>—</div>
               </div>
