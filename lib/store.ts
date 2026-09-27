@@ -6,6 +6,7 @@ const CLOUD_KEYS = new Set([
   'settings','rooms','tenants','payments','transactions','tenantHistory','paymentHistory','bookings','cctv'
 ]);
 
+const ACTIVE_USER_KEY = 'kostpro-active-user';
 const PENDING_DRAFT_KEY = 'kostpro-pending-draft'; // scoped draft marker; never reused across authenticated properties
 const HYDRATION_READY_KEY = 'kostpro-hydration-ready';
 const HYDRATION_WAIT_MS = 15000;
