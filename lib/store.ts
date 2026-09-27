@@ -31,7 +31,7 @@ async function syncLocalStateToCloud(name: string, value: unknown) {
       window.dispatchEvent(new CustomEvent('kostpro:data-save-error', {
         detail: { name, message: error.message || 'Gagal menyimpan data ke database.' }
       }));
-      throw new Error(error.message || 'Gagal menyimpan data ke database.');
+      throw new Error(/PROPERTY_NOT_FOUND/i.test(error.message || '') ? 'Account ini belum memiliki property/database aktif. Buka User & Akses → CREATE DATABASE untuk membuat property, atau LOGIN DATABASE dengan account pemilik property.' : /PROPERTY_ACCESS_DENIED/i.test(error.message || '') ? 'Account tidak memiliki akses ke property ini.' : (error.message || 'Gagal menyimpan data ke database.'));
     }
 
     sessionStorage.removeItem(PENDING_DRAFT_KEY);
