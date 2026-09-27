@@ -70,8 +70,6 @@ export default function CheckInTamu() {
         status: 'active',
       };
 
-      // Harga C.I. menjadi nilai utama untuk penghuni, kamar, dan tagihan.
-      // Pendapatan Keuangan dicatat saat tagihan benar-benar lunas.
       const nextTenants = [...tenants, tenant];
       const nextRooms = rooms.map(x =>
         x.id === selected.id
@@ -104,19 +102,12 @@ export default function CheckInTamu() {
       setPhone('');
       setEndDate('');
       setRoom('');
-      const next = nextRooms.find(x => x.status === 'available');
-      if (next) {
-        setRoom(next.id);
-        setRent(String(next.price || ''));
-      } else {
-        setRent('');
-      }
+      setRent('');
 
-      setMessage(
-        'Check In berhasil. Harga kamar sudah disinkronkan ke Penghuni Kamar, Manajemen Kamar, dan Tagihan. Setelah pembayaran dilunasi, nominal yang sama otomatis masuk ke Keuangan dan Kwitansi.'
-      );
-
-      location.href = '/tagihan?id=' + encodeURIComponent(payment.id) + '&baru=1';
+      // Setelah C.I., langsung buka pembuatan/preview kwitansi dengan
+      // nominal harga kamar yang baru disimpan. Kwitansi resmi tetap
+      // hanya bisa dicetak/dikirim setelah pembayaran dilunasi.
+      location.href = '/kwitansi?id=' + encodeURIComponent(payment.id) + '&baru=1';
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Check In gagal disimpan.');
     } finally {
@@ -136,8 +127,8 @@ export default function CheckInTamu() {
       <div className="card" style={{ maxWidth: 900 }}>
         <div className="section-title">Form Check In</div>
         <div className="sub" style={{ marginBottom: 14 }}>
-          Harga Kamar adalah nilai utama untuk C.I. Nilai ini otomatis dipakai pada data penghuni, kamar,
-          tagihan, dan saat pembayaran lunas akan masuk ke Laporan Keuangan.
+          Harga Kamar menjadi nilai utama C.I. dan otomatis disinkronkan ke Penghuni Kamar,
+          Manajemen Kamar, Tagihan, Keuangan, dan Kwitansi.
         </div>
 
         <form onSubmit={submit} style={{ display: 'grid', gap: 14 }}>
