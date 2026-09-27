@@ -29,13 +29,11 @@ Open http://localhost:3000
 ## Supabase
 For a new database, run `supabase/schema.sql` in Supabase SQL Editor.
 
-This version uses demo data in the UI so it can render immediately. The schema is prepared for the next integration stage: authentication, multi-property access, CRUD, billing, payments, expenses and reports.
-
 ## Version Archive
 - **V.1.3** — current version: CCTV menu and management, login-link support, dashboard CCTV shortcuts, and build/type fixes.
 
 ## Production
-- V.1.3 restored as the production baseline on 2026-09-26.
+- Property-scoped cloud persistence repair verified against production Supabase on 2026-09-27.
+- Current main branch contains the production Supabase client and middleware alignment.
 
-
-<!-- deployment trigger: Supabase property isolation repair -->
+<!-- deployment trigger: property app-state persistence repair verified -->
