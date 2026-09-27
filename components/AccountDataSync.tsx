@@ -9,12 +9,34 @@ const KEYS = [
   'kostpro_bookings','kostpro_cctv'
 ];
 
+const ACTIVE_USER_KEY = 'kostpro-active-user';
+const PENDING_DRAFT_KEY = 'kostpro-pending-draft';
+
 const clearLocalScope = () => {
   KEYS.forEach(key => localStorage.removeItem(key));
-  sessionStorage.removeItem('kostpro-active-user');
+  sessionStorage.removeItem(ACTIVE_USER_KEY);
+  sessionStorage.removeItem(PENDING_DRAFT_KEY);
   Object.keys(sessionStorage)
     .filter(key => key.startsWith('kostpro-hydrated-user:'))
     .forEach(key => sessionStorage.removeItem(key));
+};
+
+const clearLocalDataOnly = () => {
+  KEYS.forEach(key => localStorage.removeItem(key));
+};
+
+const readLocalSnapshot = () => {
+  const snapshot: Record<string, unknown> = {};
+  for (const key of KEYS) {
+    const raw = localStorage.getItem(key);
+    if (raw === null) continue;
+    try {
+      snapshot[key] = JSON.parse(raw);
+    } catch {
+      // Ignore one malformed local item; the authenticated cloud state remains authoritative.
+    }
+  }
+  return snapshot;
 };
 
 export default function AccountDataSync() {
@@ -23,71 +45,80 @@ export default function AccountDataSync() {
     try {
       supabase = createClient();
     } catch {
-      // Keep the application renderable when Supabase runtime configuration is unavailable.
       return;
     }
 
-    const hydrate = async (clearBeforeLoad = true) => {
-      if (clearBeforeLoad) clearLocalScope();
+    let hydratePromise: Promise<void> | null = null;
 
-      try {
+    const hydrate = async () => {
+      if (hydratePromise) return hydratePromise;
+
+      hydratePromise = (async () => {
         const { data: { user } } = await supabase.auth.getUser();
+
         if (!user) {
           clearLocalScope();
           window.dispatchEvent(new Event('kostpro:data-scope-changed'));
           return;
         }
 
+        // NEVER clear local data before the authenticated property state is read.
+        // Doing so used to destroy the only copy of a new property's draft data.
         const { data: state, error } = await supabase.rpc('get_property_app_state');
         if (error) {
-          throw new Error(error.message || 'Gagal memuat data property.');
+          // A transient cloud error must not erase the user's local data.
+          window.dispatchEvent(new CustomEvent('kostpro:data-scope-error', {
+            detail: { message: error.message || 'Gagal memuat data property.' }
+          }));
+          window.dispatchEvent(new Event('kostpro:data-scope-changed'));
+          return;
         }
 
-        // Property baru belum memiliki app state. Jangan hapus data lokal pengguna;
-        // setelah scope account terverifikasi, migrasikan draft lokal ke property ini.
-        const hasCloudState =
-          state &&
-          typeof state === 'object' &&
-          Object.keys(state as Record<string, unknown>).some((key) => KEYS.includes(key));
+        const cloudState =
+          state && typeof state === 'object'
+            ? state as Record<string, unknown>
+            : {};
 
-        sessionStorage.setItem('kostpro-active-user', user.id);
+        const hasCloudState = KEYS.some(key =>
+          Object.prototype.hasOwnProperty.call(cloudState, key)
+        );
+
+        const activeUser = sessionStorage.getItem(ACTIVE_USER_KEY);
+        const pendingDraft = sessionStorage.getItem(PENDING_DRAFT_KEY) === '1';
 
         if (hasCloudState) {
+          // The database is authoritative for an existing property.
+          // Clear every local key first so data from another property cannot survive.
+          clearLocalDataOnly();
           for (const key of KEYS) {
-            if (Object.prototype.hasOwnProperty.call(state as Record<string, unknown>, key)) {
-              localStorage.setItem(key, JSON.stringify((state as Record<string, unknown>)[key]));
+            if (Object.prototype.hasOwnProperty.call(cloudState, key)) {
+              localStorage.setItem(key, JSON.stringify(cloudState[key]));
             }
           }
-        } else {
-          const { data: currentState, error: saveError } = await supabase.rpc('save_property_app_state', {
-            p_key: 'kostpro_settings',
-            p_value: JSON.parse(localStorage.getItem('kostpro_settings') || '{}'),
-          });
-          if (saveError) throw new Error(saveError.message || 'Gagal membuat penyimpanan property.');
+          sessionStorage.removeItem(PENDING_DRAFT_KEY);
+        } else if (pendingDraft && !activeUser) {
+          // Only migrate an explicitly marked pre-login draft into a brand-new,
+          // authenticated property. Never migrate unmarked data from another user.
+          const snapshot = readLocalSnapshot();
           for (const key of KEYS) {
-            if (key === 'kostpro_settings') continue;
-            const raw = localStorage.getItem(key);
-            if (raw !== null) {
-              const value = JSON.parse(raw);
-              const { error: itemError } = await supabase.rpc('save_property_app_state', {
-                p_key: key,
-                p_value: value,
-              });
-              if (itemError) throw new Error(itemError.message || 'Gagal menyimpan data property.');
-            }
+            if (!Object.prototype.hasOwnProperty.call(snapshot, key)) continue;
+            const { error: saveError } = await supabase.rpc('save_property_app_state', {
+              p_key: key,
+              p_value: snapshot[key],
+            });
+            if (saveError) throw new Error(saveError.message || 'Gagal menyimpan draft ke property.');
           }
-          if (currentState && typeof currentState === 'object') {
-            for (const key of KEYS) {
-              if (!Object.prototype.hasOwnProperty.call(currentState as Record<string, unknown>, key)) continue;
-            }
-          }
+          sessionStorage.removeItem(PENDING_DRAFT_KEY);
         }
+
+        sessionStorage.setItem(ACTIVE_USER_KEY, user.id);
         sessionStorage.setItem('kostpro-hydrated-user:' + user.id, '1');
         window.dispatchEvent(new Event('kostpro:data-scope-changed'));
-      } catch {
-        clearLocalScope();
-        window.dispatchEvent(new Event('kostpro:data-scope-changed'));
-      }
+      })().finally(() => {
+        hydratePromise = null;
+      });
+
+      return hydratePromise;
     };
 
     void hydrate();
@@ -98,8 +129,9 @@ export default function AccountDataSync() {
         window.dispatchEvent(new Event('kostpro:data-scope-changed'));
         return;
       }
-      if (event === 'SIGNED_IN') {
-        window.setTimeout(() => void hydrate(true), 0);
+
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        window.setTimeout(() => void hydrate(), 0);
       }
     });
 
