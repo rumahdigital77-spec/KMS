@@ -15,6 +15,12 @@ export default function EditRoomStatus() {
   }, []);
 
   const change = async (id: string, status: Room['status']) => {
+    const current = rooms.find((r) => r.id === id);
+    const occupied = current?.status === 'occupied' || (current?.tenant && current.tenant !== '-');
+    if (occupied && (status === 'available' || status === 'occupied')) {
+      setMsg('Kamar yang sedang terisi tidak dapat diubah ke Tersedia atau Terisi dari Edit Room Status. Gunakan proses C.O. atau Penghuni Aktif.');
+      return;
+    }
     const next = rooms.map((r) =>
       r.id === id
         ? { ...r, status, tenant: status === 'available' || status === 'maintenance' ? '-' : r.tenant }
@@ -30,19 +36,22 @@ export default function EditRoomStatus() {
     }
   };
 
-  const actions = (r: Room) => (
+  const actions = (r: Room) => {
+    const occupied = r.status === 'occupied' || (r.tenant && r.tenant !== '-');
+    return (
     <div className="kamar-status-actions">
-      <button className="btn" disabled={r.status === 'available' || r.status === 'occupied'} onClick={() => change(r.id, 'available')}>
+      <button className="btn" disabled={r.status === 'available' || occupied} onClick={() => change(r.id, 'available')}>
         Tersedia
       </button>
       <button className="btn secondary" disabled={r.status === 'maintenance'} onClick={() => change(r.id, 'maintenance')}>
         Maintenance
       </button>
-      <button className="btn secondary" disabled={r.status === 'occupied'} onClick={() => change(r.id, 'occupied')}>
+      <button className="btn secondary" disabled={occupied} onClick={() => change(r.id, 'occupied')}>
         Terisi
       </button>
     </div>
-  );
+    );
+  };
 
   return (
     <>
