@@ -11,7 +11,7 @@ export default function Tagihan(){
   if(current.status==='paid')return setMsg('Tagihan ini sudah lunas.');
   const paidAt=new Date().toISOString().slice(0,10);
   let receiptNo=current.receiptNo;
-  try{const raw=localStorage.getItem('kostpro_settings');const s=raw?JSON.parse(raw):{};const next=Number(s.receiptNext||1);if(!receiptNo){receiptNo=(s.receiptPrefix||'KW')+'-'+new Date().getFullYear()+'-'+String(next).padStart(5,'0');localStorage.setItem('kostpro_settings',JSON.stringify({...s,receiptNext:next+1}))}}catch{}
+  try{const s=loadData<Record<string,unknown>>('settings',{});const next=Number(s.receiptNext||1);if(!receiptNo){receiptNo=(String(s.receiptPrefix||'KW'))+'-'+new Date().getFullYear()+'-'+String(next).padStart(5,'0');saveData('settings',{...s,receiptNext:next+1})}}catch{}
   const paidPayment={...current,status:'paid' as const,paidAt,method,receiptNo};
   const n=p.filter(x=>x.id!==sel);
   const paymentHistory=loadData<Payment[]>('paymentHistory',[]);
