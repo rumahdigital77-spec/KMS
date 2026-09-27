@@ -3,12 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, DoorOpen, Users, Receipt, Wallet, BarChart3, Settings, FileText, Camera, Menu, X, UserRound } from 'lucide-react';
+import { LayoutDashboard, DoorOpen, Receipt, Wallet, BarChart3, Settings, FileText, Camera, Menu, X, UserRound } from 'lucide-react';
 
 const items = [
   ['/', 'Dashboard', LayoutDashboard],
   ['/kamar', 'Manajemen Kamar', DoorOpen],
-  ['/penghuni', 'Penghuni Aktif', Users],
   ['/kwitansi', 'Kwitansi', FileText],
   ['/cctv', 'CCTV', Camera],
   ['/laporan', 'Laporan', BarChart3],
