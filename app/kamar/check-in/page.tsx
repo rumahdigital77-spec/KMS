@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { defaultRooms, defaultTenants, loadData, money, Room, Tenant, saveData } from '@/lib/store';
+import { defaultPayments, defaultRooms, defaultTenants, loadData, money, Payment, Room, Tenant, saveData } from '@/lib/store';
 
 export default function CheckInTamu() {
   const [rooms, setRooms] = useState<Room[]>(defaultRooms);
@@ -19,12 +19,19 @@ export default function CheckInTamu() {
       const data = loadData<Room[]>('rooms', defaultRooms);
       setRooms(data);
       const first = data.find(x => x.status === 'available');
-      if (first && !room) { setRoom(first.id); setRent(String(first.price || '')); }
+      if (first && !room) {
+        setRoom(first.id);
+        setRent(String(first.price || ''));
+      }
     };
     load();
     const onSaved = () => load();
     window.addEventListener('kostpro:data-saved', onSaved);
-    return () => window.removeEventListener('kostpro:data-saved', onSaved);
+    window.addEventListener('kostpro:data-scope-changed', onSaved);
+    return () => {
+      window.removeEventListener('kostpro:data-saved', onSaved);
+      window.removeEventListener('kostpro:data-scope-changed', onSaved);
+    };
   }, [room]);
 
   const availableRooms = rooms.filter(x => x.status === 'available');
@@ -38,34 +45,78 @@ export default function CheckInTamu() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setMessage('');
+
     const selected = rooms.find(x => x.id === room);
     if (!selected || selected.status !== 'available') return setMessage('Pilih kamar yang masih Available / Ready.');
     if (!name.trim()) return setMessage('Nama tamu wajib diisi.');
     if (!startDate) return setMessage('Tanggal Check In wajib diisi.');
-    if (!rent || Number(rent) <= 0) return setMessage('Harga sewa wajib diisi.');
+    if (!rent || Number(rent) <= 0) return setMessage('Harga kamar wajib diisi.');
 
+    const roomPrice = Number(rent);
     setSaving(true);
+
     try {
       const tenants = loadData<Tenant[]>('tenants', defaultTenants);
+      const payments = loadData<Payment[]>('payments', defaultPayments);
+
       const tenant: Tenant = {
         id: 'TEN-' + Date.now(),
         name: name.trim(),
         room: selected.id,
         phone: phone.trim(),
         startDate,
-        rent: Number(rent),
+        rent: roomPrice,
         ...(endDate ? { endDate } : {}),
         status: 'active',
       };
-      await saveData('tenants', [...tenants, tenant]);
 
-      const nextRooms = rooms.map(x => x.id === selected.id ? { ...x, tenant: tenant.name, price: Number(rent), status: 'occupied' as const } : x);
-      await saveData('rooms', nextRooms);
+      // Harga C.I. menjadi nilai utama untuk penghuni, kamar, dan tagihan.
+      // Pendapatan Keuangan dicatat saat tagihan benar-benar lunas.
+      const nextTenants = [...tenants, tenant];
+      const nextRooms = rooms.map(x =>
+        x.id === selected.id
+          ? { ...x, tenant: tenant.name, price: roomPrice, status: 'occupied' as const }
+          : x
+      );
+
+      const month = new Date(startDate + 'T00:00:00').toLocaleDateString('id-ID', {
+        month: 'long',
+        year: 'numeric',
+      });
+      const payment: Payment = {
+        id: 'P-' + Date.now(),
+        tenant: tenant.name,
+        room: selected.id,
+        month,
+        amount: roomPrice,
+        status: 'unpaid',
+      };
+      const nextPayments = [...payments, payment];
+
+      await Promise.all([
+        saveData('tenants', nextTenants),
+        saveData('rooms', nextRooms),
+        saveData('payments', nextPayments),
+      ]);
+
       setRooms(nextRooms);
-      setName(''); setPhone(''); setEndDate(''); setRoom('');
+      setName('');
+      setPhone('');
+      setEndDate('');
+      setRoom('');
       const next = nextRooms.find(x => x.status === 'available');
-      if (next) { setRoom(next.id); setRent(String(next.price || '')); } else setRent('');
-      setMessage('Check In berhasil. Data tamu sekarang masuk ke Penghuni Kamar dan kamar berubah menjadi Terisi.');
+      if (next) {
+        setRoom(next.id);
+        setRent(String(next.price || ''));
+      } else {
+        setRent('');
+      }
+
+      setMessage(
+        'Check In berhasil. Harga kamar sudah disinkronkan ke Penghuni Kamar, Manajemen Kamar, dan Tagihan. Setelah pembayaran dilunasi, nominal yang sama otomatis masuk ke Keuangan dan Kwitansi.'
+      );
+
+      location.href = '/tagihan?id=' + encodeURIComponent(payment.id) + '&baru=1';
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Check In gagal disimpan.');
     } finally {
@@ -73,23 +124,70 @@ export default function CheckInTamu() {
     }
   }
 
-  return <>
-    <div className="top"><div><div className="title">Check In Tamu Kamar</div><div className="sub">Input tamu baru hanya menampilkan kamar yang berstatus Available / Ready.</div></div></div>
-    <div className="card" style={{maxWidth:900}}>
-      <div className="section-title">Form Check In</div>
-      <form onSubmit={submit} style={{display:'grid',gap:14}}>
-        <div className="grid">
-          <label>Nama Tamu<input value={name} onChange={e=>setName(e.target.value)} placeholder="Nama lengkap" /></label>
-          <label>No. WhatsApp / Telepon<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="08xxxxxxxxxx" /></label>
-          <label>Kamar Available / Ready<select value={room} onChange={e=>chooseRoom(e.target.value)}><option value="">Pilih kamar</option>{availableRooms.map(x=><option key={x.id} value={x.id}>{x.id} — {money(x.price)}</option>)}</select></label>
-          <label>Harga Sewa / Bulan<input type="number" min="0" value={rent} onChange={e=>setRent(e.target.value)} placeholder="Harga kamar" /></label>
-          <label>Tanggal Check In<input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} /></label>
-          <label>Tanggal Check Out / Akhir Sewa (opsional)<input type="date" value={endDate} min={startDate} onChange={e=>setEndDate(e.target.value)} /></label>
+  return (
+    <>
+      <div className="top">
+        <div>
+          <div className="title">Check In Tamu Kamar</div>
+          <div className="sub">Input tamu baru hanya menampilkan kamar yang berstatus Available / Ready.</div>
         </div>
-        {!availableRooms.length && <div className="sub">Tidak ada kamar Available / Ready. Silakan ubah status kamar terlebih dahulu.</div>}
-        {message && <div style={{padding:12,borderRadius:10,background:'#f0fdf4',color:'#166534',fontWeight:700}}>{message}</div>}
-        <button className="btn" type="submit" disabled={saving || !availableRooms.length}>{saving ? 'MENYIMPAN...' : 'CHECK IN TAMU'}</button>
-      </form>
-    </div>
-  </>;
+      </div>
+
+      <div className="card" style={{ maxWidth: 900 }}>
+        <div className="section-title">Form Check In</div>
+        <div className="sub" style={{ marginBottom: 14 }}>
+          Harga Kamar adalah nilai utama untuk C.I. Nilai ini otomatis dipakai pada data penghuni, kamar,
+          tagihan, dan saat pembayaran lunas akan masuk ke Laporan Keuangan.
+        </div>
+
+        <form onSubmit={submit} style={{ display: 'grid', gap: 14 }}>
+          <div className="grid">
+            <label>
+              Nama Tamu
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Nama lengkap" />
+            </label>
+            <label>
+              No. WhatsApp / Telepon
+              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="08xxxxxxxxxx" />
+            </label>
+            <label>
+              Kamar Available / Ready
+              <select value={room} onChange={e => chooseRoom(e.target.value)}>
+                <option value="">Pilih kamar</option>
+                {availableRooms.map(x => (
+                  <option key={x.id} value={x.id}>{x.id} — {money(x.price)}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Harga Kamar / Bulan
+              <input type="number" min="0" value={rent} onChange={e => setRent(e.target.value)} placeholder="Masukkan harga kamar" />
+            </label>
+            <label>
+              Tanggal Check In
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+            </label>
+            <label>
+              Tanggal Check Out / Akhir Sewa (opsional)
+              <input type="date" value={endDate} min={startDate} onChange={e => setEndDate(e.target.value)} />
+            </label>
+          </div>
+
+          {!availableRooms.length && (
+            <div className="sub">Tidak ada kamar Available / Ready. Silakan ubah status kamar terlebih dahulu.</div>
+          )}
+
+          {message && (
+            <div style={{ padding: 12, borderRadius: 10, background: '#f0fdf4', color: '#166534', fontWeight: 700 }}>
+              {message}
+            </div>
+          )}
+
+          <button className="btn" type="submit" disabled={saving || !availableRooms.length}>
+            {saving ? 'MENYIMPAN...' : 'CHECK IN TAMU'}
+          </button>
+        </form>
+      </div>
+    </>
+  );
 }
