@@ -2,6 +2,8 @@ import { createClient as createSupabaseClient } from '@/lib/supabase-browser';
 
 let cloudSyncQueue: Promise<void> = Promise.resolve();
 
+// Keep this module deploy-triggered after production fixes; no runtime behavior change.
+
 const CLOUD_KEYS = new Set([
   'settings','rooms','tenants','payments','transactions','tenantHistory','paymentHistory','bookings','cctv'
 ]);
