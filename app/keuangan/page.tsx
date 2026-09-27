@@ -2,7 +2,7 @@
 // Responsive report layout hardened for small screens.
 
 import { useEffect, useMemo, useState } from 'react';
-import { defaultTransactions, loadData, money, saveData, Transaction } from '@/lib/store';
+import { defaultTransactions, loadData, money, normalizeMoney, saveData, Transaction } from '@/lib/store';
 
 export default function Keuangan() {
   const [transactions, setTransactions] = useState<Transaction[]>(defaultTransactions);
@@ -27,13 +27,20 @@ export default function Keuangan() {
     [transactions]
   );
   const result = income - expense;
+  const resultDisplay = result < 0 ? '-' + money(Math.abs(result)) : money(result);
 
   const incomeTransactions = useMemo(() => transactions.filter((item) => item.type === 'income'), [transactions]);
   const expenseTransactions = useMemo(() => transactions.filter((item) => item.type === 'expense'), [transactions]);
 
   const add = async () => {
-    if (!desc || !amt) {
-      setMsg('Keterangan dan nominal wajib diisi.');
+    const parsedAmount = Number(amt);
+    if (!desc.trim() || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setMsg('Keterangan dan nominal harus diisi. Nominal harus lebih besar dari Rp0.');
+      return;
+    }
+    const amount = normalizeMoney(parsedAmount);
+    if (amount <= 0) {
+      setMsg('Nominal transaksi harus lebih besar dari Rp0.');
       return;
     }
     const next = [
@@ -41,9 +48,9 @@ export default function Keuangan() {
       {
         id: 'TR-' + Date.now(),
         date: new Date().toISOString().slice(0, 10),
-        description: desc,
-        category: cat,
-        amount: +amt,
+        description: desc.trim(),
+        category: cat.trim() || 'Operasional',
+        amount,
         type,
       },
     ];
@@ -114,7 +121,7 @@ export default function Keuangan() {
         </div>
         <div className="card">
           <div className="label">LABA / (RUGI) BERSIH</div>
-          <div className="metric">{money(result)}</div>
+          <div className="metric">{resultDisplay}</div>
         </div>
       </div>
 
