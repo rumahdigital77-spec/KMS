@@ -44,7 +44,7 @@ export default function Keuangan() {
     return Array.from(grouped.entries()).sort((a, b) => b[1] - a[1]);
   }, [transactions]);
 
-  const add = () => {
+  const add = async () => {
     if (!desc || !amt) {
       setMsg('Keterangan dan nominal wajib diisi.');
       return;
@@ -60,12 +60,17 @@ export default function Keuangan() {
         type,
       },
     ];
-    setTransactions(next);
-    await saveData('transactions', next);
-    setDesc('');
-    setAmt('');
-    setShow(false);
-    setMsg('Transaksi berhasil dicatat.');
+
+    try {
+      await saveData('transactions', next);
+      setTransactions(next);
+      setDesc('');
+      setAmt('');
+      setShow(false);
+      setMsg('Transaksi berhasil disimpan ke database.');
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : 'Transaksi gagal disimpan ke database.');
+    }
   };
 
   return (
