@@ -8,6 +8,37 @@ const CLOUD_KEYS = new Set([
 
 const PENDING_DRAFT_KEY = 'kostpro-pending-draft'; // scoped draft marker; never reused across authenticated properties
 const HYDRATION_READY_KEY = 'kostpro-hydration-ready';
+const HYDRATION_WAIT_MS = 15000;
+
+async function waitForCloudHydration() {
+  if (typeof window === 'undefined') return;
+  if (sessionStorage.getItem(HYDRATION_READY_KEY) === '1') return;
+
+  const supabase = createSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await new Promise<void>((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      window.removeEventListener('kostpro:data-scope-changed', check);
+      window.clearTimeout(timer);
+      resolve();
+    };
+    const check = () => {
+      if (sessionStorage.getItem(HYDRATION_READY_KEY) === '1') finish();
+    };
+    const timer = window.setTimeout(finish, HYDRATION_WAIT_MS);
+    window.addEventListener('kostpro:data-scope-changed', check);
+    check();
+  });
+
+  if (sessionStorage.getItem(HYDRATION_READY_KEY) !== '1') {
+    throw new Error('Data property belum selesai dimuat. Silakan tunggu sampai sinkronisasi selesai.');
+  }
+}
 
 async function syncLocalStateToCloud(name: string, value: unknown) {
   if (!CLOUD_KEYS.has(name) || typeof window === 'undefined') return;
@@ -84,6 +115,10 @@ export async function saveData<T>(name:string,v:T): Promise<void> {
   if (typeof window === 'undefined') return;
 
   try {
+    const supabase = createSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await waitForCloudHydration();
+
     localStorage.setItem('kostpro_' + name, JSON.stringify(v));
   } catch {
     window.dispatchEvent(new CustomEvent('kostpro:data-save-error', {
