@@ -61,7 +61,7 @@ export default function Keuangan() {
       },
     ];
     setTransactions(next);
-    saveData('transactions', next);
+    await saveData('transactions', next);
     setDesc('');
     setAmt('');
     setShow(false);
