@@ -100,17 +100,18 @@ export default function Penghuni() {
       ...(endDate ? { endDate } : {}), rent:monthlyRent, status:'active'
     };
     const nr = r.map(x => x.id === room ? { ...x, tenant:nt.name, price:monthlyRent, status:'occupied' as const } : x);
-    const tt = [...t, nt];
+    const allTenants = loadData<Tenant[]>('tenants', defaultTenants);
+    const tt = [...allTenants, nt];
     const month = periodLabel(date);
     const paymentId = 'P-'+Date.now();
     const np = [
       ...loadData<Payment[]>('payments', defaultPayments),
-      { id:paymentId, tenant:nt.name, room, month, amount:monthlyRent, status:'unpaid' as const } as Payment
+      { id:paymentId, tenantId:nt.id, tenant:nt.name, room, month, amount:monthlyRent, status:'unpaid' as const } as Payment
     ];
 
     try {
       await Promise.all([saveData('tenants',tt), saveData('rooms',nr), saveData('payments',np)]);
-      setT(tt); setR(nr);
+      setT(tt.filter(x => (x.status || 'active') === 'active')); setR(nr);
       location.href='/tagihan?id='+encodeURIComponent(paymentId)+'&baru=1';
     } catch(error) {
       setMsg(error instanceof Error ? `Gagal menyimpan data: ${error.message}` : 'Gagal menyimpan data ke database.');
@@ -154,7 +155,7 @@ export default function Penghuni() {
 
     try {
       await Promise.all([saveData('tenants',tt), saveData('rooms',rr), saveData('payments',np)]);
-      setT(tt); setR(rr); reset(); setMsg('Data penghuni dan tagihan aktif berhasil diselaraskan.');
+      setT(tt.filter(x => (x.status || 'active') === 'active')); setR(rr); reset(); setMsg('Data penghuni dan tagihan aktif berhasil diselaraskan.');
     } catch(error) {
       setMsg(error instanceof Error ? `Gagal menyimpan perubahan: ${error.message}` : 'Gagal menyimpan perubahan ke database.');
     }
