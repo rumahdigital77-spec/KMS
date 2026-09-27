@@ -18,6 +18,7 @@ const clearLocalScope = () => {
   sessionStorage.removeItem(ACTIVE_USER_KEY);
   sessionStorage.removeItem(PENDING_DRAFT_KEY);
   sessionStorage.removeItem(HYDRATION_READY_KEY);
+  sessionStorage.removeItem('kostpro-post-hydration-reload');
   Object.keys(sessionStorage)
     .filter(key => key.startsWith('kostpro-hydrated-user:'))
     .forEach(key => sessionStorage.removeItem(key));
