@@ -3,7 +3,7 @@ import{useEffect,useState}from'react';
 import{defaultPayments,defaultTransactions,loadData,money,Payment,saveData,Transaction}from'@/lib/store';
 export default function Tagihan(){
  const[p,setP]=useState<Payment[]>(defaultPayments),[show,setShow]=useState(false),[sel,setSel]=useState(''),[method,setMethod]=useState('transfer'),[msg,setMsg]=useState('');
- useEffect(()=>{const payments=loadData('payments',defaultPayments);setP(payments.filter(x=>x.status==='unpaid'));const q=new URLSearchParams(location.search);const paymentId=q.get('id');if(paymentId){setSel(paymentId);setShow(true);if(q.get('baru')==='1')setMsg('Penghuni baru berhasil dibuat. Tagihan pertama sudah dibuat. Pilih tamu C.I., metode pembayaran lalu klik “Simpan & Lunas + Buat Kwitansi”.')}else if(q.get('aksi')==='catat')setShow(true)},[]);
+ useEffect(()=>{const load=()=>{const payments=loadData<Payment[]>('payments',defaultPayments);setP(payments.filter(x=>x.status==='unpaid'))};load();const q=new URLSearchParams(location.search);const paymentId=q.get('id');if(paymentId){setSel(paymentId);setShow(true);if(q.get('baru')==='1')setMsg('Penghuni baru berhasil dibuat. Tagihan pertama sudah dibuat. Pilih tamu C.I., metode pembayaran lalu klik “Simpan & Lunas + Buat Kwitansi”.')}else if(q.get('aksi')==='catat')setShow(true);window.addEventListener('kostpro:data-saved',load);window.addEventListener('kostpro:data-scope-changed',load);return()=>{window.removeEventListener('kostpro:data-saved',load);window.removeEventListener('kostpro:data-scope-changed',load)}},[]);
  const pay=async()=>{
   if(!sel)return setMsg('Pilih pembayaran dari tamu C.I.');
   const current=p.find(x=>x.id===sel);
