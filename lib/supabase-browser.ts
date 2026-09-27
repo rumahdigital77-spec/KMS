@@ -1,12 +1,11 @@
 import { createBrowserClient } from '@supabase/ssr';
 
+const SUPABASE_URL = 'https://esuictladytvabpgposc.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_OClJFBG70p9dyhTzAy1MrQ_ZuQI1bib';
+
 export function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase environment variables are not configured.');
-  }
-
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  // Publishable keys are explicitly safe for browser clients.
+  // Keep the browser client pinned to the active project key so a stale
+  // Vercel NEXT_PUBLIC_SUPABASE_* value cannot break authentication.
+  return createBrowserClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 }
