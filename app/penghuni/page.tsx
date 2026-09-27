@@ -33,6 +33,8 @@ export default function Penghuni() {
   const [endDate,setEndDate] = useState('');
   const [rent,setRent] = useState('');
   const [msg,setMsg] = useState('');
+  const [moveTenant,setMoveTenant] = useState<Tenant|null>(null);
+  const [moveRoom,setMoveRoom] = useState('');
 
   useEffect(() => {
     const run = async () => {
@@ -85,7 +87,7 @@ export default function Penghuni() {
   const reset = () => {
     setName(''); setRoom(''); setPhone('');
     setDate(new Date().toISOString().slice(0,10));
-    setEndDate(''); setRent(''); setEdit(null); setShow(false);
+    setEndDate(''); setRent(''); setEdit(null); setShow(false); setMoveTenant(null); setMoveRoom('');
   };
 
   const add = async () => {
@@ -214,6 +216,50 @@ export default function Penghuni() {
     }
   };
 
+  const moveTenantToRoom = async () => {
+    if (!moveTenant || !moveRoom || moveRoom === moveTenant.room) {
+      setMsg('Pilih kamar tujuan yang berbeda.');
+      return;
+    }
+    const target = r.find(room => room.id === moveRoom);
+    if (!target || target.status !== 'available') {
+      setMsg('Kamar tujuan tidak tersedia.');
+      return;
+    }
+
+    const nextRooms = r.map(room => {
+      if (room.id === moveTenant.room) return { ...room, tenant:'-', status:'available' as const };
+      if (room.id === moveRoom) return { ...room, tenant:moveTenant.name, price:normalizeMoney(moveTenant.rent), status:'occupied' as const };
+      return room;
+    });
+    const nextTenants = t.map(tenant =>
+      tenant.id === moveTenant.id ? { ...tenant, room:moveRoom } : tenant
+    );
+    const payments = loadData<Payment[]>('payments', defaultPayments);
+    const nextPayments = payments.map(payment =>
+      payment.status === 'unpaid' &&
+      ((payment.tenantId && payment.tenantId === moveTenant.id) ||
+       (!payment.tenantId && payment.tenant === moveTenant.name && payment.room === moveTenant.room))
+        ? { ...payment, tenantId:moveTenant.id, tenant:moveTenant.name, room:moveRoom, amount:normalizeMoney(moveTenant.rent) }
+        : payment
+    );
+
+    try {
+      await Promise.all([
+        saveData('tenants', nextTenants),
+        saveData('rooms', nextRooms),
+        saveData('payments', nextPayments),
+      ]);
+      setT(nextTenants);
+      setR(nextRooms);
+      setMoveTenant(null);
+      setMoveRoom('');
+      setMsg(moveTenant.name+' berhasil pindah dari '+moveTenant.room+' ke '+moveRoom+'. Tagihan yang belum lunas ikut diperbarui ke kamar baru.');
+    } catch (error) {
+      setMsg(error instanceof Error ? 'Gagal pindah kamar: '+error.message : 'Gagal pindah kamar ke database.');
+    }
+  };
+
   const extend = async (x:Tenant) => {
     const currentEnd = effectiveEndDate(x);
     const nextEnd = addOneMonth(currentEnd);
@@ -244,6 +290,20 @@ export default function Penghuni() {
       <button className="btn" onClick={()=>{reset();setShow(!show)}}>+ Tambah Penghuni</button>
     </div>
     {msg && <div className="card" style={{marginBottom:18}}>{msg}</div>}
+    {moveTenant && <div className="card" style={{marginBottom:18}}>
+      <div className="section-title">Pindah Kamar — {moveTenant.name}</div>
+      <div className="sub" style={{marginBottom:12}}>Kamar saat ini: <b>{moveTenant.room}</b>. Hanya kamar Available yang dapat dipilih.</div>
+      <div className="form">
+        <div className="field"><label>Kamar Tujuan</label><select value={moveRoom} onChange={e=>setMoveRoom(e.target.value)}>
+          <option value="">Pilih kamar tujuan</option>
+          {r.filter(room=>room.status==='available' && room.id!==moveTenant.room).map(room=><option key={room.id} value={room.id}>{room.id} — {money(room.price)}</option>)}
+        </select></div>
+      </div>
+      <div className="actions">
+        <button className="btn" onClick={moveTenantToRoom}>Pindah Kamar</button>
+        <button className="btn secondary" onClick={()=>{setMoveTenant(null);setMoveRoom('')}}>Batal</button>
+      </div>
+    </div>}
     {show && <div className="card" style={{marginBottom:18}}>
       <div className="section-title">{edit?'Edit Penghuni':'Tambah Penghuni'}</div>
       <div className="form">
@@ -258,7 +318,7 @@ export default function Penghuni() {
     </div>}
     <div className="card">
       <table className="table"><thead><tr><th>Nama</th><th>Kamar</th><th>Telepon</th><th>Mulai</th><th>Berakhir</th><th>Sewa</th><th>Aksi</th></tr></thead>
-      <tbody>{t.map(x=><tr key={x.id}><td><b>{x.name}</b></td><td>{x.room}</td><td>{x.phone}</td><td>{x.startDate}</td><td>{effectiveEndDate(x)}</td><td>{money(x.rent)}</td><td><div className="actions"><button className="btn secondary" onClick={()=>startEdit(x)}>Edit</button><button className="btn secondary" onClick={()=>extend(x)}>Perpanjang</button><button className="btn" onClick={()=>checkout(x)}>C.O</button></div></td></tr>)}{!t.length&&<tr><td colSpan={7}>Belum ada penghuni aktif.</td></tr>}</tbody></table>
+      <tbody>{t.map(x=><tr key={x.id}><td><b>{x.name}</b></td><td>{x.room}</td><td>{x.phone}</td><td>{x.startDate}</td><td>{effectiveEndDate(x)}</td><td>{money(x.rent)}</td><td><div className="actions"><button className="btn secondary" onClick={()=>startEdit(x)}>Edit</button><button className="btn secondary" onClick={()=>extend(x)}>Perpanjang</button><button className="btn secondary" onClick={()=>{setMoveTenant(x);setMoveRoom('')}}>Pindah Kamar</button><button className="btn" onClick={()=>checkout(x)}>C.O</button></div></td></tr>)}{!t.length&&<tr><td colSpan={7}>Belum ada penghuni aktif.</td></tr>}</tbody></table>
     </div>
   </>;
 }
