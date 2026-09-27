@@ -114,11 +114,13 @@ export function loadData<T>(name:string,fallback:T):T {
 export async function saveData<T>(name:string,v:T): Promise<void> {
   if (typeof window === 'undefined') return;
 
-  try {
-    const supabase = createSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) await waitForCloudHydration();
+  // Auth/hydration errors are deliberately kept outside the localStorage
+  // try/catch so they cannot be misreported as "storage full".
+  const supabase = createSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) await waitForCloudHydration();
 
+  try {
     localStorage.setItem('kostpro_' + name, JSON.stringify(v));
   } catch {
     window.dispatchEvent(new CustomEvent('kostpro:data-save-error', {
