@@ -58,7 +58,7 @@ export default function BookingPage() {
       ? '/api/rooms?public=1&property_id=' + encodeURIComponent(publicPropertyId)
       : '/api/rooms';
     fetch(roomsEndpoint,{cache:'no-store'}).then(r=>r.json()).then(data=>{
-      if(Array.isArray(data.rooms) && data.rooms.length){setRooms(data.rooms);saveData('rooms',data.rooms);}
+      if(Array.isArray(data.rooms) && data.rooms.length){setRooms(data.rooms);await saveData('rooms',data.rooms);}
     }).catch(()=>{});
     if (!publicPropertyId) {
       fetch('/api/bookings',{cache:'no-store'}).then(r=>r.json()).then(data=>{
