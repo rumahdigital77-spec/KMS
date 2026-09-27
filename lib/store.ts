@@ -107,7 +107,24 @@ export function loadData<T>(name:string,fallback:T):T {
   if (typeof window === 'undefined') return fallback;
   try {
     const v = localStorage.getItem('kostpro_' + name);
-    if (v) return JSON.parse(v);
+    if (v) {
+      const parsed = JSON.parse(v);
+      if (Array.isArray(parsed)) {
+        if (name === 'rooms') {
+          return parsed.map((x) => ({ ...x, price: normalizeMoney(x?.price) })) as T;
+        }
+        if (name === 'tenants' || name === 'tenantHistory') {
+          return parsed.map((x) => ({ ...x, rent: normalizeMoney(x?.rent) })) as T;
+        }
+        if (name === 'payments' || name === 'paymentHistory') {
+          return parsed.map((x) => ({ ...x, amount: normalizeMoney(x?.amount) })) as T;
+        }
+        if (name === 'transactions') {
+          return parsed.map((x) => ({ ...x, amount: normalizeMoney(x?.amount) })) as T;
+        }
+      }
+      return parsed;
+    }
     return isActiveDataScope() ? fallback : emptyForUnauthenticated(name,fallback);
   } catch {
     return emptyForUnauthenticated(name,fallback);
