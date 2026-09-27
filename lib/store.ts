@@ -120,10 +120,55 @@ export async function saveData<T>(name:string,v:T): Promise<void> {
   // try/catch so they cannot be misreported as "storage full".
   const supabase = createSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (user) await waitForCloudHydration();
+
+  // Do not block user input behind the hydration event. If a page was already
+  // open when login completed, bootstrap the canonical property state here
+  // before writing. This makes the first post-login save reliable even when
+  // React mounted before AccountDataSync finished.
+  let valueToSave: T = v;
+  if (user && CLOUD_KEYS.has(name) && sessionStorage.getItem(HYDRATION_READY_KEY) !== '1') {
+    const { data: cloudState, error: cloudError } = await supabase.rpc('get_property_app_state');
+    if (cloudError) {
+      throw new Error(cloudError.message || 'Gagal memuat data property sebelum menyimpan.');
+    }
+
+    const state = cloudState && typeof cloudState === 'object'
+      ? cloudState as Record<string, unknown>
+      : {};
+    const cloudValue = state['kostpro_' + name];
+
+    // For the common first-login/add-data race, merge array records by id so
+    // existing cloud records cannot be overwritten by an empty/stale page state.
+    // For object settings, merge keys. Once hydrated, the caller's value is
+    // authoritative (including intentional deletes/edits).
+    if (Array.isArray(v) && Array.isArray(cloudValue)) {
+      const incoming = v as Array<{ id?: unknown }>;
+      const existing = cloudValue as Array<{ id?: unknown }>;
+      const incomingIds = new Set(incoming.map(item => item?.id).filter(Boolean));
+      valueToSave = [
+        ...existing.filter(item => !incomingIds.has(item?.id)),
+        ...incoming,
+      ] as T;
+    } else if (
+      v && typeof v === 'object' && !Array.isArray(v) &&
+      cloudValue && typeof cloudValue === 'object' && !Array.isArray(cloudValue)
+    ) {
+      valueToSave = { ...(cloudValue as object), ...(v as object) } as T;
+    }
+
+    // Establish the same scoped state locally so subsequent page actions work
+    // immediately without waiting for a reload.
+    try {
+      localStorage.setItem('kostpro_' + name, JSON.stringify(valueToSave));
+    } catch {
+      throw new Error('Penyimpanan lokal penuh atau data terlalu besar.');
+    }
+    sessionStorage.setItem(ACTIVE_USER_KEY, user.id);
+    sessionStorage.setItem(HYDRATION_READY_KEY, '1');
+  }
 
   try {
-    localStorage.setItem('kostpro_' + name, JSON.stringify(v));
+    localStorage.setItem('kostpro_' + name, JSON.stringify(valueToSave));
   } catch {
     window.dispatchEvent(new CustomEvent('kostpro:data-save-error', {
       detail: { name, message: 'Penyimpanan lokal penuh atau data terlalu besar.' }
@@ -131,7 +176,7 @@ export async function saveData<T>(name:string,v:T): Promise<void> {
     throw new Error('Penyimpanan lokal penuh atau data terlalu besar.');
   }
 
-  if (CLOUD_KEYS.has(name)) await syncLocalStateToCloud(name,v);
+  if (CLOUD_KEYS.has(name)) await syncLocalStateToCloud(name,valueToSave);
 
   window.dispatchEvent(new CustomEvent('kostpro:data-saved', { detail: { name } }));
 }
