@@ -11,11 +11,13 @@ const KEYS = [
 
 const ACTIVE_USER_KEY = 'kostpro-active-user';
 const PENDING_DRAFT_KEY = 'kostpro-pending-draft';
+const HYDRATION_READY_KEY = 'kostpro-hydration-ready';
 
 const clearLocalScope = () => {
   KEYS.forEach(key => localStorage.removeItem(key));
   sessionStorage.removeItem(ACTIVE_USER_KEY);
   sessionStorage.removeItem(PENDING_DRAFT_KEY);
+  sessionStorage.removeItem(HYDRATION_READY_KEY);
   Object.keys(sessionStorage)
     .filter(key => key.startsWith('kostpro-hydrated-user:'))
     .forEach(key => sessionStorage.removeItem(key));
@@ -113,7 +115,17 @@ export default function AccountDataSync() {
 
         sessionStorage.setItem(ACTIVE_USER_KEY, user.id);
         sessionStorage.setItem('kostpro-hydrated-user:' + user.id, '1');
+        sessionStorage.setItem(HYDRATION_READY_KEY, '1');
         window.dispatchEvent(new Event('kostpro:data-scope-changed'));
+
+        // React pages read localStorage during their initial mount. They do not
+        // all subscribe to the scope event, so after a fresh login they could
+        // otherwise remain on the pre-login/default state. Reload exactly once
+        // after authenticated hydration; the ready marker prevents a loop.
+        if (!sessionStorage.getItem('kostpro-post-hydration-reload')) {
+          sessionStorage.setItem('kostpro-post-hydration-reload', '1');
+          window.location.reload();
+        }
       })().finally(() => {
         hydratePromise = null;
       });
