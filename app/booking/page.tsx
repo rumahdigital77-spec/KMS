@@ -132,7 +132,7 @@ export default function BookingPage() {
         if(!response.ok) throw new Error(data.error||'Database online belum terhubung. Silakan hubungkan Supabase di Vercel.');
         const booking:Booking={id:String(data.booking.id),room:data.booking.room_id,name:data.booking.name,phone:data.booking.phone,startDate:data.booking.start_date,duration:data.booking.duration,createdAt:data.booking.created_at,status:'pending'};
         const next=[booking,...loadData<Booking[]>('bookings',[]).filter(x=>x.id!==booking.id)];
-        setBookings(next);saveData('bookings',next);
+        setBookings(next);await saveData('bookings',next);
         setMsg('Booking berhasil dikirim. Data sudah masuk ke sistem pengelola.');
         setName('');setPhone('');setRoomId('');setSelectedRoom(null);
       }catch(error){
