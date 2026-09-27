@@ -202,3 +202,93 @@ input,select,textarea{font-size:16px}
 @media(max-width:380px){
  .kamar-room-info,.kamar-history-info,.kamar-detail-grid{grid-template-columns:1fr}
 }
+
+
+/* Manajemen Kamar — unified premium card system */
+.kamar-mobile-cards,.kamar-status-cards,.kamar-history-cards{gap:12px}
+.kamar-room-card,.kamar-status-card,.kamar-history-card-item{
+  position:relative;
+  border:1px solid #e3e8f4;
+  border-radius:18px;
+  padding:16px;
+  background:linear-gradient(145deg,#ffffff 0%,#f8faff 100%);
+  box-shadow:0 10px 24px rgba(31,41,55,.08);
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.kamar-room-card:hover,.kamar-status-card:hover,.kamar-history-card-item:hover{
+  transform:translateY(-2px);
+  border-color:#cbd5f5;
+  box-shadow:0 14px 30px rgba(49,46,129,.12);
+}
+.kamar-room-head{min-height:42px}
+.kamar-room-name{font-size:17px;letter-spacing:-.2px}
+.kamar-room-tenant{font-size:12px;color:#667085;font-weight:600}
+.kamar-room-info,.kamar-history-info{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:15px;
+  padding-top:13px;
+}
+.kamar-room-info>div,.kamar-history-info>div{
+  min-height:54px;
+  padding:9px 10px;
+  border-radius:12px;
+  background:#f7f9fd;
+  border:1px solid #edf0f6;
+}
+.kamar-room-info b,.kamar-history-info b{
+  font-size:12px;
+  line-height:1.35;
+}
+.kamar-full-btn{margin-top:12px}
+.kamar-status-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kamar-status-actions .btn{min-height:44px;border-radius:12px}
+.kamar-status-card .kamar-status-actions{margin-top:12px}
+.kamar-form-card{
+  width:100%;
+  border:1px solid #e3e8f4;
+  border-radius:18px;
+  background:linear-gradient(145deg,#ffffff,#f8faff);
+  box-shadow:0 12px 30px rgba(31,41,55,.08);
+}
+.kamar-checkin-card{max-width:900px}
+.kamar-form-heading{padding-bottom:12px;border-bottom:1px solid #edf0f6}
+.kamar-form-heading .section-title{margin-bottom:7px;font-size:17px}
+.kamar-form-badge{box-shadow:0 4px 10px rgba(16,185,129,.10)}
+.kamar-checkin-card form{margin-top:2px}
+.kamar-checkin-card form label{
+  display:grid;
+  gap:7px;
+  color:#344054;
+  font-size:12px;
+  font-weight:800;
+}
+.kamar-checkin-card form input,.kamar-checkin-card form select{
+  min-height:45px;
+  border:1px solid #dbe2ef;
+  border-radius:12px;
+  background:#fff;
+  transition:border-color .15s,box-shadow .15s;
+}
+.kamar-checkin-card form input:focus,.kamar-checkin-card form select:focus{
+  outline:none;
+  border-color:#818cf8;
+  box-shadow:0 0 0 3px rgba(99,102,241,.10);
+}
+.kamar-checkin-card form>.btn{
+  min-height:46px;
+  border-radius:12px;
+}
+@media(max-width:640px){
+  .kamar-room-card,.kamar-status-card,.kamar-history-card-item{padding:14px;border-radius:16px}
+  .kamar-room-name{font-size:16px}
+  .kamar-room-info,.kamar-history-info{grid-template-columns:1fr 1fr}
+  .kamar-status-actions{grid-template-columns:1fr 1fr}
+  .kamar-status-actions .btn:last-child{grid-column:1/-1}
+  .kamar-checkin-card{padding:14px}
+}
+@media(max-width:420px){
+  .kamar-room-info,.kamar-history-info{grid-template-columns:1fr}
+  .kamar-status-actions{grid-template-columns:1fr}
+  .kamar-status-actions .btn:last-child{grid-column:auto}
+}
