@@ -411,6 +411,33 @@ end; $;
 revoke all on function public.get_property_app_state() from public,anon;
 grant execute on function public.get_property_app_state() to authenticated;
 
+create or replace function public.save_property_app_state(p_key text, p_value jsonb)
+returns jsonb language plpgsql security invoker set search_path=public as $
+declare v_user uuid:=auth.uid(); v_property uuid; v_state jsonb;
+begin
+  if v_user is null then raise exception 'AUTH_REQUIRED'; end if;
+  if p_key not in (
+    'kostpro_settings','kostpro_rooms','kostpro_tenants','kostpro_payments',
+    'kostpro_transactions','kostpro_tenantHistory','kostpro_paymentHistory',
+    'kostpro_bookings','kostpro_cctv'
+  ) then raise exception 'INVALID_APP_STATE_KEY'; end if;
+  select ua.property_id into v_property from public.user_accounts ua
+    where ua.user_id=v_user and ua.status='active';
+  if v_property is null then raise exception 'PROPERTY_NOT_FOUND'; end if;
+  if not exists(select 1 from public.account_properties ap where ap.user_id=v_user and ap.property_id=v_property) then
+    raise exception 'PROPERTY_ACCESS_DENIED';
+  end if;
+  insert into public.property_app_state(property_id,state,updated_at)
+  values(v_property,jsonb_build_object(p_key,p_value),now())
+  on conflict(property_id) do update set
+    state=coalesce(public.property_app_state.state,'{}'::jsonb) || jsonb_build_object(p_key,p_value),
+    updated_at=now()
+  returning state into v_state;
+  return v_state;
+end; $;
+revoke all on function public.save_property_app_state(text,jsonb) from public,anon;
+grant execute on function public.save_property_app_state(text,jsonb) to authenticated;
+
 grant select,insert,update,delete on public.properties,public.user_accounts,public.account_properties,public.licenses,
   public.rooms,public.tenants,public.invoices,public.payments,public.expenses,public.property_app_state to authenticated;
 grant select on public.kost_rooms to anon,authenticated;
