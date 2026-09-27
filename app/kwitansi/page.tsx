@@ -28,6 +28,7 @@ const defaults: Settings = {
 
 export default function Kwitansi() {
   const [payments, setPayments] = useState<Payment[]>(defaultPayments);
+  const [paymentHistory, setPaymentHistory] = useState<Payment[]>([]);
   const [id, setId] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -35,6 +36,7 @@ export default function Kwitansi() {
 
   useEffect(() => {
     setPayments(loadData('payments', defaultPayments));
+    setPaymentHistory(loadData('paymentHistory', []));
     const saved = loadData<Partial<Settings>>('settings', {});
     setSettings({ ...defaults, ...saved });
 
@@ -43,8 +45,11 @@ export default function Kwitansi() {
   }, []);
 
   const payment =
+    paymentHistory.find((item) => item.id === id) ||
     payments.find((item) => item.id === id) ||
+    paymentHistory.find((item) => item.status === 'paid') ||
     payments.find((item) => item.status === 'paid') ||
+    paymentHistory[0] ||
     payments[0];
   const isPaid = payment?.status === 'paid';
   const no = payment?.receiptNo || '—';
@@ -186,7 +191,7 @@ export default function Kwitansi() {
           <div className="field full">
             <label>Pilih Pembayaran Lunas</label>
             <select value={id} onChange={(event) => setId(event.target.value)}>
-              {payments
+              {paymentHistory
                 .filter((item) => item.status === 'paid')
                 .map((item) => (
                   <option key={item.id} value={item.id}>
