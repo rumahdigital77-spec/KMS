@@ -27,7 +27,7 @@ export default function Keuangan() {
     [transactions]
   );
   const result = income - expense;
-  const resultDisplay = result < 0 ? '-' + money(Math.abs(result)) : money(result);
+  const resultDisplay = result < 0 ? '(' + money(Math.abs(result)) + ')' : money(result);
 
   const incomeTransactions = useMemo(() => transactions.filter((item) => item.type === 'income'), [transactions]);
   const expenseTransactions = useMemo(() => transactions.filter((item) => item.type === 'expense'), [transactions]);
@@ -176,7 +176,7 @@ export default function Keuangan() {
 
             <div style={{ gridColumn: '1 / -1', borderTop: '2px solid #111827', marginTop: 6 }} />
             <div style={{ padding: '14px 8px', fontWeight: 900, fontSize: 15 }}>LABA / (RUGI) BERSIH</div>
-            <div style={{ padding: '14px 8px', textAlign: 'right', fontWeight: 900 }}>{result < 0 ? money(Math.abs(result)) : '—'}</div>
+            <div style={{ padding: '14px 8px', textAlign: 'right', fontWeight: 900 }}>{result < 0 ? '(' + money(Math.abs(result)) + ')' : '—'}</div>
             <div style={{ padding: '14px 8px', textAlign: 'right', fontWeight: 900 }}>{result >= 0 ? money(result) : '—'}</div>
           </div>
         </div>
