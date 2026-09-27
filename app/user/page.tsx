@@ -34,6 +34,7 @@ export default function UserPage() {
   const [ownerName, setOwnerName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
+  const [roomCount, setRoomCount] = useState('');
   const [createBusy, setCreateBusy] = useState(false);
   const [createMsg, setCreateMsg] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
@@ -120,8 +121,9 @@ export default function UserPage() {
     setCreateMsg('');
     const email = createEmail.trim().toLowerCase();
     const name = propertyName.trim();
-    if (!email || createPassword.length < 6 || !name) {
-      setCreateMsg('Email, password minimal 6 karakter, dan nama property wajib diisi.');
+    const rooms = Math.max(0, Math.floor(Number(roomCount) || 0));
+    if (!email || createPassword.length < 6 || !name || rooms < 1) {
+      setCreateMsg('Email, password minimal 6 karakter, nama property, dan jumlah kamar (minimal 1) wajib diisi.');
       return;
     }
     setCreateBusy(true);
@@ -131,7 +133,7 @@ export default function UserPage() {
       if (!user) {
         const sign = await getSupabase().auth.signUp({
           email, password: createPassword,
-          options: { data: { full_name: ownerName || email, property_name: name, address, phone } }
+          options: { data: { full_name: ownerName || email, property_name: name, address, phone, room_count: rooms } }
         });
         if (sign.error) {
           if (/already registered|already exists/i.test(sign.error.message || '')) {
@@ -153,6 +155,7 @@ export default function UserPage() {
         p_full_name: ownerName.trim() || email,
         p_phone: phone.trim(),
         p_property_name: name,
+        p_room_count: rooms,
       });
       if (provisionError) {
         const code = provisionError.message || '';
@@ -165,6 +168,7 @@ export default function UserPage() {
       setCreateMsg('✓ Database + account owner + property + akses berhasil dibuat.');
       setDatabaseCreated(true);
       setCreatePassword('');
+      setRoomCount('');
       await loadAccount();
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
@@ -264,6 +268,7 @@ export default function UserPage() {
                     <div className="field"><label>Email Account</label><input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" /></div>
                     <div className="field"><label>Password Login</label><input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password" /></div>
                     <div className="field"><label>Nama Property</label><input value={propertyName} onChange={e => setPropertyName(e.target.value)} placeholder="Nama kost / hotel" /></div>
+                    <div className="field"><label>Jumlah Kamar</label><input type="number" min="1" max="1000" value={roomCount} onChange={e => setRoomCount(e.target.value)} placeholder="Contoh: 20" required /><div className="sub">Kamar akan langsung dibuat sebagai <b>Tersedia</b> di menu Kamar.</div></div>
                     <div className="field"><label>Nama Pemilik</label><input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Nama lengkap pemilik" /></div>
                     <div className="field"><label>Nomor Telepon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Nomor telepon" /></div>
                     <div className="field full"><label>Alamat Property</label><textarea value={address} onChange={e => setAddress(e.target.value)} rows={2} /></div>
