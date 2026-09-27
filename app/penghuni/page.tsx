@@ -316,9 +316,34 @@ export default function Penghuni() {
       </div>
       <div className="actions"><button className="btn" onClick={edit?update:add}>{edit?'Simpan Perubahan':'Simpan Penghuni'}</button><button className="btn secondary" onClick={reset}>Batal</button></div>
     </div>}
-    <div className="card">
-      <table className="table"><thead><tr><th>Nama</th><th>Kamar</th><th>Telepon</th><th>Mulai</th><th>Berakhir</th><th>Sewa</th><th>Aksi</th></tr></thead>
-      <tbody>{t.map(x=><tr key={x.id}><td><b>{x.name}</b></td><td>{x.room}</td><td>{x.phone}</td><td>{x.startDate}</td><td>{effectiveEndDate(x)}</td><td>{money(x.rent)}</td><td><div className="actions"><button className="btn secondary" onClick={()=>startEdit(x)}>Edit</button><button className="btn secondary" onClick={()=>extend(x)}>Perpanjang</button><button className="btn secondary" onClick={()=>{setMoveTenant(x);setMoveRoom('')}}>Pindah Kamar</button><button className="btn" onClick={()=>checkout(x)}>C.O</button></div></td></tr>)}{!t.length&&<tr><td colSpan={7}>Belum ada penghuni aktif.</td></tr>}</tbody></table>
+    <div className="card penghuni-active-list">
+      <div className="penghuni-desktop-table">
+        <div className="table-wrap">
+          <table className="table"><thead><tr><th>Nama</th><th>Kamar</th><th>Telepon</th><th>Mulai</th><th>Berakhir</th><th>Sewa</th><th>Aksi</th></tr></thead>
+          <tbody>{t.map(x=><tr key={x.id}><td><b>{x.name}</b></td><td>{x.room}</td><td>{x.phone || '-'}</td><td>{x.startDate}</td><td>{effectiveEndDate(x)}</td><td>{money(x.rent)}</td><td><div className="actions"><button className="btn secondary" onClick={()=>startEdit(x)}>Edit</button><button className="btn secondary" onClick={()=>extend(x)}>Perpanjang</button><button className="btn secondary" onClick={()=>{setMoveTenant(x);setMoveRoom('')}}>Pindah Kamar</button><button className="btn" onClick={()=>checkout(x)}>C.O</button></div></td></tr>)}{!t.length&&<tr><td colSpan={7}>Belum ada penghuni aktif.</td></tr>}</tbody></table>
+        </div>
+      </div>
+      <div className="penghuni-mobile-cards">
+        {!t.length && <div className="penghuni-empty">Belum ada penghuni aktif.</div>}
+        {t.map(x=><div className="penghuni-mobile-card" key={x.id}>
+          <div className="penghuni-mobile-head">
+            <div><div className="penghuni-mobile-name">{x.name}</div><div className="penghuni-mobile-room">Kamar {x.room}</div></div>
+            <div className="badge blue">AKTIF</div>
+          </div>
+          <div className="penghuni-mobile-info">
+            <div><span>Telepon</span><b>{x.phone || '-'}</b></div>
+            <div><span>Mulai</span><b>{x.startDate}</b></div>
+            <div><span>Berakhir</span><b>{effectiveEndDate(x)}</b></div>
+            <div><span>Sewa / bulan</span><b>{money(x.rent)}</b></div>
+          </div>
+          <div className="penghuni-mobile-actions">
+            <button className="btn secondary" onClick={()=>startEdit(x)}>Edit</button>
+            <button className="btn secondary" onClick={()=>extend(x)}>Perpanjang</button>
+            <button className="btn secondary" onClick={()=>{setMoveTenant(x);setMoveRoom('')}}>Pindah Kamar</button>
+            <button className="btn" onClick={()=>checkout(x)}>C.O</button>
+          </div>
+        </div>)}
+      </div>
     </div>
   </>;
 }
