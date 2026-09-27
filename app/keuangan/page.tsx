@@ -14,8 +14,7 @@ export default function Keuangan() {
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    const load = () => setTransactions(loadData('transactions', defaultTransactions));
-    load();
+    setTransactions(loadData('transactions', defaultTransactions));
     if (new URLSearchParams(location.search).get('aksi') === 'tambah') setShow(true);
   }, []);
 
