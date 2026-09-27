@@ -65,8 +65,15 @@ export function loadData<T>(name:string,fallback:T):T{
   }catch{return emptyForUnauthenticated(name,fallback)}
 }
 export function saveData<T>(name:string,v:T){
-  if(typeof window!=='undefined' && isActiveDataScope()){
+  if(typeof window==='undefined') return;
+  // Persist immediately in the browser so every form has an immediate save path.
+  // Cloud sync is separately authorized by the current Supabase session/property.
+  try {
     localStorage.setItem('kostpro_'+name,JSON.stringify(v));
-    void syncLocalStateToCloud(name,v);
+  } catch {
+    window.dispatchEvent(new CustomEvent('kostpro:data-save-error',{detail:{name,message:'Penyimpanan lokal penuh atau data terlalu besar.'}}));
+    return;
   }
+  if (CLOUD_KEYS.has(name)) void syncLocalStateToCloud(name,v);
+  window.dispatchEvent(new CustomEvent('kostpro:data-saved',{detail:{name}}));
 }export const money=(n:number)=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
