@@ -28,21 +28,8 @@ export default function Keuangan() {
   );
   const result = income - expense;
 
-  const expenseByCategory = useMemo(() => {
-    const grouped = new Map<string, number>();
-    transactions
-      .filter((item) => item.type === 'expense')
-      .forEach((item) => grouped.set(item.category || 'Beban Lainnya', (grouped.get(item.category || 'Beban Lainnya') || 0) + item.amount));
-    return Array.from(grouped.entries()).sort((a, b) => b[1] - a[1]);
-  }, [transactions]);
-
-  const incomeByCategory = useMemo(() => {
-    const grouped = new Map<string, number>();
-    transactions
-      .filter((item) => item.type === 'income')
-      .forEach((item) => grouped.set(item.category || 'Pendapatan Lainnya', (grouped.get(item.category || 'Pendapatan Lainnya') || 0) + item.amount));
-    return Array.from(grouped.entries()).sort((a, b) => b[1] - a[1]);
-  }, [transactions]);
+  const incomeTransactions = useMemo(() => transactions.filter((item) => item.type === 'income'), [transactions]);
+  const expenseTransactions = useMemo(() => transactions.filter((item) => item.type === 'expense'), [transactions]);
 
   const add = async () => {
     if (!desc || !amt) {
@@ -153,11 +140,14 @@ export default function Keuangan() {
             <div style={{ padding: '11px 8px', fontWeight: 800, textAlign: 'right', minWidth: 130 }}>KREDIT</div>
 
             <div style={{ gridColumn: '1 / -1', padding: '14px 8px 7px', fontWeight: 800, background: '#f8fafc' }}>PENDAPATAN</div>
-            {incomeByCategory.length ? incomeByCategory.map(([category, amount]) => (
-              <div key={'income-' + category} style={{ display: 'contents' }}>
-                <div style={{ padding: '7px 8px 7px 22px' }}>{category}</div>
+            {incomeTransactions.length ? incomeTransactions.map((item) => (
+              <div key={item.id} style={{ display: 'contents' }}>
+                <div style={{ padding: '7px 8px 7px 22px' }}>
+                  <div style={{ fontWeight: 700 }}>{item.description || 'Pendapatan tanpa keterangan'}</div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{item.date} · {item.category || 'Pendapatan Lainnya'} · ID {item.id}</div>
+                </div>
                 <div style={{ padding: '7px 8px', textAlign: 'right' }}>—</div>
-                <div style={{ padding: '7px 8px', textAlign: 'right' }}>{money(amount)}</div>
+                <div style={{ padding: '7px 8px', textAlign: 'right' }}>{money(item.amount)}</div>
               </div>
             )) : (
               <><div style={{ padding: '7px 8px 7px 22px', color: '#9ca3af' }}>Belum ada pendapatan</div><div /><div /></>
@@ -167,10 +157,13 @@ export default function Keuangan() {
             <div style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 800, borderTop: '1px solid #e5e7eb' }}>{money(income)}</div>
 
             <div style={{ gridColumn: '1 / -1', padding: '14px 8px 7px', fontWeight: 800, background: '#f8fafc' }}>BEBAN / PENGELUARAN</div>
-            {expenseByCategory.length ? expenseByCategory.map(([category, amount]) => (
-              <div key={'expense-' + category} style={{ display: 'contents' }}>
-                <div style={{ padding: '7px 8px 7px 22px' }}>{category}</div>
-                <div style={{ padding: '7px 8px', textAlign: 'right' }}>{money(amount)}</div>
+            {expenseTransactions.length ? expenseTransactions.map((item) => (
+              <div key={item.id} style={{ display: 'contents' }}>
+                <div style={{ padding: '7px 8px 7px 22px' }}>
+                  <div style={{ fontWeight: 700 }}>{item.description || 'Pengeluaran tanpa keterangan'}</div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{item.date} · {item.category || 'Beban Lainnya'} · ID {item.id}</div>
+                </div>
+                <div style={{ padding: '7px 8px', textAlign: 'right' }}>{money(item.amount)}</div>
                 <div style={{ padding: '7px 8px', textAlign: 'right' }}>—</div>
               </div>
             )) : (
