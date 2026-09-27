@@ -56,7 +56,7 @@ export default function CCTVPage() {
 
   function persist(next: CameraItem[]) {
     setCameras(next);
-    saveData(STORAGE_KEY.replace('kostpro_',''), next);
+    await saveData(STORAGE_KEY.replace('kostpro_',''), next);
   }
 
   function openAdd() {
