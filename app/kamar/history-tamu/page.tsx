@@ -29,7 +29,7 @@ export default function HistoryTamuKamar() {
         monthly = [...monthly, ...moving.filter(x => !monthly.some(m => m.id === x.id))];
         history = history.filter(x => !ids.has(x.id));
 
-        const paid = paymentHistory.filter(p => moving.some(g => g.name === p.tenant && g.room === p.room));
+        const paid = paymentHistory.filter(p => moving.some(g => (p.tenantId && p.tenantId === g.id) || (!p.tenantId && p.tenant === g.name && p.room === g.room)));
         monthlyPayments = [...monthlyPayments, ...paid.filter(p => !monthlyPayments.some(m => m.id === p.id))];
         paymentHistory = paymentHistory.filter(p => !paid.some(x => x.id === p.id));
 
@@ -43,7 +43,7 @@ export default function HistoryTamuKamar() {
       }
 
       setGuests(history);
-      setPayments(paymentHistory.filter(p => history.some(g => g.name === p.tenant && g.room === p.room)));
+      setPayments(paymentHistory.filter(p => history.some(g => (p.tenantId && p.tenantId === g.id) || (!p.tenantId && p.tenant === g.name && p.room === g.room))));
     };
     void run();
   }, []);
