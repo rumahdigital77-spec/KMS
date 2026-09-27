@@ -83,6 +83,7 @@ export default function CheckInTamu() {
       });
       const payment: Payment = {
         id: 'P-' + Date.now(),
+        tenantId: tenant.id,
         tenant: tenant.name,
         room: selected.id,
         month,
