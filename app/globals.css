@@ -71,3 +71,28 @@ button{max-width:100%}
   .main{margin:0!important;width:100%!important;padding:0!important}
   .card{box-shadow:none!important}
 }
+
+
+/* Laporan Keuangan: angka dibuat ringkas agar presisi terhadap ruang layar */
+.laporan-page .metric{font-size:22px;line-height:1.15;letter-spacing:-.35px;white-space:nowrap}
+.laporan-page .grid .card:nth-child(3) .metric,
+.laporan-page .grid .card:nth-child(4) .metric{font-size:18px;letter-spacing:-.45px}
+.laporan-page .table{min-width:0;table-layout:auto}
+.laporan-page .table th,
+.laporan-page .table td{font-size:12px;padding:9px 8px}
+.laporan-page .table td:nth-last-child(2),
+.laporan-page .table td:nth-child(3){font-variant-numeric:tabular-nums}
+@media(max-width:640px){
+  .laporan-page .metric{font-size:20px}
+  .laporan-page .grid .card:nth-child(3) .metric,
+  .laporan-page .grid .card:nth-child(4) .metric{font-size:16px}
+  .laporan-page .table{min-width:0;width:100%;font-size:11px}
+  .laporan-page .table th,.laporan-page .table td{font-size:11px;padding:7px 6px}
+  .laporan-page .table th{white-space:normal;line-height:1.2}
+}
+@media(max-width:420px){
+  .laporan-page .metric{font-size:19px}
+  .laporan-page .grid .card:nth-child(3) .metric,
+  .laporan-page .grid .card:nth-child(4) .metric{font-size:15px}
+  .laporan-page .table th,.laporan-page .table td{font-size:10.5px;padding:6px 5px}
+}
