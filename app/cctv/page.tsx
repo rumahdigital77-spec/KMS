@@ -54,9 +54,9 @@ export default function CCTVPage() {
     [cameras, previewId]
   );
 
-  function persist(next: CameraItem[]) {
-    setCameras(next);
+  async function persist(next: CameraItem[]) {
     await saveData(STORAGE_KEY.replace('kostpro_',''), next);
+    setCameras(next);
   }
 
   function openAdd() {
@@ -82,7 +82,7 @@ export default function CCTVPage() {
     setShowForm(true);
   }
 
-  function saveCamera() {
+  async function saveCamera() {
     const name = form.name.trim();
     const location = form.location.trim();
     const url = form.url.trim();
@@ -124,17 +124,25 @@ export default function CCTVPage() {
       ? cameras.map(camera => camera.id === editingId ? item : camera)
       : [item, ...cameras];
 
-    persist(next);
-    setShowForm(false);
-    setEditingId(null);
-    setForm(emptyForm);
-    setNotice('');
+    try {
+      await persist(next);
+      setShowForm(false);
+      setEditingId(null);
+      setForm(emptyForm);
+      setNotice('');
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'CCTV gagal disimpan ke database.');
+    }
   }
 
-  function removeCamera(id: string) {
+  async function removeCamera(id: string) {
     if (!window.confirm('Hapus kamera ini dari KMS?')) return;
     if (previewId === id) setPreviewId(null);
-    persist(cameras.filter(camera => camera.id !== id));
+    try {
+      await persist(cameras.filter(camera => camera.id !== id));
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'CCTV gagal dihapus dari database.');
+    }
   }
 
   function openLogin(camera: CameraItem) {
