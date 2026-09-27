@@ -65,8 +65,19 @@ export default function AccountDataSync() {
           return;
         }
 
-        // NEVER clear local data before the authenticated property state is read.
-        // Doing so used to destroy the only copy of a new property's draft data.
+        // If a different authenticated account takes over this browser session,
+        // immediately discard the previous account's local cache. This prevents
+        // another property's data from remaining visible while the new property's
+        // cloud state is being fetched. A failed cloud read must fail closed: no
+        // previous property's records may be exposed to the newly logged-in user.
+        const activeUser = sessionStorage.getItem(ACTIVE_USER_KEY);
+        if (activeUser && activeUser !== user.id) {
+          clearLocalScope();
+        }
+
+        // NEVER clear local data for a brand-new account before the authenticated
+        // property state is read, because an explicitly marked pre-login draft may
+        // need to be migrated into that new property.
         const { data: state, error } = await supabase.rpc('get_property_app_state');
         if (error) {
           // A transient cloud error must not erase the user's local data.
