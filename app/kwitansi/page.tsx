@@ -35,10 +35,8 @@ export default function Kwitansi() {
 
   useEffect(() => {
     setPayments(loadData('payments', defaultPayments));
-    try {
-      const raw = localStorage.getItem('kostpro_settings');
-      if (raw) setSettings({ ...defaults, ...JSON.parse(raw) });
-    } catch {}
+    const saved = loadData<Partial<Settings>>('settings', {});
+    setSettings({ ...defaults, ...saved });
 
     const queryId = new URLSearchParams(window.location.search).get('id');
     if (queryId) setId(queryId);
