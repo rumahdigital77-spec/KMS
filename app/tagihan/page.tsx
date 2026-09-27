@@ -4,7 +4,7 @@ import{defaultPayments,defaultTransactions,loadData,money,Payment,saveData,Trans
 export default function Tagihan(){
  const[p,setP]=useState<Payment[]>(defaultPayments),[show,setShow]=useState(false),[sel,setSel]=useState(''),[method,setMethod]=useState('transfer'),[msg,setMsg]=useState('');
  useEffect(()=>{const payments=loadData('payments',defaultPayments);setP(payments);const q=new URLSearchParams(location.search);const paymentId=q.get('id');if(paymentId){setSel(paymentId);setShow(true);if(q.get('baru')==='1')setMsg('Penghuni baru berhasil dibuat. Tagihan pertama sudah dibuat. Pilih metode pembayaran lalu klik “Simpan & Lunas + Buat Kwitansi”.')}else if(q.get('aksi')==='catat')setShow(true)},[]);
- const pay=()=>{
+ const pay=async()=>{
   if(!sel)return setMsg('Pilih tagihan.');
   const current=p.find(x=>x.id===sel);
   if(!current)return setMsg('Tagihan tidak ditemukan.');
@@ -21,7 +21,7 @@ export default function Tagihan(){
   const alreadyRecorded=existing.some(x=>x.referenceId===current.id);
   const tx:Transaction={id:'TR-'+Date.now(),date:paidAt,description:'Pelunasan sewa '+current.tenant+' — '+current.room+' — '+current.month,category:'Pendapatan sewa',amount:current.amount,type:'income',referenceId:current.id};
   const transactions=alreadyRecorded?existing:[...existing,tx];
-  setP(n);saveData('payments',n);saveData('paymentHistory',nextPaymentHistory);saveData('transactions',transactions);setShow(false);setMsg(alreadyRecorded?'Tagihan lunas dan dipindahkan dari daftar tagihan aktif. Membuka kwitansi...':'Pelunasan berhasil. Tagihan dipindahkan ke History Payment dan nomor kwitansi sudah dicatat. Membuka kwitansi...');
+  setP(n);await Promise.all([saveData('payments',n),saveData('paymentHistory',nextPaymentHistory),saveData('transactions',transactions)]);setShow(false);setMsg(alreadyRecorded?'Tagihan lunas dan dipindahkan dari daftar tagihan aktif. Membuka kwitansi...':'Pelunasan berhasil. Tagihan dipindahkan ke History Payment dan nomor kwitansi sudah dicatat. Membuka kwitansi...');
   location.href='/kwitansi?id='+encodeURIComponent(current.id);
  };
  const openPay=(id:string)=>{setSel(id);setShow(true);setMsg('')};
