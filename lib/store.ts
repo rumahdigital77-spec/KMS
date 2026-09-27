@@ -10,36 +10,25 @@ const CLOUD_KEYS = new Set([
 async function syncLocalStateToCloud(name: string, value: unknown) {
   if (!CLOUD_KEYS.has(name) || typeof window === 'undefined') return;
   cloudSyncQueue = cloudSyncQueue.then(async () => {
-  try {
-    const supabase = createSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: account } = await supabase
-      .from('user_accounts')
-      .select('property_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    const propertyId = account?.property_id;
-    if (!propertyId) return;
+    try {
+      const supabase = createSupabaseClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data: row } = await supabase
-      .from('property_app_state')
-      .select('state')
-      .eq('property_id', propertyId)
-      .maybeSingle();
+      const { error } = await supabase.rpc('save_property_app_state', {
+        p_key: 'kostpro_' + name,
+        p_value: value,
+      });
 
-    const state = row?.state && typeof row.state === 'object'
-      ? { ...(row.state as Record<string, unknown>) }
-      : {};
-    state['kostpro_' + name] = value;
-
-    await supabase.from('property_app_state').upsert({
-      property_id: propertyId,
-      state,
-      updated_at: new Date().toISOString(),
-    });
-    } catch {
-      // Local cache remains usable if the network is temporarily unavailable.
+      if (error) {
+        window.dispatchEvent(new CustomEvent('kostpro:data-save-error',{
+          detail:{name,message:error.message || 'Gagal menyimpan data ke database.'}
+        }));
+      }
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent('kostpro:data-save-error',{
+        detail:{name,message:error instanceof Error ? error.message : 'Gagal menyimpan data ke database.'}
+      }));
     }
   });
   await cloudSyncQueue;
