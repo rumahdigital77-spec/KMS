@@ -51,7 +51,7 @@ export default function Penghuni() {
 
         const payments = loadData<Payment[]>('payments', defaultPayments);
         const paymentHistory = loadData<Payment[]>('paymentHistory', []);
-        const movedPayments = payments.filter(p => expired.some(tn => tn.name === p.tenant && tn.room === p.room && p.status === 'paid'));
+        const movedPayments = payments.filter(p => expired.some(tn => ((p.tenantId && p.tenantId === tn.id) || (!p.tenantId && p.tenant === tn.name && p.room === tn.room)) && p.status === 'paid'));
         const keepPayments = payments.filter(p => !movedPayments.some(h => h.id === p.id));
         const mergedPaymentHistory = [
           ...paymentHistory,
@@ -137,7 +137,8 @@ export default function Penghuni() {
       ...edit, name:name.trim(), room, phone:phone.trim(), startDate:date,
       endDate:endDate || defaultEndDate(date), rent:monthlyRent, status:'active'
     };
-    const tt = t.map(x => x.id === edit.id ? updated : x);
+    const allTenants = loadData<Tenant[]>('tenants', defaultTenants);
+    const tt = allTenants.map(x => x.id === edit.id ? updated : x);
     const rr = r.map(x => {
       if (x.id === edit.room && x.id !== room) return { ...x, tenant:'-', status:'available' as const };
       if (x.id === room) return { ...x, tenant:updated.name, price:monthlyRent, status:'occupied' as const };
@@ -146,8 +147,8 @@ export default function Penghuni() {
 
     const payments = loadData<Payment[]>('payments', defaultPayments);
     const np = payments.map(p =>
-      p.status === 'unpaid' && p.tenant === edit.name && p.room === edit.room
-        ? { ...p, tenant:updated.name, room:updated.room, amount:monthlyRent }
+      p.status === 'unpaid' && ((p.tenantId && p.tenantId === edit.id) || (!p.tenantId && p.tenant === edit.name && p.room === edit.room))
+        ? { ...p, tenantId:updated.id, tenant:updated.name, room:updated.room, amount:monthlyRent }
         : p
     );
 
@@ -172,7 +173,7 @@ export default function Penghuni() {
     const ids = new Set(moving.map(x => x.id));
     monthly = [...monthly, ...moving.filter(x => !monthly.some(m => m.id === x.id))];
     history = history.filter(x => !ids.has(x.id));
-    const paid = paymentHistory.filter(p => moving.some(g => g.name === p.tenant && g.room === p.room));
+    const paid = paymentHistory.filter(p => moving.some(g => (p.tenantId && p.tenantId === g.id) || (!p.tenantId && p.tenant === g.name && p.room === g.room)));
     monthlyPayments = [...monthlyPayments, ...paid.filter(p => !monthlyPayments.some(m => m.id === p.id))];
     paymentHistory = paymentHistory.filter(p => !paid.some(x => x.id === p.id));
     await Promise.all([
@@ -192,7 +193,7 @@ export default function Penghuni() {
     const tt = t.filter(y => y.id !== x.id);
     const payments = loadData<Payment[]>('payments', defaultPayments);
     const paymentHistory = loadData<Payment[]>('paymentHistory', []);
-    const movedPayments = payments.filter(p => p.tenant === x.name && p.room === x.room && p.status === 'paid');
+    const movedPayments = payments.filter(p => ((p.tenantId && p.tenantId === x.id) || (!p.tenantId && p.tenant === x.name && p.room === x.room)) && p.status === 'paid');
     const keepPayments = payments.filter(p => !movedPayments.some(h => h.id === p.id));
     const mergedPaymentHistory = [...paymentHistory, ...movedPayments.filter(p => !paymentHistory.some(h => h.id === p.id))];
     const rr = r.map(y => y.id === x.room ? { ...y, tenant:'-', status:'available' as const } : y);
@@ -217,9 +218,9 @@ export default function Penghuni() {
     const nextEnd = addOneMonth(currentEnd);
     const month = periodLabel(currentEnd);
     const payments = loadData<Payment[]>('payments', defaultPayments);
-    const exists = payments.some(p => p.tenant === x.name && p.room === x.room && p.month === month);
+    const exists = payments.some(p => ((p.tenantId && p.tenantId === x.id) || (!p.tenantId && p.tenant === x.name && p.room === x.room)) && p.month === month);
     const nextPayment:Payment = {
-      id:'P-'+Date.now(), tenant:x.name, room:x.room, month,
+      id:'P-'+Date.now(), tenantId:x.id, tenant:x.name, room:x.room, month,
       amount:normalizeMoney(x.rent), status:'unpaid'
     };
     const tt = t.map(y => y.id === x.id ? { ...y, endDate:nextEnd, status:'active' as const } : y);
