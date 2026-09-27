@@ -7,6 +7,7 @@ const CLOUD_KEYS = new Set([
 ]);
 
 const PENDING_DRAFT_KEY = 'kostpro-pending-draft'; // scoped draft marker; never reused across authenticated properties
+const HYDRATION_READY_KEY = 'kostpro-hydration-ready';
 
 async function syncLocalStateToCloud(name: string, value: unknown) {
   if (!CLOUD_KEYS.has(name) || typeof window === 'undefined') return;
@@ -19,6 +20,14 @@ async function syncLocalStateToCloud(name: string, value: unknown) {
       // Data entered before login is explicitly marked as a temporary draft.
       // It is migrated only after a successful authenticated property lookup.
       sessionStorage.setItem(PENDING_DRAFT_KEY, '1');
+      return;
+    }
+
+    // Do not allow a page that mounted before authenticated cloud hydration
+    // to overwrite the property's canonical database state with its empty/default
+    // React state. AccountDataSync marks this ready only after the scoped cloud
+    // state has been loaded (or an explicit draft has been migrated).
+    if (sessionStorage.getItem(HYDRATION_READY_KEY) !== '1') {
       return;
     }
 
