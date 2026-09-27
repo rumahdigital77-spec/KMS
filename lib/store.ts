@@ -114,6 +114,8 @@ export function loadData<T>(name:string,fallback:T):T {
 export async function saveData<T>(name:string,v:T): Promise<void> {
   if (typeof window === 'undefined') return;
 
+  // Auth/hydration errors stay separate from localStorage failures.
+  // This also keeps the real Supabase error visible to the caller.
   // Auth/hydration errors are deliberately kept outside the localStorage
   // try/catch so they cannot be misreported as "storage full".
   const supabase = createSupabaseClient();
