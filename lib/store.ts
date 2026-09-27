@@ -184,5 +184,11 @@ export async function saveData<T>(name:string,v:T): Promise<void> {
   window.dispatchEvent(new CustomEvent('kostpro:data-saved', { detail: { name } }));
 }
 
+export const normalizeMoney = (value: unknown): number => {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.round(n);
+};
+
 export const money = (n:number) =>
-  new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
+  new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(normalizeMoney(n));
