@@ -1,7 +1,7 @@
 'use client';
-import{useEffect,useState}from'react';import{useSearchParams}from'next/navigation';import{defaultRooms,loadData,money,Room,saveData}from'@/lib/store';
+import{useEffect,useState}from'react';import{defaultRooms,loadData,money,Room,saveData}from'@/lib/store';
 const label=(s:Room['status'])=>s==='occupied'?'Terisi':s==='available'?'Tersedia':'Maintenance';
-export default function Kamar(){const searchParams=useSearchParams();const[r,setR]=useState<Room[]>(defaultRooms),[add,setAdd]=useState(false),[detail,setDetail]=useState<Room|null>(null),[code,setCode]=useState(''),[price,setPrice]=useState(''),[status,setStatus]=useState<Room['status']>('available'),[msg,setMsg]=useState('');
+export default function Kamar(){const[r,setR]=useState<Room[]>(defaultRooms),[add,setAdd]=useState(false),[detail,setDetail]=useState<Room|null>(null),[code,setCode]=useState(''),[price,setPrice]=useState(''),[status,setStatus]=useState<Room['status']>('available'),[msg,setMsg]=useState('');
 useEffect(()=>{
   const load=async()=>{
     const local=loadData<Room[]>('rooms',defaultRooms);
@@ -25,7 +25,7 @@ useEffect(()=>{
       setR(local);
       if(error instanceof Error && local.length===0) setMsg(error.message);
     }
-    const q=searchParams;
+    const q=new URLSearchParams(window.location.search);
     if(q.get('aksi')==='tambah')setAdd(true);
     const roomId=q.get('room');
     if(roomId){const target=local.find(x=>x.id===roomId);if(target)setDetail(target);}
