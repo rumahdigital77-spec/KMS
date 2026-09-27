@@ -27,7 +27,7 @@ export default function Keuangan() {
     [transactions]
   );
   const result = income - expense;
-  const resultDisplay = result < 0 ? '(' + money(Math.abs(result)) + ')' : money(result);
+  const resultDisplay = result < 0 ? '(' + money(Math.abs(result)) + ')' : '+' + money(result);
 
   const incomeTransactions = useMemo(() => transactions.filter((item) => item.type === 'income'), [transactions]);
   const expenseTransactions = useMemo(() => transactions.filter((item) => item.type === 'expense'), [transactions]);
@@ -121,7 +121,7 @@ export default function Keuangan() {
         </div>
         <div className="card">
           <div className="label">LABA / (RUGI) BERSIH</div>
-          <div className="metric">{resultDisplay}</div>
+          <div className={`metric ${result < 0 ? 'result-negative' : 'result-positive'}`}>{resultDisplay}</div>
         </div>
       </div>
 
@@ -183,6 +183,8 @@ export default function Keuangan() {
       </div>
 
       <style jsx>{`
+        .result-positive{color:#15803d}
+        .result-negative{color:#b91c1c}
         .report-sheet{max-width:100%;overflow:hidden}
         .report-grid{width:100%;max-width:100%;overflow:hidden}
         @media(max-width:560px){
