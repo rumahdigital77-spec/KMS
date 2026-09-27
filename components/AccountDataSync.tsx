@@ -27,12 +27,13 @@ export default function AccountDataSync() {
       return;
     }
 
-    const hydrate = async () => {
-      clearLocalScope();
+    const hydrate = async (clearBeforeLoad = true) => {
+      if (clearBeforeLoad) clearLocalScope();
 
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
+          clearLocalScope();
           window.dispatchEvent(new Event('kostpro:data-scope-changed'));
           return;
         }
@@ -61,8 +62,13 @@ export default function AccountDataSync() {
     void hydrate();
 
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-        window.setTimeout(() => void hydrate(), 0);
+      if (event === 'SIGNED_OUT') {
+        clearLocalScope();
+        window.dispatchEvent(new Event('kostpro:data-scope-changed'));
+        return;
+      }
+      if (event === 'SIGNED_IN') {
+        window.setTimeout(() => void hydrate(true), 0);
       }
     });
 
