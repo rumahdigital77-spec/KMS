@@ -60,8 +60,8 @@ export default function HistoryTamuKamar() {
     </div>
     <div className="card" style={{marginTop:18}}>
       <div className="section-title">Database History Tamu C.O</div>
-      <div className="kamar-history-table table-wrap"><table className="table"><thead><tr><th>Nama</th><th>Kamar</th><th>Telepon</th><th>Masuk</th><th>C.O</th><th>Harga/Bulan</th><th>Status</th></tr></thead>
-      <tbody>{guests.map(x=><tr key={x.id}><td><b>{x.name}</b></td><td>{x.room}</td><td>{x.phone||'-'}</td><td>{x.startDate}</td><td>{x.endDate||'-'}</td><td>{money(x.rent)}</td><td>{x.checkoutReason==='expired'?'Masa aktif berakhir':x.checkoutReason==='transferred'?'Pindah kamar':'C.O manual'}</td></tr>)}{!guests.length&&<tr><td colSpan={7}>Belum ada tamu C.O.</td></tr>}</tbody></table></div><div className="kamar-history-cards">{guests.map(x=><div className="kamar-history-card-item" key={x.id}><div className="kamar-room-head"><div><div className="kamar-room-name">{x.name}</div><div className="kamar-room-tenant">Kamar {x.room}</div></div><span className="badge blue">{x.checkoutReason==="expired"?"Masa aktif berakhir":x.checkoutReason==="transferred"?"Pindah kamar":"C.O manual"}</span></div><div className="kamar-history-info"><div><span>Telepon</span><b>{x.phone||"-"}</b></div><div><span>Masuk</span><b>{x.startDate}</b></div><div><span>C.O</span><b>{x.endDate||"-"}</b></div><div><span>Harga / Bulan</span><b>{money(x.rent)}</b></div></div></div>)}{!guests.length&&<div className="penghuni-empty">Belum ada tamu C.O.</div>}</div>
+      <div className="table-wrap"><table className="table"><thead><tr><th>Nama</th><th>Kamar</th><th>Telepon</th><th>Masuk</th><th>C.O</th><th>Harga/Bulan</th><th>Status</th></tr></thead>
+      <tbody>{guests.map(x=><tr key={x.id}><td><b>{x.name}</b></td><td>{x.room}</td><td>{x.phone||'-'}</td><td>{x.startDate}</td><td>{x.endDate||'-'}</td><td>{money(x.rent)}</td><td>{x.checkoutReason==='expired'?'Masa aktif berakhir':x.checkoutReason==='transferred'?'Pindah kamar':'C.O manual'}</td></tr>)}{!guests.length&&<tr><td colSpan={7}>Belum ada tamu C.O.</td></tr>}</tbody></table></div>
     </div>
   </div>;
 }
