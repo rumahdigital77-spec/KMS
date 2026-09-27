@@ -17,12 +17,6 @@ export default function Keuangan() {
     const load = () => setTransactions(loadData('transactions', defaultTransactions));
     load();
     if (new URLSearchParams(location.search).get('aksi') === 'tambah') setShow(true);
-    window.addEventListener('kostpro:data-saved', load);
-    window.addEventListener('kostpro:data-scope-changed', load);
-    return () => {
-      window.removeEventListener('kostpro:data-saved', load);
-      window.removeEventListener('kostpro:data-scope-changed', load);
-    };
   }, []);
 
   const income = useMemo(
