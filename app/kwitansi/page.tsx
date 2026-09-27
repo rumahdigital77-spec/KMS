@@ -44,13 +44,9 @@ export default function Kwitansi() {
     if (queryId) setId(queryId);
   }, []);
 
-  const payment =
-    paymentHistory.find((item) => item.id === id) ||
-    payments.find((item) => item.id === id) ||
-    paymentHistory.find((item) => item.status === 'paid') ||
-    payments.find((item) => item.status === 'paid') ||
-    paymentHistory[0] ||
-    payments[0];
+  const payment = id
+    ? (paymentHistory.find((item) => item.id === id) || payments.find((item) => item.id === id))
+    : (paymentHistory.find((item) => item.status === 'paid') || payments.find((item) => item.status === 'paid'));
   const isPaid = payment?.status === 'paid';
   const no = payment?.receiptNo || '—';
 
