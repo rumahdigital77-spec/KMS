@@ -43,7 +43,7 @@ export default function Sidebar() {
     const { data: listener } = supabase.auth.onAuthStateChange(() => { window.setTimeout(() => void loadRole(), 0); });
     return () => { cancelled = true; listener.subscription.unsubscribe(); };
   }, []);
-  useEffect(() => { if (p === '/tagihan' || p === '/keuangan') setLaporanOpen(true); if (p === '/kamar' || p.startsWith('/kamar/')) setKamarOpen(true); }, [p]);
+  useEffect(() => { if (p === '/keuangan') setLaporanOpen(true); if (p === '/kamar' || p.startsWith('/kamar/')) setKamarOpen(true); }, [p]);
   useEffect(() => { document.body.style.overflow = open ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [open]);
 
   return <>
