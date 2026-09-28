@@ -1,3 +1,4 @@
+// Keep room status action guards deployed with the current production build.
 'use client';
 
 import { useEffect, useState } from 'react';
