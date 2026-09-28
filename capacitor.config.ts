@@ -1,5 +1,6 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+// KOSTPRO v1.5 final audited Android wrapper.
 const config: CapacitorConfig = {
   appId: 'com.kostpro.kms',
   appName: 'KOSTPRO',
