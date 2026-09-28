@@ -51,7 +51,7 @@ export default function Sidebar() {
     {open && <button type="button" className="sidebar-overlay" aria-label="Tutup menu" onClick={() => setOpen(false)} />}
     <aside className={'sidebar ' + (open ? 'sidebar-open' : '')}>
       <div className="brand"><div className="brand-fallback"><span>KOST</span><span>PRO</span></div><div className="sub" style={{ color: '#98a2b3' }}>Kost Management System</div></div>
-      <nav className="nav">{items.filter(([href]) => href !== '/user' || role !== 'admin').map(([href, label, Icon]) => label === 'Manajemen Kamar' ? <div className="nav-group" key={href}>
+      <nav className="nav">{items.map(([href, label, Icon]) => label === 'Manajemen Kamar' ? <div className="nav-group" key={href}>
         <button type="button" className={'nav-parent-link nav-parent ' + (p === href || p.startsWith('/kamar/') ? 'active' : '')} onClick={() => setKamarOpen(v => !v)} aria-expanded={kamarOpen}><Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />{label}</button>
         {kamarOpen && <div className="nav-submenu">
           <Link className={p === '/kamar/check-in' ? 'active' : ''} href="/kamar/check-in"><UserRound size={15} />C.I Tamu Kamar</Link>
