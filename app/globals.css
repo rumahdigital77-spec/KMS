@@ -504,13 +504,14 @@ input,select,textarea{font-size:16px}
 
 /* Owner logo hardening */
 .sidebar-owner-logo-wrap{
-  width:48px;height:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:center;
-  border-radius:12px;background:rgba(255,255,255,.96);overflow:hidden;
-  border:1px solid rgba(255,255,255,.6);box-shadow:0 5px 14px rgba(0,0,0,.22);
+  width:56px;height:56px;flex:0 0 56px;display:flex;align-items:center;justify-content:center;
+  border-radius:12px;background:transparent;overflow:visible;
+  border:0;box-shadow:none;
 }
 .sidebar-owner-logo-wrap .sidebar-owner-logo{
-  width:100%;height:100%;padding:4px;border:0;border-radius:0;background:transparent;
-  object-fit:contain;object-position:center;display:block;filter:none;
+  width:100%;height:100%;padding:2px;border:0;border-radius:0;background:transparent;
+  object-fit:contain;object-position:center;display:block;filter:brightness(0) invert(1);
+  mix-blend-mode:normal;
 }
 .sidebar-owner-logo-fallback{
   display:none;align-items:center;justify-content:center;width:100%;height:100%;
@@ -520,3 +521,5 @@ input,select,textarea{font-size:16px}
 /* Room status safety: occupied rooms must never expose an active Ready/Available action. */
 .kamar-status-actions .btn:disabled,
 .kamar-status-actions .btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed;pointer-events:none;filter:grayscale(.15)}
+
+/* logo visibility fix: keep owner logo white and remove the white backing box */
