@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { defaultRooms, loadData, money, Room, saveData } from '@/lib/store';
+import { defaultRooms, defaultTenants, loadData, money, Room, Tenant, saveData } from '@/lib/store';
 
 const label = (s: Room['status']) =>
   s === 'occupied' ? 'Terisi' : s === 'available' ? 'Tersedia' : 'Maintenance';
@@ -9,14 +9,16 @@ const label = (s: Room['status']) =>
 export default function EditRoomStatus() {
   const [rooms, setRooms] = useState<Room[]>(defaultRooms);
   const [msg, setMsg] = useState('');
+  const [tenants, setTenants] = useState<Tenant[]>(defaultTenants);
 
   useEffect(() => {
     setRooms(loadData<Room[]>('rooms', defaultRooms));
+    setTenants(loadData<Tenant[]>('tenants', defaultTenants));
   }, []);
 
   const change = async (id: string, status: Room['status']) => {
     const current = rooms.find((r) => r.id === id);
-    const occupied = Boolean(current?.status === 'occupied' || (current?.tenant && current.tenant !== '-'));
+    const occupied = Boolean(current?.status === 'occupied' || (current?.tenant && current.tenant.trim() !== '-' && current.tenant.trim() !== '') || tenants.some((t) => t.room === id && t.status !== 'history'));
     if (occupied && (status === 'available' || status === 'occupied')) {
       setMsg('Kamar yang sedang terisi tidak dapat diubah ke Tersedia atau Terisi dari Edit Room Status. Gunakan proses C.O. atau Penghuni Aktif.');
       return;
@@ -37,7 +39,7 @@ export default function EditRoomStatus() {
   };
 
   const actions = (r: Room) => {
-    const occupied = Boolean(r.status === 'occupied' || (r.tenant && r.tenant !== '-'));
+    const occupied = Boolean(r.status === 'occupied' || (r.tenant && r.tenant.trim() !== '-' && r.tenant.trim() !== '') || tenants.some((t) => t.room === r.id && t.status !== 'history'));
     return (
     <div className="kamar-status-actions">
       <button className="btn" disabled={r.status === 'available' || occupied} onClick={() => change(r.id, 'available')}>
