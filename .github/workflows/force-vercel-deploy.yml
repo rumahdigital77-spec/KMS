@@ -1,0 +1,27 @@
+name: Force Vercel Production Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'DEPLOY_TRIGGER_V1.5'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      VERCEL_ORG_ID: team_CUpIKgs4OnUgSYsdKXEFfvOt
+      VERCEL_PROJECT_ID: prj_ZPIWBCL2kahxumQftp2nikS4iZUZ
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Deploy latest main to Vercel production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel@54.17.2 deploy --prod --yes --token="$VERCEL_TOKEN" --scope="rumahdigital77-7464"
