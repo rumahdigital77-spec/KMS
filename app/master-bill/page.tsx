@@ -43,10 +43,7 @@ export default function MasterBill() {
     const tenantPayments = [...tenantActivePayments, ...tenantHistoryPayments.filter(h => !tenantActivePayments.some(p => p.id === h.id))];
     const tenantPaymentIds = new Set(tenantPayments.map(p => p.id));
     const tenantTransactions = transactions.filter(tx => {
-      // A payment-linked transaction belongs to exactly one bill.
       if (tx.referenceId) return tenantPaymentIds.has(tx.referenceId);
-      // Legacy transactions without referenceId must match the tenant AND room,
-      // never the tenant name alone (e.g. "Tes — K-01" must not enter K-02).
       const haystack = tx.description.toLowerCase();
       const tenantLabel = tenant.name.toLowerCase();
       const roomLabel = tenant.room.toLowerCase();
@@ -61,9 +58,6 @@ export default function MasterBill() {
   const masterTransactions = useMemo(() => [...(selected?.transactions || [])].sort((a, b) => String(a.date || '').localeCompare(String(b.date || ''))), [selected]);
   const totalIncome = masterTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = masterTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-  // Master Bill is a receivable sub-ledger:
-  // billing creates a debit (Piutang), while payment settlement reduces
-  // that receivable on the credit side. The balance must never mix tenants.
   const totalCreditSettlement = masterTransactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -152,12 +146,7 @@ export default function MasterBill() {
             </div>
             <div className="master-row">
               <div>
-                <b>Transaksi Pembayaran / Pelunasan</b>
-                {masterTransactions.filter(t => t.type === 'income').length ? masterTransactions.filter(t => t.type === 'income').map(tx => (
-                  <span key={'settlement-detail-'+tx.id} className="master-detail">{tx.date} · {tx.category} · {tx.description}</span>
-                )) : (
-                  <span className="master-detail">Belum ada transaksi pembayaran yang terhubung ke billing tamu ini.</span>
-                )}
+                <b>Pelunasan</b>
               </div>
               <div className="right">—</div>
               <div className="right">{money(totalCreditSettlement)}</div>
@@ -171,6 +160,7 @@ export default function MasterBill() {
         </div>
       </div>
     </>}
+
     <style jsx>{`
       .master-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
       .master-label{font-size:10px!important;letter-spacing:.04em}.master-metric{font-size:20px!important;line-height:1.15}
