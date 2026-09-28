@@ -80,8 +80,18 @@ export default function EditRoomStatus() {
     }
   };
 
-  const actions = (_r: Room) => {
-    return <div className="kamar-status-actions" aria-hidden="true" />;
+  const actions = (r: Room) => {
+    const occupied = isOccupied(r);
+    return (
+      <div className="kamar-status-actions">
+        <button type="button" className="btn" disabled={occupied} onClick={() => change(r.id, 'available')}>
+          Tersedia
+        </button>
+        <button type="button" className="btn" disabled={occupied} onClick={() => change(r.id, 'maintenance')}>
+          Maintenance
+        </button>
+      </div>
+    );
   };
 
   return (
