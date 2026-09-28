@@ -83,14 +83,7 @@ export default function MasterBill() {
           <div><div className="sub">Kamar</div><b>{selected.tenant.room}</b></div>
           <div><div className="sub">Mulai Sewa</div><b>{selected.tenant.startDate}</b></div>
           <div><div className="sub">Berakhir</div><b>{selected.tenant.endDate || '-'}</b></div>
-          <div><div className="sub">Sewa / Bulan</div><b>{money(selected.tenant.rent)}</b></div>
         </div>
-      </div>
-
-      <div className="grid" style={{ marginBottom: 18 }}>
-        <div className="card"><div className="label master-label">TOTAL BILLING</div><div className="metric master-metric">{money(totalBilling)}</div></div>
-        <div className="card"><div className="label master-label">SUDAH DIBAYAR</div><div className="metric master-metric">{money(totalPaid)}</div></div>
-        <div className="card"><div className="label master-label">BELUM DIBAYAR</div><div className="metric master-metric">{money(totalUnpaid)}</div></div>
       </div>
 
       <div className="card" style={{ marginBottom: 18, overflow: 'hidden' }}>
