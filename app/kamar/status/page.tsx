@@ -13,13 +13,22 @@ export default function EditRoomStatus() {
   const [tenants, setTenants] = useState<Tenant[]>(defaultTenants);
 
   useEffect(() => {
-    setRooms(loadData<Room[]>('rooms', defaultRooms));
-    setTenants(loadData<Tenant[]>('tenants', defaultTenants));
+    const refresh = () => {
+      setRooms(loadData<Room[]>('rooms', defaultRooms));
+      setTenants(loadData<Tenant[]>('tenants', defaultTenants));
+    };
+    refresh();
+    window.addEventListener('kostpro:data-saved', refresh);
+    window.addEventListener('kostpro:data-scope-changed', refresh);
+    return () => {
+      window.removeEventListener('kostpro:data-saved', refresh);
+      window.removeEventListener('kostpro:data-scope-changed', refresh);
+    };
   }, []);
 
   const change = async (id: string, status: Room['status']) => {
     const current = rooms.find((r) => r.id === id);
-    const occupied = Boolean(current?.status === 'occupied' || (current?.tenant && current.tenant.trim() !== '-' && current.tenant.trim() !== '') || tenants.some((t) => t.room === id && t.status !== 'history'));
+    const occupied = Boolean(current?.status === 'occupied' || (current?.tenant && current.tenant.trim() !== '-' && current.tenant.trim() !== '') || tenants.some((t) => String(t.room).trim() === String(id).trim() && (t.status || 'active') === 'active'));
     if (occupied && (status === 'available' || status === 'occupied')) {
       setMsg('Kamar yang sedang terisi tidak dapat diubah ke Tersedia atau Terisi dari Edit Room Status. Gunakan proses C.O. atau Penghuni Aktif.');
       return;
@@ -49,7 +58,7 @@ export default function EditRoomStatus() {
       <button className="btn secondary" disabled={r.status === 'maintenance'} onClick={() => change(r.id, 'maintenance')}>
         Maintenance
       </button>
-      <button className="btn secondary" disabled={occupied} onClick={() => change(r.id, 'occupied')}>
+      <button className="btn secondary" disabled={occupied} aria-disabled={occupied} onClick={() => change(r.id, 'occupied')}>
         Terisi
       </button>
     </div>
