@@ -56,7 +56,6 @@ export default function Sidebar() {
         {kamarOpen && <div className="nav-submenu">
           <Link className={p === '/kamar/check-in' ? 'active' : ''} href="/kamar/check-in"><UserRound size={15} />C.I Tamu Kamar</Link>
           <Link className={p === '/penghuni' ? 'active' : ''} href="/penghuni"><Users size={15} />Penghuni Aktif</Link>
-          <Link className={p === '/master-bill' ? 'active' : ''} href="/master-bill"><Receipt size={15} />Master Bill</Link>
           <Link className={p === '/kamar/history-tamu' ? 'active' : ''} href="/kamar/history-tamu"><Users size={15} />History Tamu Kamar</Link>
           <Link className={p === '/kamar/status' ? 'active' : ''} href="/kamar/status"><DoorOpen size={15} />Edit Room Status</Link>
         </div>}
