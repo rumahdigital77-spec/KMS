@@ -28,7 +28,7 @@ export default function EditRoomStatus() {
 
   const change = async (id: string, status: Room['status']) => {
     const current = rooms.find((r) => r.id === id);
-    const occupied = Boolean(current?.status === 'occupied') || Boolean(current?.tenant?.trim() && current.tenant.trim() !== '-') || tenants.some((t) => String(t.room).trim() === String(id).trim() && (t.status || 'active') === 'active');
+    const occupied = Boolean(current && (String(current.tenant ?? '').trim() !== '' && String(current.tenant ?? '').trim() !== '-')) || Boolean(current?.status === 'occupied') || tenants.some((t) => String(t.room ?? '').trim() === String(id).trim() && String(t.name ?? '').trim() !== '' && String(t.name ?? '').trim() !== '-' && (t.status || 'active') !== 'history');
     if (occupied && (status === 'available' || status === 'occupied')) {
       setMsg('Kamar yang sedang terisi tidak dapat diubah ke Tersedia atau Terisi dari Edit Room Status. Gunakan proses C.O. atau Penghuni Aktif.');
       return;
@@ -49,10 +49,10 @@ export default function EditRoomStatus() {
   };
 
   const actions = (r: Room) => {
-    const occupied = Boolean(r.status === 'occupied') || Boolean(r.tenant?.trim() && r.tenant.trim() !== '-') || tenants.some((t) => String(t.room).trim() === String(r.id).trim() && (t.status || 'active') === 'active');
+    const occupied = Boolean((String(r.tenant ?? '').trim() !== '' && String(r.tenant ?? '').trim() !== '-')) || Boolean(r.status === 'occupied') || tenants.some((t) => String(t.room ?? '').trim() === String(r.id).trim() && String(t.name ?? '').trim() !== '' && String(t.name ?? '').trim() !== '-' && (t.status || 'active') !== 'history');
     return (
     <div className="kamar-status-actions">
-      <button className="btn" disabled={r.status === 'available' || occupied} onClick={() => change(r.id, 'available')}>
+      <button className="btn" disabled={occupied || r.status === 'available'} onClick={() => change(r.id, 'available')}>
         Tersedia
       </button>
       <button className="btn secondary" disabled={r.status === 'maintenance'} onClick={() => change(r.id, 'maintenance')}>
