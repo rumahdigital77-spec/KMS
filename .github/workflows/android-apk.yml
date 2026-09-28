@@ -43,6 +43,26 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Apply owner logo as Android app icon
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+          mkdir -p /tmp/kostpro-icon
+          convert -background none public/kostpro-owner-logo.svg -resize 512x512 /tmp/kostpro-icon/icon.png
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            case "$density" in
+              mdpi) size=48 ;;
+              hdpi) size=72 ;;
+              xhdpi) size=96 ;;
+              xxhdpi) size=144 ;;
+              xxxhdpi) size=192 ;;
+            esac
+            mkdir -p "android/app/src/main/res/mipmap-$density"
+            convert /tmp/kostpro-icon/icon.png -resize "${size}x${size}" "android/app/src/main/res/mipmap-$density/ic_launcher.png"
+            cp "android/app/src/main/res/mipmap-$density/ic_launcher.png" "android/app/src/main/res/mipmap-$density/ic_launcher_round.png"
+          done
+
       - name: Set app version
         shell: bash
         run: |
@@ -50,8 +70,8 @@ jobs:
           from pathlib import Path
           p = Path('android/app/build.gradle')
           s = p.read_text()
-          s = s.replace('versionCode 1', 'versionCode 15')
-          s = s.replace('versionName "1.0"', 'versionName "1.5.0"')
+          s = s.replace('versionCode 1', 'versionCode 16')
+          s = s.replace('versionName "1.0"', 'versionName "1.6.0"')
           p.write_text(s)
           PY
 
@@ -68,7 +88,7 @@ jobs:
       - name: Upload dependency audit
         uses: actions/upload-artifact@v4
         with:
-          name: KOSTPRO-v1.5.0-dependency-audit
+          name: KOSTPRO-v1.6.0-dependency-audit
           path: npm-audit.json
           if-no-files-found: error
           retention-days: 30
