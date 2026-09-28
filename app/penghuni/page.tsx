@@ -35,6 +35,7 @@ export default function Penghuni() {
   const [msg,setMsg] = useState('');
   const [moveTenant,setMoveTenant] = useState<Tenant|null>(null);
   const [moveRoom,setMoveRoom] = useState('');
+  const [busy,setBusy] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -91,15 +92,19 @@ export default function Penghuni() {
   };
 
   const add = async () => {
+    if (busy) return;
     const rm = r.find(x => x.id === room);
     const monthlyRent = normalizeMoney(rent || rm?.price);
     if (!name.trim() || !rm) return setMsg('Nama dan kamar wajib diisi.');
     if (rm.status !== 'available') return setMsg('Kamar tidak tersedia.');
     if (!monthlyRent) return setMsg('Harga sewa wajib diisi.');
+    if (!date) return setMsg('Tanggal mulai sewa wajib diisi.');
+    const resolvedEndDate = endDate || defaultEndDate(date);
+    if (resolvedEndDate <= date) return setMsg('Tanggal berakhir harus setelah tanggal mulai sewa.');
 
     const nt:Tenant = {
       id:'T-'+Date.now(), name:name.trim(), room, phone:phone.trim(), startDate:date,
-      ...(endDate ? { endDate } : {}), rent:monthlyRent, status:'active'
+      endDate:resolvedEndDate, rent:monthlyRent, status:'active'
     };
     const nr = r.map(x => x.id === room ? { ...x, tenant:nt.name, price:monthlyRent, status:'occupied' as const } : x);
     const allTenants = loadData<Tenant[]>('tenants', defaultTenants);
@@ -112,11 +117,14 @@ export default function Penghuni() {
     ];
 
     try {
+      setBusy(true);
       await Promise.all([saveData('tenants',tt), saveData('rooms',nr), saveData('payments',np)]);
       setT(tt.filter(x => (x.status || 'active') === 'active')); setR(nr);
       location.href='/tagihan?id='+encodeURIComponent(paymentId)+'&baru=1';
     } catch(error) {
       setMsg(error instanceof Error ? `Gagal menyimpan data: ${error.message}` : 'Gagal menyimpan data ke database.');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -128,6 +136,7 @@ export default function Penghuni() {
   };
 
   const update = async () => {
+    if (busy) return;
     if (!edit || !name.trim()) return setMsg('Nama wajib diisi.');
     const newRoom = r.find(x => x.id === room);
     if (!newRoom) return setMsg('Kamar wajib dipilih.');
@@ -135,10 +144,13 @@ export default function Penghuni() {
 
     const monthlyRent = normalizeMoney(rent || newRoom.price);
     if (!monthlyRent) return setMsg('Harga sewa wajib diisi.');
+    if (!date) return setMsg('Tanggal mulai sewa wajib diisi.');
+    const resolvedEndDate = endDate || defaultEndDate(date);
+    if (resolvedEndDate <= date) return setMsg('Tanggal berakhir harus setelah tanggal mulai sewa.');
 
     const updated:Tenant = {
       ...edit, name:name.trim(), room, phone:phone.trim(), startDate:date,
-      endDate:endDate || defaultEndDate(date), rent:monthlyRent, status:'active'
+      endDate:resolvedEndDate, rent:monthlyRent, status:'active'
     };
     const allTenants = loadData<Tenant[]>('tenants', defaultTenants);
     const tt = allTenants.map(x => x.id === edit.id ? updated : x);
@@ -156,10 +168,13 @@ export default function Penghuni() {
     );
 
     try {
+      setBusy(true);
       await Promise.all([saveData('tenants',tt), saveData('rooms',rr), saveData('payments',np)]);
       setT(tt.filter(x => (x.status || 'active') === 'active')); setR(rr); reset(); setMsg('Data penghuni dan tagihan aktif berhasil diselaraskan.');
     } catch(error) {
       setMsg(error instanceof Error ? `Gagal menyimpan perubahan: ${error.message}` : 'Gagal menyimpan perubahan ke database.');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -188,6 +203,7 @@ export default function Penghuni() {
   };
 
   const checkout = async (x:Tenant) => {
+    if (busy) return;
     if (!confirm('C.O / Check Out '+x.name+' dari '+x.room+'? Data akan dipindahkan ke History Tamu.')) return;
     const today = new Date().toISOString().slice(0,10);
     const history = loadData<Tenant[]>('tenantHistory', []);
@@ -202,6 +218,7 @@ export default function Penghuni() {
     const rr = r.map(y => y.id === x.room ? { ...y, tenant:'-', status:'available' as const } : y);
 
     try {
+      setBusy(true);
       await Promise.all([
         saveData('tenantHistory',hh),
         saveData('paymentHistory',mergedPaymentHistory),
@@ -213,10 +230,13 @@ export default function Penghuni() {
       setMsg(x.name+' sudah C.O. Kamar kembali Available. Tagihan belum lunas tetap berada di Tagihan; pembayaran lunas masuk History Payment.');
     } catch(error) {
       setMsg(error instanceof Error ? `Gagal menyimpan C.O.: ${error.message}` : 'Gagal menyimpan C.O. ke database.');
+    } finally {
+      setBusy(false);
     }
   };
 
   const moveTenantToRoom = async () => {
+    if (busy) return;
     if (!moveTenant || !moveRoom || moveRoom === moveTenant.room) {
       setMsg('Pilih kamar tujuan yang berbeda.');
       return;
@@ -245,6 +265,7 @@ export default function Penghuni() {
     );
 
     try {
+      setBusy(true);
       await Promise.all([
         saveData('tenants', nextTenants),
         saveData('rooms', nextRooms),
@@ -257,11 +278,18 @@ export default function Penghuni() {
       setMsg(moveTenant.name+' berhasil pindah dari '+moveTenant.room+' ke '+moveRoom+'. Tagihan yang belum lunas ikut diperbarui ke kamar baru.');
     } catch (error) {
       setMsg(error instanceof Error ? 'Gagal pindah kamar: '+error.message : 'Gagal pindah kamar ke database.');
+    } finally {
+      setBusy(false);
     }
   };
 
   const extend = async (x:Tenant) => {
+    if (busy) return;
     const currentEnd = effectiveEndDate(x);
+    const today = new Date().toISOString().slice(0,10);
+    if (currentEnd < today) {
+      return setMsg('Masa sewa penghuni ini sudah berakhir. Silakan proses C.O. atau input ulang sebagai penghuni aktif.');
+    }
     const nextEnd = addOneMonth(currentEnd);
     const month = periodLabel(currentEnd);
     const payments = loadData<Payment[]>('payments', defaultPayments);
@@ -274,6 +302,7 @@ export default function Penghuni() {
     const np = exists ? payments : [...payments, nextPayment];
 
     try {
+      setBusy(true);
       await Promise.all([saveData('tenants',tt), saveData('payments',np)]);
       setT(tt);
       setMsg(exists
@@ -281,13 +310,15 @@ export default function Penghuni() {
         : 'Masa sewa diperpanjang sampai '+nextEnd+'. Tagihan periode baru sebesar '+money(x.rent)+' sudah dibuat.');
     } catch(error) {
       setMsg(error instanceof Error ? `Gagal menyimpan perpanjangan: ${error.message}` : 'Gagal menyimpan perpanjangan ke database.');
+    } finally {
+      setBusy(false);
     }
   };
 
   return <>
     <div className="top">
       <div><div className="title">Penghuni Aktif</div><div className="sub">Kelola tamu yang masih tinggal.</div></div>
-      <button className="btn" onClick={()=>{reset();setShow(!show)}}>+ Tambah Penghuni</button>
+      <button className="btn" disabled={busy} onClick={()=>{reset();setShow(v=>!v)}}>+ Tambah Penghuni</button>
     </div>
     {msg && <div className="card" style={{marginBottom:18}}>{msg}</div>}
     {moveTenant && <div className="card" style={{marginBottom:18}}>
@@ -300,8 +331,8 @@ export default function Penghuni() {
         </select></div>
       </div>
       <div className="actions">
-        <button className="btn" onClick={moveTenantToRoom}>Pindah Kamar</button>
-        <button className="btn secondary" onClick={()=>{setMoveTenant(null);setMoveRoom('')}}>Batal</button>
+        <button className="btn" disabled={busy} onClick={moveTenantToRoom}>{busy?'Menyimpan...':'Pindah Kamar'}</button>
+        <button className="btn secondary" disabled={busy} onClick={()=>{setMoveTenant(null);setMoveRoom('')}}>Batal</button>
       </div>
     </div>}
     {show && <div className="card" style={{marginBottom:18}}>
@@ -314,13 +345,13 @@ export default function Penghuni() {
         <div className="field"><label>Berakhir</label><input type="date" value={endDate || defaultEndDate(date)} min={date} onChange={e=>setEndDate(e.target.value)}/></div>
         <div className="field"><label>Sewa / bulan</label><input type="number" min="0" value={rent} onChange={e=>setRent(e.target.value)}/></div>
       </div>
-      <div className="actions"><button className="btn" onClick={edit?update:add}>{edit?'Simpan Perubahan':'Simpan Penghuni'}</button><button className="btn secondary" onClick={reset}>Batal</button></div>
+      <div className="actions"><button className="btn" disabled={busy} onClick={edit?update:add}>{busy?'Menyimpan...':edit?'Simpan Perubahan':'Simpan Penghuni'}</button><button className="btn secondary" disabled={busy} onClick={reset}>Batal</button></div>
     </div>}
     <div className="card penghuni-active-list">
       <div className="penghuni-desktop-table">
         <div className="table-wrap">
           <table className="table"><thead><tr><th>Nama</th><th>Kamar</th><th>Telepon</th><th>Mulai</th><th>Berakhir</th><th>Sewa</th><th>Aksi</th></tr></thead>
-          <tbody>{t.map(x=><tr key={x.id}><td><b>{x.name}</b></td><td>{x.room}</td><td>{x.phone || '-'}</td><td>{x.startDate}</td><td>{effectiveEndDate(x)}</td><td>{money(x.rent)}</td><td><div className="actions"><button className="btn secondary" onClick={()=>startEdit(x)}>Edit</button><button className="btn secondary" onClick={()=>extend(x)}>Perpanjang</button><button className="btn secondary" onClick={()=>{setMoveTenant(x);setMoveRoom('')}}>Pindah Kamar</button><button className="btn" onClick={()=>checkout(x)}>C.O</button></div></td></tr>)}{!t.length&&<tr><td colSpan={7}>Belum ada penghuni aktif.</td></tr>}</tbody></table>
+          <tbody>{t.map(x=><tr key={x.id}><td><b>{x.name}</b></td><td>{x.room}</td><td>{x.phone || '-'}</td><td>{x.startDate}</td><td>{effectiveEndDate(x)}</td><td>{money(x.rent)}</td><td><div className="actions"><button className="btn secondary" disabled={busy} onClick={()=>startEdit(x)}>Edit</button><button className="btn secondary" disabled={busy} onClick={()=>extend(x)}>Perpanjang</button><button className="btn secondary" disabled={busy} onClick={()=>{setMoveTenant(x);setMoveRoom('')}}>Pindah Kamar</button><button className="btn" disabled={busy} onClick={()=>checkout(x)}>C.O</button></div></td></tr>)}{!t.length&&<tr><td colSpan={7}>Belum ada penghuni aktif.</td></tr>}</tbody></table>
         </div>
       </div>
       <div className="penghuni-mobile-cards">
@@ -337,10 +368,10 @@ export default function Penghuni() {
             <div><span>Sewa / bulan</span><b>{money(x.rent)}</b></div>
           </div>
           <div className="penghuni-mobile-actions">
-            <button className="btn secondary" onClick={()=>startEdit(x)}>Edit</button>
-            <button className="btn secondary" onClick={()=>extend(x)}>Perpanjang</button>
-            <button className="btn secondary" onClick={()=>{setMoveTenant(x);setMoveRoom('')}}>Pindah Kamar</button>
-            <button className="btn" onClick={()=>checkout(x)}>C.O</button>
+            <button className="btn secondary" disabled={busy} onClick={()=>startEdit(x)}>Edit</button>
+            <button className="btn secondary" disabled={busy} onClick={()=>extend(x)}>Perpanjang</button>
+            <button className="btn secondary" disabled={busy} onClick={()=>{setMoveTenant(x);setMoveRoom('')}}>Pindah Kamar</button>
+            <button className="btn" disabled={busy} onClick={()=>checkout(x)}>C.O</button>
           </div>
         </div>)}
       </div>
