@@ -460,62 +460,70 @@ input,select,textarea{font-size:16px}
   left:14px;
   right:14px;
   bottom:14px;
+  min-height:72px;
+  padding:8px 12px;
   display:flex;
   align-items:center;
-  gap:11px;
-  min-height:70px;
-  padding:8px 10px;
-  border:1px solid rgba(255,255,255,.22);
-  border-radius:16px;
-  background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(15,23,42,.38));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 20px rgba(0,0,0,.16);
+  justify-content:flex-start;
+  gap:12px;
+  box-sizing:border-box;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:18px;
+  background:rgba(255,255,255,.07);
+  box-shadow:0 10px 28px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.10);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
   overflow:visible;
+  z-index:100;
+}
+.sidebar-owner-logo-wrap{
+  position:relative;
+  width:54px;
+  height:54px;
+  flex:0 0 54px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:15px;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.24);
+  box-shadow:0 6px 18px rgba(0,0,0,.18);
+  overflow:hidden;
 }
 .sidebar-owner-logo{
+  width:100%;
+  height:100%;
+  padding:6px;
+  box-sizing:border-box;
   display:block;
-  width:60px;
-  height:60px;
-  flex:0 0 60px;
-  padding:2px;
   object-fit:contain;
   object-position:center;
+  border:0;
+  border-radius:14px;
   background:transparent;
-  border:1px solid rgba(255,255,255,.28);
-  border-radius:13px;
-  box-shadow:0 5px 16px rgba(0,0,0,.20);
-  filter:grayscale(1) brightness(0) invert(1);
+  filter:none!important;
+  opacity:1!important;
+  visibility:visible!important;
 }
+.sidebar-owner-logo-fallback{display:none;}
 .sidebar-owner-version{
   display:flex;
   align-items:center;
   min-width:0;
-  line-height:1.1;
 }
 .sidebar-owner-version b{
   font-size:12px;
   font-weight:800;
   color:#fff;
-  letter-spacing:.2px;
+  letter-spacing:.3px;
   white-space:nowrap;
 }
 @media(max-width:900px){
-  .sidebar-owner-footer{bottom:max(14px,env(safe-area-inset-bottom));}
-}
-
-/* Owner logo hardening */
-.sidebar-owner-logo-wrap{
-  width:56px;height:56px;flex:0 0 56px;display:flex;align-items:center;justify-content:center;
-  border-radius:12px;background:transparent;overflow:visible;
-  border:0;box-shadow:none;
-}
-.sidebar-owner-logo-wrap .sidebar-owner-logo{
-  width:100%;height:100%;padding:2px;border:0;border-radius:0;background:transparent;
-  object-fit:contain;object-position:center;display:block;filter:brightness(0) invert(1);
-  mix-blend-mode:normal;
-}
-.sidebar-owner-logo-fallback{
-  display:none;align-items:center;justify-content:center;width:100%;height:100%;
-  font-size:8px;font-weight:900;letter-spacing:.5px;color:#312e81;
+  .sidebar-owner-footer{
+    left:12px;
+    right:12px;
+    bottom:max(12px,env(safe-area-inset-bottom));
+  }
 }
 
 /* Room status safety: occupied rooms must never expose an active Ready/Available action. */
