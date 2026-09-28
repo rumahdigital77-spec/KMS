@@ -89,8 +89,8 @@ export default function MasterBill() {
 
       <div className="grid" style={{ marginBottom: 18 }}>
         <div className="card"><div className="label master-label">TOTAL BILLING</div><div className="metric master-metric">{money(totalBilling)}</div></div>
-        <div className="card"><div className="label master-label">TOTAL PEMBAYARAN</div><div className="metric master-metric">{money(totalPaid)}</div></div>
-        <div className="card"><div className="label master-label">SISA TAGIHAN</div><div className="metric master-metric">{money(totalUnpaid)}</div></div>
+        <div className="card"><div className="label master-label">SUDAH DIBAYAR</div><div className="metric master-metric">{money(totalPaid)}</div></div>
+        <div className="card"><div className="label master-label">BELUM DIBAYAR</div><div className="metric master-metric">{money(totalUnpaid)}</div></div>
       </div>
 
       <div className="card" style={{ marginBottom: 18, overflow: 'hidden' }}>
@@ -144,7 +144,7 @@ export default function MasterBill() {
             <div className="master-total"><b>Total Transaksi</b><b className="right">{money(totalExpense)}</b><b className="right">{money(totalIncome)}</b></div>
 
             <div className="master-net">
-              <b>SISA TAGIHAN</b>
+              <b>BELUM DIBAYAR</b>
               <b className="right">{money(totalUnpaid)}</b>
               <b className="right">—</b>
             </div>
