@@ -71,10 +71,10 @@ export default function Keuangan() {
     <>
       <div className="top">
         <div>
-          <div className="title">Laporan Keuangan</div>
-          <div className="sub">Arus kas, pendapatan, beban dan hasil usaha</div>
+          <div className="title finance-page-title">Laporan Keuangan</div>
+          <div className="sub finance-page-sub">Arus kas, pendapatan, beban dan hasil usaha</div>
         </div>
-        <button className="btn" onClick={() => setShow(!show)}>+ Catat Transaksi</button>
+        <button className="btn finance-add-btn" onClick={() => setShow(!show)}>+ Catat Transaksi</button>
       </div>
 
       {msg && <div className="card" style={{ marginBottom: 18 }}>{msg}</div>}
@@ -112,15 +112,15 @@ export default function Keuangan() {
 
       <div className="grid">
         <div className="card">
-          <div className="label">TOTAL PENDAPATAN</div>
+          <div className="label finance-label">TOTAL PENDAPATAN</div>
           <div className="metric finance-metric">{money(income)}</div>
         </div>
         <div className="card">
-          <div className="label">TOTAL BEBAN</div>
+          <div className="label finance-label">TOTAL BEBAN</div>
           <div className="metric finance-metric">{money(expense)}</div>
         </div>
         <div className="card">
-          <div className="label">LABA / (RUGI) BERSIH</div>
+          <div className="label finance-label">LABA / (RUGI) BERSIH</div>
           <div className={`metric finance-metric ${result < 0 ? 'result-negative' : 'result-positive'}`}>{resultDisplay}</div>
         </div>
       </div>
@@ -185,13 +185,13 @@ export default function Keuangan() {
       <style jsx>{`
         .result-positive{color:#15803d}
         .result-negative{color:#b91c1c}
-        .finance-metric{font-size:22px!important;line-height:1.15;letter-spacing:-.02em}
+        .finance-page-title{font-size:20px!important}.finance-page-sub{font-size:12px!important}.finance-add-btn{font-size:12px!important;padding:8px 12px!important}.finance-label{font-size:10px!important;letter-spacing:.04em}.finance-metric{font-size:20px!important;line-height:1.15;letter-spacing:-.02em}
         .report-sheet{max-width:100%;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.06)}
         .report-grid{width:100%;max-width:100%;overflow:hidden}
         .report-grid>div{transition:background .15s ease}
         .report-grid>div:nth-child(3n+1){letter-spacing:.005em}
         @media(max-width:560px){
-          .finance-metric{font-size:18px!important}
+          .finance-page-title{font-size:18px!important}.finance-page-sub{font-size:11px!important}.finance-add-btn{font-size:11px!important;padding:7px 10px!important}.finance-label{font-size:9px!important}.finance-metric{font-size:17px!important}
           .report-sheet{padding:12px!important;border-radius:10px!important}
           .report-grid{font-size:9.5px!important;grid-template-columns:minmax(0,1fr) minmax(72px,86px) minmax(72px,86px)!important}
           .report-grid>div{min-width:0;overflow-wrap:anywhere}
