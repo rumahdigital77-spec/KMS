@@ -522,4 +522,9 @@ input,select,textarea{font-size:16px}
 .kamar-status-actions .btn:disabled,
 .kamar-status-actions .btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed;pointer-events:none;filter:grayscale(.15)}
 
-/* logo visibility fix: keep owner logo white and remove the white backing box */
+/* Final owner-logo visibility hardening */
+.sidebar-owner-footer{z-index:60;isolation:isolate;}
+.sidebar-owner-logo-wrap{position:relative;z-index:61;opacity:1!important;visibility:visible!important;display:flex!important;}
+.sidebar-owner-logo-wrap .sidebar-owner-logo{position:relative;z-index:62;opacity:1!important;visibility:visible!important;display:block!important;filter:brightness(0) invert(1)!important;mix-blend-mode:normal!important;}
+.sidebar-owner-logo-fallback{position:absolute;inset:0;z-index:63;pointer-events:none;}
+.sidebar-owner-logo-wrap .sidebar-owner-logo + .sidebar-owner-logo-fallback{display:none;}
