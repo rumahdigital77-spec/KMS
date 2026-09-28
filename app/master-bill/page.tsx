@@ -131,11 +131,21 @@ export default function MasterBill() {
               <b className="right">{money(totalBilling)}</b>
               <b className="right">—</b>
             </div>
-            <div className="master-total">
-              <b>PELUNASAN</b>
-              <b className="right">—</b>
-              <b className="right">{money(totalCreditSettlement)}</b>
-            </div>
+            <div className="master-section">DETAIL PAYMENT / PELUNASAN</div>
+            {selected.payments.filter(p => p.status === 'paid').length ? selected.payments.filter(p => p.status === 'paid').map(p => (
+              <div key={'settlement-'+p.id} className="master-row">
+                <div>
+                  <b>{p.month} · Pelunasan</b>
+                  <span className="master-detail">
+                    {p.receiptNo || p.id} · Tanggal: {p.paidAt || '-'} · Metode: {p.method || '-'}
+                  </span>
+                </div>
+                <div className="right">—</div>
+                <div className="right">{money(p.amount)}</div>
+              </div>
+            )) : (
+              <div className="master-empty">Belum ada payment/pelunasan.</div>
+            )}
             <div className="master-total">
               <b>SISA PIUTANG</b>
               <b className="right">{money(outstandingReceivable)}</b>
