@@ -9,6 +9,7 @@ import { LayoutDashboard, DoorOpen, Receipt, Wallet, BarChart3, Settings, FileTe
 const items = [
   ['/', 'Dashboard', LayoutDashboard],
   ['/kamar', 'Manajemen Kamar', DoorOpen],
+  ['/tagihan', 'Tagihan', Receipt],
   ['/kwitansi', 'Kwitansi', FileText],
   ['/cctv', 'CCTV', Camera],
   ['/laporan', 'Laporan', BarChart3],
@@ -61,8 +62,8 @@ export default function Sidebar() {
           <Link className={p === '/kamar/status' ? 'active' : ''} href="/kamar/status"><DoorOpen size={15} />Edit Room Status</Link>
         </div>}
       </div> : label === 'Laporan' ? <div className="nav-group" key={href}>
-        <button type="button" className={'nav-parent-link nav-parent ' + (p === href || p === '/tagihan' || p === '/keuangan' ? 'active' : '')} onClick={() => setLaporanOpen(v => !v)} aria-expanded={laporanOpen}><Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />{label}</button>
-        {laporanOpen && <div className="nav-submenu"><Link className={p === '/tagihan' ? 'active' : ''} href="/tagihan"><Receipt size={15} />Tagihan</Link><Link className={p === '/keuangan' ? 'active' : ''} href="/keuangan"><Wallet size={15} />Keuangan</Link><Link className={p === '/laporan/bulanan' ? 'active' : ''} href="/laporan/bulanan"><BarChart3 size={15} />History Laporan Bulanan</Link></div>}
+        <button type="button" className={'nav-parent-link nav-parent ' + (p === href || p === '/keuangan' ? 'active' : '')} onClick={() => setLaporanOpen(v => !v)} aria-expanded={laporanOpen}><Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />{label}</button>
+        {laporanOpen && <div className="nav-submenu"><Link className={p === '/keuangan' ? 'active' : ''} href="/keuangan"><Wallet size={15} />Keuangan</Link><Link className={p === '/laporan/bulanan' ? 'active' : ''} href="/laporan/bulanan"><BarChart3 size={15} />History Laporan Bulanan</Link></div>}
       </div> : <Link className={p === href ? 'active' : ''} href={href} key={href}><Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />{label}</Link>)}</nav>
       <div className="sidebar-owner-footer"><div className="sidebar-owner-logo-wrap"><img src="/kostpro-owner-logo.svg?v=1.7" alt="Logo pemilik" className="sidebar-owner-logo" onError={(e) => { e.currentTarget.style.display = 'none'; const fallback = e.currentTarget.nextElementSibling as HTMLElement | null; if (fallback) fallback.style.display = 'flex'; }} /><span className="sidebar-owner-logo-fallback">LOGO</span></div><div className="sidebar-owner-version"><b>V.1.6</b></div></div>
     </aside>
