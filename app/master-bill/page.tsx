@@ -55,12 +55,11 @@ export default function MasterBill() {
   const selected = rows.find(x => x.tenant.id === selectedId) || rows[0];
 
   const totalBilling = selected?.payments.reduce((sum, p) => sum + p.amount, 0) || 0;
-  const masterTransactions = useMemo(() => [...(selected?.transactions || [])].sort((a, b) => String(a.date || '').localeCompare(String(b.date || ''))), [selected]);
-  const totalIncome = masterTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = masterTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-  const totalCreditSettlement = masterTransactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  // Piutang = total billing (debet) - pelunasan yang berstatus paid (kredit).
+  // Kredit tidak diambil dari transaksi umum agar tidak terjadi posting ganda.
+  const totalCreditSettlement = selected?.payments
+    .filter(p => p.status === 'paid')
+    .reduce((sum, p) => sum + p.amount, 0) || 0;
   const outstandingReceivable = Math.max(0, totalBilling - totalCreditSettlement);
 
   if (!tenants.length) {
@@ -71,7 +70,7 @@ export default function MasterBill() {
     <div className="top">
       <div>
         <div className="title">Master Bill — Preview</div>
-        <div className="sub">Pilih tamu/kamar aktif, lihat billing, pembayaran, transaksi terkait, dan akumulasi piutang berdasarkan prinsip debit-kredit.</div>
+        <div className="sub">Pilih tamu/kamar aktif, lihat billing, pembayaran, dan akumulasi piutang berdasarkan prinsip debit-kredit.</div>
       </div>
     </div>
 
@@ -104,7 +103,7 @@ export default function MasterBill() {
         <div className="master-report-sheet">
           <div className="master-report-heading">
             <div className="master-kicker">KOSTPRO • MASTER BILL</div>
-            <div className="master-report-title">RINGKASAN BILLING & TRANSAKSI TAMU</div>
+            <div className="master-report-title">RINGKASAN BILLING TAMU</div>
             <div className="master-report-sub">Preview informasi transaksi untuk tamu kamar aktif</div>
             <div className="master-guest-line">{selected.tenant.name} · Kamar {selected.tenant.room}</div>
           </div>
@@ -131,6 +130,11 @@ export default function MasterBill() {
               <b>Total Billing</b>
               <b className="right">{money(totalBilling)}</b>
               <b className="right">—</b>
+            </div>
+            <div className="master-total">
+              <b>PELUNASAN</b>
+              <b className="right">—</b>
+              <b className="right">{money(totalCreditSettlement)}</b>
             </div>
             <div className="master-total">
               <b>SISA PIUTANG</b>
