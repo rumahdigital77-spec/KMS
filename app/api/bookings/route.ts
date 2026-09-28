@@ -3,7 +3,7 @@ import { createServerSupabaseClient, getAuthenticatedPropertyId } from '@/lib/su
 
 export async function GET(req: Request) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const scope = await getAuthenticatedPropertyId(supabase);
     if (!scope.propertyId) return NextResponse.json({ error: scope.error || 'AUTH_REQUIRED' }, { status: 401 });
 
