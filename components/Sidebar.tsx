@@ -32,7 +32,10 @@ export default function Sidebar() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { if (!cancelled) setRole(null); return; }
         const { data } = await supabase.from('user_accounts').select('role').eq('user_id', user.id).maybeSingle();
-        if (!cancelled) const normalized = String(data?.role || '').toLowerCase();\n        setRole(normalized === 'admin' ? 'admin' : normalized === 'owner' ? 'owner' : null);
+        if (!cancelled) {
+          const normalized = String(data?.role || '').toLowerCase();
+          setRole(normalized === 'admin' ? 'admin' : normalized === 'owner' ? 'owner' : null);
+        }
       } catch { if (!cancelled) setRole(null); }
     };
     void loadRole();
