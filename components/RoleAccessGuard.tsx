@@ -9,7 +9,7 @@ type Role = 'owner' | 'admin';
 export default function RoleAccessGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [checked, setChecked] = useState(false);
+  const [checked, setChecked] = useState(false);\n  const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
