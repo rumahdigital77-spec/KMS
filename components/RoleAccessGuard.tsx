@@ -19,7 +19,7 @@ export default function RoleAccessGuard({ children }: { children: React.ReactNod
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          if (!cancelled) { setAllowed(!pathname.startsWith('/user')); setChecked(true); }
+          if (!cancelled) { setAllowed(true); setChecked(true); }
           return;
         }
         const { data: account, error: accountError } = await supabase.from('user_accounts').select('role').eq('user_id', user.id).maybeSingle();
