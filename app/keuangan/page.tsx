@@ -128,20 +128,20 @@ export default function Keuangan() {
       <div className="card" style={{ marginTop: 18, overflow: 'hidden' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: 22 }}>
           <div>
-            <div className="section-title" style={{ fontSize: 20 }}>Laporan Laba Rugi</div>
+            <div className="section-title" style={{ fontSize: 18 }}>Laporan Laba Rugi</div>
             <div className="sub">Laporan hasil usaha berdasarkan transaksi yang tercatat.</div>
           </div>
           <button className="btn secondary" onClick={() => window.print()}>Cetak Laporan</button>
         </div>
 
-        <div className="report-sheet" style={{ border: '1px solid #dfe3e8', borderRadius: 12, background: '#fff', padding: '18px 18px' }}>
+        <div className="report-sheet" style={{ border: '1px solid #dfe3e8', borderRadius: 12, background: '#fff', padding: '16px 16px' }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.2, color: '#6b7280' }}>KOSTPRO • LAPORAN KEUANGAN</div>
-            <div style={{ fontSize: 21, fontWeight: 800, marginTop: 5 }}>LAPORAN LABA RUGI</div>
-            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>Berdasarkan transaksi yang tercatat dalam sistem</div>
+            <div style={{ fontSize: 19, fontWeight: 800, marginTop: 5 }}>LAPORAN LABA RUGI</div>
+            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>Berdasarkan transaksi yang tercatat dalam sistem</div>
           </div>
 
-          <div className="report-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(90px,120px) minmax(90px,120px)', gap: 0, borderTop: '2px solid #111827', borderBottom: '1px solid #111827', fontSize: 12.5 }}>
+          <div className="report-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(90px,120px) minmax(90px,120px)', gap: 0, borderTop: '2px solid #111827', borderBottom: '1px solid #111827', fontSize: 11.5 }}>
             <div style={{ padding: '11px 8px', fontWeight: 800 }}>URAIAN</div>
             <div style={{ padding: '11px 8px', fontWeight: 800, textAlign: 'right', minWidth: 120 }}>DEBET</div>
             <div style={{ padding: '11px 8px', fontWeight: 800, textAlign: 'right', minWidth: 130 }}>KREDIT</div>
@@ -175,7 +175,7 @@ export default function Keuangan() {
             <div style={{ padding: '10px 8px', textAlign: 'right', borderTop: '1px solid #e5e7eb' }}>—</div>
 
             <div style={{ gridColumn: '1 / -1', borderTop: '2px solid #111827', marginTop: 6 }} />
-            <div style={{ padding: '14px 8px', fontWeight: 900, fontSize: 14 }}>LABA / (RUGI) BERSIH</div>
+            <div style={{ padding: '14px 8px', fontWeight: 900, fontSize: 13 }}>LABA / (RUGI) BERSIH</div>
             <div style={{ padding: '14px 8px', textAlign: 'right', fontWeight: 900 }}>{result < 0 ? '(' + money(Math.abs(result)) + ')' : '—'}</div>
             <div style={{ padding: '14px 8px', textAlign: 'right', fontWeight: 900 }}>{result >= 0 ? money(result) : '—'}</div>
           </div>
@@ -185,17 +185,17 @@ export default function Keuangan() {
       <style jsx>{`
         .result-positive{color:#15803d}
         .result-negative{color:#b91c1c}
-        .finance-metric{font-size:24px!important;line-height:1.15;letter-spacing:-.02em}
+        .finance-metric{font-size:22px!important;line-height:1.15;letter-spacing:-.02em}
         .report-sheet{max-width:100%;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.06)}
         .report-grid{width:100%;max-width:100%;overflow:hidden}
         .report-grid>div{transition:background .15s ease}
         .report-grid>div:nth-child(3n+1){letter-spacing:.005em}
         @media(max-width:560px){
-          .finance-metric{font-size:20px!important}
+          .finance-metric{font-size:18px!important}
           .report-sheet{padding:12px!important;border-radius:10px!important}
-          .report-grid{font-size:10.5px!important;grid-template-columns:minmax(0,1fr) minmax(72px,86px) minmax(72px,86px)!important}
+          .report-grid{font-size:9.5px!important;grid-template-columns:minmax(0,1fr) minmax(72px,86px) minmax(72px,86px)!important}
           .report-grid>div{min-width:0;overflow-wrap:anywhere}
-          .report-sheet .section-title{font-size:17px!important}
+          .report-sheet .section-title{font-size:16px!important}
           .report-sheet .report-grid>div{padding-left:5px!important;padding-right:5px!important}
         }
       `}</style>
