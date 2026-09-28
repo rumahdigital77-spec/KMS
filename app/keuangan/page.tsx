@@ -1,5 +1,4 @@
 'use client';
-// Responsive report layout hardened for small screens.
 
 import { useEffect, useMemo, useState } from 'react';
 import { defaultTransactions, loadData, money, normalizeMoney, saveData, Transaction } from '@/lib/store';
@@ -125,59 +124,84 @@ export default function Keuangan() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: 18, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: 22 }}>
+      <div className="card finance-report-card">
+        <div className="finance-report-header">
           <div>
-            <div className="section-title" style={{ fontSize: 18 }}>Laporan Laba Rugi</div>
+            <div className="section-title finance-report-title">Laporan Laba Rugi</div>
             <div className="sub">Laporan hasil usaha berdasarkan transaksi yang tercatat.</div>
           </div>
           <button className="btn secondary" onClick={() => window.print()}>Cetak Laporan</button>
         </div>
 
-        <div className="report-sheet" style={{ border: '1px solid #dfe3e8', borderRadius: 12, background: '#fff', padding: '16px 16px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.2, color: '#6b7280' }}>KOSTPRO • LAPORAN KEUANGAN</div>
-            <div style={{ fontSize: 19, fontWeight: 800, marginTop: 5 }}>LAPORAN LABA RUGI</div>
-            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>Berdasarkan transaksi yang tercatat dalam sistem</div>
+        <div className="report-sheet">
+          <div className="report-heading">
+            <div className="report-brand">KOSTPRO • LAPORAN KEUANGAN</div>
+            <div className="report-title">LAPORAN LABA RUGI</div>
+            <div className="report-subtitle">Berdasarkan transaksi yang tercatat dalam sistem</div>
           </div>
 
-          <div className="report-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(90px,120px) minmax(90px,120px)', gap: 0, borderTop: '2px solid #111827', borderBottom: '1px solid #111827', fontSize: 11.5 }}>
-            <div style={{ padding: '11px 8px', fontWeight: 800 }}>URAIAN</div>
-            <div style={{ padding: '11px 8px', fontWeight: 800, textAlign: 'right', minWidth: 0, whiteSpace: 'nowrap' }}>DEBET</div>
-            <div style={{ padding: '11px 8px', fontWeight: 800, textAlign: 'right', minWidth: 0, whiteSpace: 'nowrap' }}>KREDIT</div>
+          <div className="report-table" role="table" aria-label="Laporan laba rugi">
+            <div className="report-row report-head" role="row">
+              <div role="columnheader">URAIAN</div>
+              <div role="columnheader">DEBET</div>
+              <div role="columnheader">KREDIT</div>
+            </div>
 
-            <div style={{ gridColumn: '1 / -1', padding: '14px 8px 7px', fontWeight: 800, background: '#f8fafc' }}>PENDAPATAN</div>
+            <div className="report-section" role="row">
+              <div>PENDAPATAN</div>
+            </div>
+
             {incomeTransactions.length ? incomeTransactions.map((item) => (
-              <div key={item.id} style={{ display: 'contents' }}>
-                <div style={{ padding: '8px 8px 8px 22px', fontWeight: 700 }}>{item.description || 'Pendapatan'}</div>
-                <div style={{ padding: '7px 8px', textAlign: 'right' }}>—</div>
-                <div style={{ padding: '7px 8px', textAlign: 'right' }}>{money(item.amount)}</div>
+              <div className="report-row report-data" role="row" key={item.id}>
+                <div className="report-description" role="cell">{item.description || 'Pendapatan'}</div>
+                <div className="report-amount" role="cell">—</div>
+                <div className="report-amount" role="cell">{money(item.amount)}</div>
               </div>
             )) : (
-              <><div style={{ padding: '7px 8px 7px 22px', color: '#9ca3af' }}>Belum ada pendapatan</div><div /><div /></>
+              <div className="report-row report-data" role="row">
+                <div className="report-description report-empty" role="cell">Belum ada pendapatan</div>
+                <div role="cell">—</div>
+                <div role="cell">—</div>
+              </div>
             )}
-            <div style={{ padding: '10px 8px', fontWeight: 800, borderTop: '1px solid #e5e7eb' }}>Total Pendapatan</div>
-            <div style={{ padding: '10px 8px', textAlign: 'right', borderTop: '1px solid #e5e7eb' }}>—</div>
-            <div style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 800, borderTop: '1px solid #e5e7eb' }}>{money(income)}</div>
 
-            <div style={{ gridColumn: '1 / -1', padding: '14px 8px 7px', fontWeight: 800, background: '#f8fafc' }}>PENGELUARAN</div>
+            <div className="report-row report-total" role="row">
+              <div role="cell">Total Pendapatan</div>
+              <div className="report-amount" role="cell">—</div>
+              <div className="report-amount" role="cell">{money(income)}</div>
+            </div>
+
+            <div className="report-section" role="row">
+              <div>PENGELUARAN</div>
+            </div>
+
             {expenseTransactions.length ? expenseTransactions.map((item) => (
-              <div key={item.id} style={{ display: 'contents' }}>
-                <div style={{ padding: '8px 8px 8px 22px', fontWeight: 700 }}>{item.description || 'Pengeluaran'}</div>
-                <div style={{ padding: '7px 8px', textAlign: 'right' }}>{money(item.amount)}</div>
-                <div style={{ padding: '7px 8px', textAlign: 'right' }}>—</div>
+              <div className="report-row report-data" role="row" key={item.id}>
+                <div className="report-description" role="cell">{item.description || 'Pengeluaran'}</div>
+                <div className="report-amount" role="cell">{money(item.amount)}</div>
+                <div className="report-amount" role="cell">—</div>
               </div>
             )) : (
-              <><div style={{ padding: '7px 8px 7px 22px', color: '#9ca3af' }}>Belum ada beban</div><div /><div /></>
+              <div className="report-row report-data" role="row">
+                <div className="report-description report-empty" role="cell">Belum ada beban</div>
+                <div role="cell">—</div>
+                <div role="cell">—</div>
+              </div>
             )}
-            <div style={{ padding: '10px 8px', fontWeight: 800, borderTop: '1px solid #e5e7eb' }}>Total Beban</div>
-            <div style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 800, borderTop: '1px solid #e5e7eb' }}>{money(expense)}</div>
-            <div style={{ padding: '10px 8px', textAlign: 'right', borderTop: '1px solid #e5e7eb' }}>—</div>
 
-            <div style={{ gridColumn: '1 / -1', borderTop: '2px solid #111827', marginTop: 6 }} />
-            <div style={{ padding: '14px 8px', fontWeight: 900, fontSize: 13 }}>LABA / (RUGI) BERSIH</div>
-            <div style={{ padding: '14px 8px', textAlign: 'right', fontWeight: 900 }}>{result < 0 ? '(' + money(Math.abs(result)) + ')' : '—'}</div>
-            <div style={{ padding: '14px 8px', textAlign: 'right', fontWeight: 900 }}>{result >= 0 ? money(result) : '—'}</div>
+            <div className="report-row report-total" role="row">
+              <div role="cell">Total Beban</div>
+              <div className="report-amount" role="cell">{money(expense)}</div>
+              <div className="report-amount" role="cell">—</div>
+            </div>
+
+            <div className="report-result-divider" aria-hidden="true" />
+
+            <div className="report-row report-result" role="row">
+              <div role="cell">LABA / (RUGI) BERSIH</div>
+              <div className="report-amount" role="cell">{result < 0 ? '(' + money(Math.abs(result)) + ')' : '—'}</div>
+              <div className="report-amount" role="cell">{result >= 0 ? money(result) : '—'}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -190,26 +214,65 @@ export default function Keuangan() {
         .finance-add-btn{font-size:12px!important;padding:8px 12px!important;font-weight:700!important}
         .finance-label{font-size:10px!important;letter-spacing:.08em;font-weight:800!important;line-height:1.3}
         .finance-metric{font-size:20px!important;line-height:1.15;font-weight:800!important;letter-spacing:-.02em;font-variant-numeric:tabular-nums lining-nums}
-        .report-sheet{max-width:100%;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.07);border-color:#d8dee6!important}
-        .report-grid{width:100%;max-width:100%;overflow:hidden;font-variant-numeric:tabular-nums lining-nums}
-        .report-grid>div{transition:background .15s ease;min-width:0}
-        .report-grid>div:nth-child(3n+1){letter-spacing:.005em}
-        .report-grid>div:nth-child(3n+2),.report-grid>div:nth-child(3n){font-feature-settings:"tnum" 1,"lnum" 1}
-        .report-grid>div:nth-child(3n+2):not([style*="grid-column"]),.report-grid>div:nth-child(3n){white-space:nowrap}
-        .report-grid>div[style*="font-weight: 900"]{letter-spacing:-.01em}
-        @media(max-width:560px){
-          .finance-page-title{font-size:18px!important}.finance-page-sub{font-size:11px!important}.finance-add-btn{font-size:11px!important;padding:7px 10px!important}.finance-label{font-size:9px!important}.finance-metric{font-size:17px!important}
-          .report-sheet{padding:12px!important;border-radius:10px!important}
-          .report-grid{font-size:9.5px!important;grid-template-columns:minmax(0,1fr) minmax(88px,92px) minmax(88px,92px)!important}
-          .report-grid>div{min-width:0;overflow-wrap:anywhere}
-          .report-sheet .section-title{font-size:16px!important}
-          .report-sheet .report-grid>div{padding-left:5px!important;padding-right:5px!important}
-          .report-grid>div:nth-child(3n+2),.report-grid>div:nth-child(3n){font-size:9.5px!important}
+
+        .finance-report-card{margin-top:18px;overflow:hidden}
+        .finance-report-header{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-bottom:22px}
+        .finance-report-title{font-size:18px!important}
+        .report-sheet{width:100%;box-sizing:border-box;border:1px solid #d8dee6;border-radius:12px;background:#fff;padding:20px;box-shadow:0 10px 30px rgba(15,23,42,.07);overflow:hidden}
+        .report-heading{text-align:center;margin-bottom:22px}
+        .report-brand{font-size:12px;font-weight:800;letter-spacing:1.2px;color:#6b7280}
+        .report-title{font-size:19px;font-weight:800;margin-top:5px}
+        .report-subtitle{font-size:11px;color:#6b7280;margin-top:4px}
+
+        .report-table{width:100%;font-size:11.5px;font-variant-numeric:tabular-nums lining-nums}
+        .report-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,130px) minmax(100px,130px);width:100%;box-sizing:border-box}
+        .report-row>div{min-width:0;box-sizing:border-box}
+        .report-head{border-top:2px solid #111827;border-bottom:1px solid #111827;font-weight:800}
+        .report-head>div{padding:11px 10px}
+        .report-head>div:nth-child(n+2){text-align:right;white-space:nowrap}
+        .report-section{display:block;padding:14px 10px 7px;font-weight:800;background:#f8fafc}
+        .report-data>div{padding:8px 10px;min-height:36px;display:flex;align-items:flex-start}
+        .report-description{padding-left:24px!important;font-weight:700;white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.45}
+        .report-amount{justify-content:flex-end;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1.45}
+        .report-empty{color:#9ca3af;font-weight:500}
+        .report-total{border-top:1px solid #e5e7eb;font-weight:800}
+        .report-total>div{padding:10px}
+        .report-total>div:nth-child(n+2){text-align:right;white-space:nowrap}
+        .report-result-divider{border-top:2px solid #111827;margin-top:6px}
+        .report-result{font-weight:900;font-size:13px}
+        .report-result>div{padding:14px 10px}
+        .report-result>div:nth-child(n+2){text-align:right;white-space:nowrap}
+
+        @media(max-width:700px){
+          .report-sheet{padding:14px;border-radius:10px}
+          .report-row{grid-template-columns:minmax(0,1fr) minmax(86px,96px) minmax(86px,96px)}
+          .report-table{font-size:10.5px}
+          .report-head>div,.report-data>div,.report-total>div,.report-result>div{padding-left:6px;padding-right:6px}
+          .report-description{padding-left:12px!important}
+        }
+        @media(max-width:480px){
+          .finance-page-title{font-size:18px!important}
+          .finance-page-sub{font-size:11px!important}
+          .finance-add-btn{font-size:11px!important;padding:7px 10px!important}
+          .finance-label{font-size:9px!important}
+          .finance-metric{font-size:17px!important}
+          .report-sheet{padding:10px}
+          .report-brand{font-size:10px;letter-spacing:.9px}
+          .report-title{font-size:16px}
+          .report-subtitle{font-size:10px}
+          .report-row{grid-template-columns:minmax(0,1fr) minmax(78px,84px) minmax(78px,84px)}
+          .report-table{font-size:9.5px}
+          .report-description{padding-left:8px!important}
+          .report-data>div{min-height:34px}
+          .report-result{font-size:11px}
+        }
+        @media print{
+          .finance-report-card{margin-top:0;box-shadow:none}
+          .report-sheet{box-shadow:none;border:0;padding:0}
+          .report-row{grid-template-columns:minmax(0,1fr) 110px 110px}
+          .report-description{overflow-wrap:break-word}
         }
       `}</style>
-
     </>
   );
 }
-
- 
