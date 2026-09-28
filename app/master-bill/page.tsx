@@ -151,7 +151,14 @@ export default function MasterBill() {
               <div className="right">—</div>
             </div>
             <div className="master-row">
-              <div><b>Pelunasan / Pengurangan Piutang</b><span className="master-detail">Pembayaran yang terhubung langsung ke billing tamu ini</span></div>
+              <div>
+                <b>Transaksi Pembayaran / Pelunasan</b>
+                {masterTransactions.filter(t => t.type === 'income').length ? masterTransactions.filter(t => t.type === 'income').map(tx => (
+                  <span key={'settlement-detail-'+tx.id} className="master-detail">{tx.date} · {tx.category} · {tx.description}</span>
+                )) : (
+                  <span className="master-detail">Belum ada transaksi pembayaran yang terhubung ke billing tamu ini.</span>
+                )}
+              </div>
               <div className="right">—</div>
               <div className="right">{money(totalCreditSettlement)}</div>
             </div>
