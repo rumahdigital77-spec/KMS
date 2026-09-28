@@ -23,7 +23,7 @@ export async function createServerSupabaseClient() {
   });
 }
 
-export async function getAuthenticatedPropertyId(supabase: ReturnType<typeof createServerSupabaseClient>) {
+export async function getAuthenticatedPropertyId(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>) {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return { user: null, propertyId: null, error: userError?.message || 'AUTH_REQUIRED' };
 
