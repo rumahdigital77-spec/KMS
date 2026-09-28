@@ -141,7 +141,8 @@ export default function MasterBill() {
             )) : (
               <div className="master-empty">Belum ada transaksi terkait tamu ini.</div>
             )}
-            <div className="master-total"><b>Total Transaksi</b><b className="right">{money(totalExpense)}</b><b className="right">{money(totalIncome)}</b></div>
+            <div className="master-total"><b>Ringkasan Pengeluaran</b><b className="right">{money(totalExpense)}</b><b className="right">—</b></div>
+            <div className="master-total"><b>Ringkasan Pendapatan</div>
 
             <div className="master-net">
               <b>SISA TAGIHAN</b>
