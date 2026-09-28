@@ -139,10 +139,10 @@ export default function MasterBill() {
             <div className="master-total"><b>TOTAL TRANSAKSI</b><b className="right">{money(totalExpense)}</b><b className="right">{money(totalIncome)}</b></div>
 
             <div className="master-section">REKAP PIUTANG TAMU</div>
-            <div className="master-row">
-              <div><b>Total Billing / Piutang</b><span className="master-detail">Tagihan yang dibebankan kepada tamu</span></div>
-              <div className="right">{money(totalBilling)}</div>
-              <div className="right">—</div>
+            <div className="master-total">
+              <b>Total Billing</b>
+              <b className="right">{money(totalBilling)}</b>
+              <b className="right">—</b>
             </div>
             <div className="master-total">
               <b>SISA PIUTANG</b>
