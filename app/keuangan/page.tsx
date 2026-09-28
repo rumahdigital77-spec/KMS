@@ -224,8 +224,8 @@ export default function Keuangan() {
         .report-title{font-size:19px;font-weight:800;margin-top:5px}
         .report-subtitle{font-size:11px;color:#6b7280;margin-top:4px}
 
-        .report-table{width:100%;font-size:11.5px;font-variant-numeric:tabular-nums lining-nums}
-        .report-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,130px) minmax(100px,130px);width:100%;box-sizing:border-box}
+        .report-table{width:100%;font-size:11px;font-variant-numeric:tabular-nums lining-nums}
+        .report-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(112px,124px) minmax(112px,124px);width:100%;box-sizing:border-box}
         .report-row>div{min-width:0;box-sizing:border-box}
         .report-head{border-top:2px solid #111827;border-bottom:1px solid #111827;font-weight:800}
         .report-head>div{padding:11px 10px}
@@ -245,8 +245,8 @@ export default function Keuangan() {
 
         @media(max-width:700px){
           .report-sheet{padding:14px;border-radius:10px}
-          .report-row{grid-template-columns:minmax(0,1fr) minmax(86px,96px) minmax(86px,96px)}
-          .report-table{font-size:10.5px}
+          .report-row{grid-template-columns:minmax(0,1fr) minmax(92px,98px) minmax(92px,98px)}
+          .report-table{font-size:10px}
           .report-head>div,.report-data>div,.report-total>div,.report-result>div{padding-left:6px;padding-right:6px}
           .report-description{padding-left:12px!important}
         }
@@ -260,11 +260,11 @@ export default function Keuangan() {
           .report-brand{font-size:10px;letter-spacing:.9px}
           .report-title{font-size:16px}
           .report-subtitle{font-size:10px}
-          .report-row{grid-template-columns:minmax(0,1fr) minmax(78px,84px) minmax(78px,84px)}
-          .report-table{font-size:9.5px}
+          .report-row{grid-template-columns:minmax(0,1fr) minmax(88px,92px) minmax(88px,92px)}
+          .report-table{font-size:9px}
           .report-description{padding-left:8px!important}
           .report-data>div{min-height:34px}
-          .report-result{font-size:11px}
+          .report-result{font-size:10.5px}
         }
         @media print{
           .finance-report-card{margin-top:0;box-shadow:none}
