@@ -56,7 +56,8 @@ export default function UserPage() {
     setLoading(true);
     setError('');
     try {
-      const { data: { user } } = await getSupabase().auth.getUser();
+      const { data: { session } } = await getSupabase().auth.getSession();
+      const user = session?.user ?? null;
       if (!user) {
         setAccount(null);
         setAccess([]);
