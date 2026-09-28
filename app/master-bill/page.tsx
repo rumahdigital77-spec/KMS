@@ -12,6 +12,7 @@ type MasterRow = {
 export default function MasterBill() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<Payment[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [msg, setMsg] = useState('');
@@ -21,18 +22,25 @@ export default function MasterBill() {
       .filter(x => (x.status || 'active') === 'active');
     const allPayments = loadData<Payment[]>('payments', defaultPayments);
     const allTransactions = loadData<Transaction[]>('transactions', defaultTransactions);
+    const allPaymentHistory = loadData<Payment[]>('paymentHistory', []);
     setTenants(active);
     setPayments(allPayments);
+    setPaymentHistory(allPaymentHistory);
     setTransactions(allTransactions);
     const requested = new URLSearchParams(location.search).get('id');
     if (active.length) setSelectedId(requested && active.some(x => x.id === requested) ? requested : active[0].id);
   }, []);
 
   const rows = useMemo<MasterRow[]>(() => tenants.map(tenant => {
-    const tenantPayments = payments.filter(p =>
+    const tenantActivePayments = payments.filter(p =>
       (p.tenantId && p.tenantId === tenant.id) ||
       (!p.tenantId && p.tenant === tenant.name && p.room === tenant.room)
     );
+    const tenantHistoryPayments = paymentHistory.filter(p =>
+      (p.tenantId && p.tenantId === tenant.id) ||
+      (!p.tenantId && p.tenant === tenant.name && p.room === tenant.room)
+    );
+    const tenantPayments = [...tenantActivePayments, ...tenantHistoryPayments.filter(h => !tenantActivePayments.some(p => p.id === h.id))];
     const tenantPaymentIds = new Set(tenantPayments.map(p => p.id));
     const tenantTransactions = transactions.filter(tx => {
       // A payment-linked transaction belongs to exactly one bill.
@@ -45,7 +53,7 @@ export default function MasterBill() {
       return haystack.includes(tenantLabel) && haystack.includes(roomLabel);
     });
     return { tenant, payments: tenantPayments, transactions: tenantTransactions };
-  }), [tenants, payments, transactions]);
+  }), [tenants, payments, paymentHistory, transactions]);
 
   const selected = rows.find(x => x.tenant.id === selectedId) || rows[0];
 
@@ -112,7 +120,7 @@ export default function MasterBill() {
             <div className="master-head right">DEBET</div>
             <div className="master-head right">KREDIT</div>
 
-            <div className="master-section">DETAIL BILLING</div>
+            <div className="master-section">DETAIL BILLING (AKTIF + LUNAS)</div>
             {selected.payments.length ? selected.payments.map(p => (
               <div key={'bill-'+p.id} className="master-row">
                 <div><b>{p.month}</b><span className="master-detail">{p.receiptNo || p.id} · Nomor: {p.receiptNo || p.id} · Status: {p.status === 'paid' ? 'Sudah Dibayar' : 'Belum Dibayar'} · Metode: {p.method || '-'}</span></div>
@@ -124,7 +132,7 @@ export default function MasterBill() {
             )}
             <div className="master-total"><b>Total Billing</b><b className="right">{money(totalBilling)}</b><b className="right">—</b></div>
 
-            <div className="master-section">TRANSAKSI TERKAIT TAMU</div>
+            <div className="master-section">TRANSAKSI TERKAIT TAMU — PELUNASAN SINKRON DENGAN BILLING</div>
             {masterTransactions.length ? masterTransactions.map(tx => (
               <div key={tx.id} className="master-row">
                 <div><b>{tx.description}</b><span className="master-detail">{tx.date} · {tx.category}</span></div>
