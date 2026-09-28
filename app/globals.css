@@ -533,6 +533,5 @@ input,select,textarea{font-size:16px}
 /* Final owner-logo visibility hardening */
 .sidebar-owner-footer{z-index:60;isolation:isolate;}
 .sidebar-owner-logo-wrap{position:relative;z-index:61;opacity:1!important;visibility:visible!important;display:flex!important;}
-.sidebar-owner-logo-wrap .sidebar-owner-logo{position:relative;z-index:62;opacity:1!important;visibility:visible!important;display:block!important;filter:brightness(0) invert(1)!important;mix-blend-mode:normal!important;}
-.sidebar-owner-logo-fallback{position:absolute;inset:0;z-index:63;pointer-events:none;}
-.sidebar-owner-logo-wrap .sidebar-owner-logo + .sidebar-owner-logo-fallback{display:none;}
+.sidebar-owner-logo-wrap .sidebar-owner-logo{position:relative;z-index:62;opacity:1!important;visibility:visible!important;display:block!important;filter:none!important;mix-blend-mode:normal!important;}
+.sidebar-owner-logo-fallback{display:none!important;}
