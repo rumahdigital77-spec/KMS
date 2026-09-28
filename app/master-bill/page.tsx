@@ -57,7 +57,7 @@ export default function MasterBill() {
     <div className="top">
       <div>
         <div className="title">Master Bill — Preview</div>
-        <div className="sub">Ringkasan billing dan transaksi tamu kamar aktif dengan format informasi seperti Laporan Laba Rugi.</div>
+        <div className="sub">Pilih tamu/kamar aktif, lihat masa sewa dan harga, billing, pembayaran, transaksi terkait, serta ringkasan pendapatan dan pengeluaran.</div>
       </div>
     </div>
 
@@ -144,7 +144,7 @@ export default function MasterBill() {
             <div className="master-total"><b>Total Transaksi</b><b className="right">{money(totalExpense)}</b><b className="right">{money(totalIncome)}</b></div>
 
             <div className="master-net">
-              <b>BELUM DIBAYAR</b>
+              <b>SISA TAGIHAN</b>
               <b className="right">{money(totalUnpaid)}</b>
               <b className="right">—</b>
             </div>
