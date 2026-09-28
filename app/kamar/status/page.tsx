@@ -28,7 +28,7 @@ export default function EditRoomStatus() {
 
   const change = async (id: string, status: Room['status']) => {
     const current = rooms.find((r) => r.id === id);
-    const occupied = Boolean(current?.status === 'occupied' || (current?.tenant && current.tenant.trim() !== '-' && current.tenant.trim() !== '') || tenants.some((t) => String(t.room).trim() === String(id).trim() && (t.status || 'active') === 'active'));
+    const occupied = Boolean(current?.status === 'occupied') || Boolean(current?.tenant?.trim() && current.tenant.trim() !== '-') || tenants.some((t) => String(t.room).trim() === String(id).trim() && (t.status || 'active') === 'active');
     if (occupied && (status === 'available' || status === 'occupied')) {
       setMsg('Kamar yang sedang terisi tidak dapat diubah ke Tersedia atau Terisi dari Edit Room Status. Gunakan proses C.O. atau Penghuni Aktif.');
       return;
@@ -49,7 +49,7 @@ export default function EditRoomStatus() {
   };
 
   const actions = (r: Room) => {
-    const occupied = Boolean(r.status === 'occupied' || (r.tenant && r.tenant.trim() !== '-' && r.tenant.trim() !== '') || tenants.some((t) => t.room === r.id && t.status !== 'history'));
+    const occupied = Boolean(r.status === 'occupied') || Boolean(r.tenant?.trim() && r.tenant.trim() !== '-') || tenants.some((t) => String(t.room).trim() === String(r.id).trim() && (t.status || 'active') === 'active');
     return (
     <div className="kamar-status-actions">
       <button className="btn" disabled={r.status === 'available' || occupied} onClick={() => change(r.id, 'available')}>
