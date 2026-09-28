@@ -108,16 +108,6 @@ export default function EditRoomStatus() {
         >
           Maintenance
         </button>
-        <button
-          type="button"
-          className="btn secondary"
-          disabled={occupied || r.status === 'occupied'}
-          aria-disabled={occupied || r.status === 'occupied'}
-          title={occupied ? 'Kamar terisi: gunakan C.O. atau Penghuni Aktif.' : undefined}
-          onClick={() => change(r.id, 'occupied')}
-        >
-          Terisi
-        </button>
       </div>
     );
   };
@@ -137,7 +127,7 @@ export default function EditRoomStatus() {
         <div className="kamar-status-editor-head">
           <div>
             <div className="section-title">Status Kamar</div>
-            <div className="kamar-status-editor-sub">Pilih status terbaru untuk setiap kamar.</div>
+            <div className="kamar-status-editor-sub">Kelola status Ready/Tersedia atau Maintenance. Status Terisi hanya ditetapkan otomatis dari C.I. atau input penghuni baru.</div>
           </div>
           <span className="kamar-status-count">{rooms.length} Kamar</span>
         </div>
