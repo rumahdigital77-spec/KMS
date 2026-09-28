@@ -126,18 +126,6 @@ export default function MasterBill() {
             )}
             <div className="master-total"><b>Total Billing</b><b className="right">{money(totalBilling)}</b><b className="right">—</b></div>
 
-            <div className="master-section">TRANSAKSI TERKAIT TAMU — PELUNASAN SINKRON DENGAN BILLING</div>
-            {masterTransactions.length ? masterTransactions.map(tx => (
-              <div key={tx.id} className="master-row">
-                <div><b>{tx.description}</b><span className="master-detail">{tx.date} · {tx.category}</span></div>
-                <div className="right">{tx.type === 'expense' ? money(tx.amount) : '—'}</div>
-                <div className="right">{tx.type === 'income' ? money(tx.amount) : '—'}</div>
-              </div>
-            )) : (
-              <div className="master-empty">Belum ada transaksi terkait tamu ini.</div>
-            )}
-            <div className="master-total"><b>TOTAL TRANSAKSI</b><b className="right">{money(totalExpense)}</b><b className="right">{money(totalIncome)}</b></div>
-
             <div className="master-section">REKAP PIUTANG TAMU</div>
             <div className="master-total">
               <b>Total Billing</b>
