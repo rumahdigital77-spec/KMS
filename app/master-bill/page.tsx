@@ -144,13 +144,6 @@ export default function MasterBill() {
               <div className="right">{money(totalBilling)}</div>
               <div className="right">—</div>
             </div>
-            <div className="master-row">
-              <div>
-                <b>Pelunasan</b>
-              </div>
-              <div className="right">—</div>
-              <div className="right">{money(totalCreditSettlement)}</div>
-            </div>
             <div className="master-total">
               <b>SISA PIUTANG</b>
               <b className="right">{money(outstandingReceivable)}</b>
