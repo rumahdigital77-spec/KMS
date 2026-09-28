@@ -32,7 +32,7 @@ export default function Sidebar() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { if (!cancelled) setRole(null); return; }
         const { data } = await supabase.from('user_accounts').select('role').eq('user_id', user.id).maybeSingle();
-        if (!cancelled) setRole(data?.role === 'admin' ? 'admin' : data?.role === 'owner' ? 'owner' : null);
+        if (!cancelled) const normalized = String(data?.role || '').toLowerCase();\n        setRole(normalized === 'admin' ? 'admin' : normalized === 'owner' ? 'owner' : null);
       } catch { if (!cancelled) setRole(null); }
     };
     void loadRole();
@@ -48,7 +48,7 @@ export default function Sidebar() {
     {open && <button type="button" className="sidebar-overlay" aria-label="Tutup menu" onClick={() => setOpen(false)} />}
     <aside className={'sidebar ' + (open ? 'sidebar-open' : '')}>
       <div className="brand"><div className="brand-fallback"><span>KOST</span><span>PRO</span></div><div className="sub" style={{ color: '#98a2b3' }}>Kost Management System</div></div>
-      <nav className="nav">{items.filter(([href]) => role !== 'admin' || href !== '/user').map(([href, label, Icon]) => label === 'Manajemen Kamar' ? <div className="nav-group" key={href}>
+      <nav className="nav">{items.filter(([href]) => href !== '/user' || role === 'owner').map(([href, label, Icon]) => label === 'Manajemen Kamar' ? <div className="nav-group" key={href}>
         <button type="button" className={'nav-parent-link nav-parent ' + (p === href || p.startsWith('/kamar/') ? 'active' : '')} onClick={() => setKamarOpen(v => !v)} aria-expanded={kamarOpen}><Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />{label}</button>
         {kamarOpen && <div className="nav-submenu">
           <Link className={p === '/kamar/check-in' ? 'active' : ''} href="/kamar/check-in"><UserRound size={15} />C.I Tamu Kamar</Link>
