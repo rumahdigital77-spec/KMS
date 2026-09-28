@@ -26,6 +26,9 @@
     "typescript": "^5.6.3",
     "eslint": "^8.57.1",
     "eslint-config-next": "15.5.26",
-    "@capacitor/cli": "8.5.2"
+    "@capacitor/cli": "8.4.3"
+  },
+  "overrides": {
+    "postcss": "8.5.28"
   }
 }
