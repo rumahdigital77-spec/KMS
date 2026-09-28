@@ -26,13 +26,31 @@ export default function EditRoomStatus() {
     };
   }, []);
 
+  const isOccupied = (room: Room) =>
+    Boolean(
+      (String(room.tenant ?? '').trim() !== '' &&
+        String(room.tenant ?? '').trim() !== '-') ||
+        room.status === 'occupied' ||
+        tenants.some(
+          (t) =>
+            String(t.room ?? '').trim() === String(room.id).trim() &&
+            String(t.name ?? '').trim() !== '' &&
+            String(t.name ?? '').trim() !== '-' &&
+            (t.status || 'active') !== 'history'
+        )
+    );
+
   const change = async (id: string, status: Room['status']) => {
     const current = rooms.find((r) => r.id === id);
-    const occupied = Boolean(current && (String(current.tenant ?? '').trim() !== '' && String(current.tenant ?? '').trim() !== '-')) || Boolean(current?.status === 'occupied') || tenants.some((t) => String(t.room ?? '').trim() === String(id).trim() && String(t.name ?? '').trim() !== '' && String(t.name ?? '').trim() !== '-' && (t.status || 'active') !== 'history');
-    if (occupied && (status === 'available' || status === 'occupied')) {
-      setMsg('Kamar yang sedang terisi tidak dapat diubah ke Tersedia atau Terisi dari Edit Room Status. Gunakan proses C.O. atau Penghuni Aktif.');
+    const occupied = Boolean(current && isOccupied(current));
+
+    if (occupied && (status === 'available' || status === 'maintenance' || status === 'occupied')) {
+      setMsg(
+        'Kamar yang sedang terisi tidak dapat diubah dari Edit Room Status. Gunakan proses C.O. atau Penghuni Aktif.'
+      );
       return;
     }
+
     const next = rooms.map((r) =>
       r.id === id
         ? { ...r, status, tenant: status === 'available' || status === 'maintenance' ? '-' : r.tenant }
@@ -49,19 +67,37 @@ export default function EditRoomStatus() {
   };
 
   const actions = (r: Room) => {
-    const occupied = Boolean((String(r.tenant ?? '').trim() !== '' && String(r.tenant ?? '').trim() !== '-')) || Boolean(r.status === 'occupied') || tenants.some((t) => String(t.room ?? '').trim() === String(r.id).trim() && String(t.name ?? '').trim() !== '' && String(t.name ?? '').trim() !== '-' && (t.status || 'active') !== 'history');
+    const occupied = isOccupied(r);
     return (
-    <div className="kamar-status-actions">
-      <button className="btn" disabled={occupied || r.status === 'available'} onClick={() => change(r.id, 'available')}>
-        Tersedia
-      </button>
-      <button className="btn secondary" disabled={r.status === 'maintenance'} onClick={() => change(r.id, 'maintenance')}>
-        Maintenance
-      </button>
-      <button className="btn secondary" disabled={occupied} aria-disabled={occupied} onClick={() => change(r.id, 'occupied')}>
-        Terisi
-      </button>
-    </div>
+      <div className="kamar-status-actions">
+        <button
+          className="btn"
+          disabled={occupied || r.status === 'available'}
+          aria-disabled={occupied || r.status === 'available'}
+          title={occupied ? 'Kamar terisi: gunakan C.O. atau Penghuni Aktif.' : undefined}
+          onClick={() => change(r.id, 'available')}
+        >
+          Tersedia
+        </button>
+        <button
+          className="btn secondary"
+          disabled={occupied || r.status === 'maintenance'}
+          aria-disabled={occupied || r.status === 'maintenance'}
+          title={occupied ? 'Kamar terisi: gunakan C.O. atau Penghuni Aktif.' : undefined}
+          onClick={() => change(r.id, 'maintenance')}
+        >
+          Maintenance
+        </button>
+        <button
+          className="btn secondary"
+          disabled={occupied || r.status === 'occupied'}
+          aria-disabled={occupied || r.status === 'occupied'}
+          title={occupied ? 'Kamar terisi: gunakan C.O. atau Penghuni Aktif.' : undefined}
+          onClick={() => change(r.id, 'occupied')}
+        >
+          Terisi
+        </button>
+      </div>
     );
   };
 
