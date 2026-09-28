@@ -80,36 +80,8 @@ export default function EditRoomStatus() {
     }
   };
 
-  const actions = (r: Room) => {
-    const occupied = isOccupied(r);
-    return (
-      <div className="kamar-status-actions">
-        <button
-          type="button"
-          className="btn"
-          disabled={occupied || r.status === 'available'}
-          aria-disabled={occupied || r.status === 'available'}
-          data-room-occupied={occupied ? 'true' : 'false'}
-          title={occupied ? 'Kamar terisi: tombol Siap Jual dinonaktifkan. Gunakan C.O. atau Penghuni Aktif.' : undefined}
-          onClick={() => {
-            if (occupied) return;
-            void change(r.id, 'available');
-          }}
-        >
-          Tersedia
-        </button>
-        <button
-          type="button"
-          className="btn secondary"
-          disabled={occupied || r.status === 'maintenance'}
-          aria-disabled={occupied || r.status === 'maintenance'}
-          title={occupied ? 'Kamar terisi: gunakan C.O. atau Penghuni Aktif.' : undefined}
-          onClick={() => change(r.id, 'maintenance')}
-        >
-          Maintenance
-        </button>
-      </div>
-    );
+  const actions = (_r: Room) => {
+    return <div className="kamar-status-actions" aria-hidden="true" />;
   };
 
   return (
