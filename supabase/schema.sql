@@ -381,7 +381,7 @@ with check(exists(select 1 from public.account_properties ap where ap.user_id=(s
 grant select,insert,update,delete on public.property_app_state to authenticated;
 
 create or replace function public.get_property_app_state()
-returns jsonb language plpgsql security invoker set search_path=public as $
+returns jsonb language plpgsql security invoker set search_path=public as $$
 declare v_user uuid:=auth.uid(); v_property uuid; v_state jsonb;
 begin
   if v_user is null then raise exception 'AUTH_REQUIRED'; end if;
@@ -407,12 +407,12 @@ begin
     'kostpro_payments',coalesce((select jsonb_agg(jsonb_build_object('id',pay.id,'tenant',coalesce(t.name,''),'room',coalesce(r.room_code,''),'month',to_char(i.period,'FMMonth YYYY'),'amount',pay.amount,'status','paid','paidAt',pay.paid_at,'method',pay.method) order by pay.paid_at) from public.payments pay join public.invoices i on i.id=pay.invoice_id left join public.tenants t on t.id=i.tenant_id left join public.rooms r on r.id=t.room_id where i.property_id=v_property),'[]'::jsonb),
     'kostpro_transactions',coalesce((select jsonb_agg(jsonb_build_object('id','PAY-'||pay.id,'date',coalesce(pay.paid_at::date,current_date),'description','Pembayaran '||coalesce(t.name,''),'category','Pendapatan sewa','amount',pay.amount,'type','income','referenceId',pay.invoice_id) order by pay.paid_at) from public.payments pay join public.invoices i on i.id=pay.invoice_id left join public.tenants t on t.id=i.tenant_id where i.property_id=v_property),'[]'::jsonb)
   );
-end; $;
+end; $$;
 revoke all on function public.get_property_app_state() from public,anon;
 grant execute on function public.get_property_app_state() to authenticated;
 
 create or replace function public.save_property_app_state(p_key text, p_value jsonb)
-returns jsonb language plpgsql security invoker set search_path=public as $
+returns jsonb language plpgsql security invoker set search_path=public as $$
 declare v_user uuid:=auth.uid(); v_property uuid; v_state jsonb;
 begin
   if v_user is null then raise exception 'AUTH_REQUIRED'; end if;
@@ -434,7 +434,7 @@ begin
     updated_at=now()
   returning state into v_state;
   return v_state;
-end; $;
+end; $$;
 revoke all on function public.save_property_app_state(text,jsonb) from public,anon;
 grant execute on function public.save_property_app_state(text,jsonb) to authenticated;
 
