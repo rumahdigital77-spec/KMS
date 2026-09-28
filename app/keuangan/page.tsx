@@ -143,8 +143,8 @@ export default function Keuangan() {
 
           <div className="report-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(90px,120px) minmax(90px,120px)', gap: 0, borderTop: '2px solid #111827', borderBottom: '1px solid #111827', fontSize: 11.5 }}>
             <div style={{ padding: '11px 8px', fontWeight: 800 }}>URAIAN</div>
-            <div style={{ padding: '11px 8px', fontWeight: 800, textAlign: 'right', minWidth: 120 }}>DEBET</div>
-            <div style={{ padding: '11px 8px', fontWeight: 800, textAlign: 'right', minWidth: 130 }}>KREDIT</div>
+            <div style={{ padding: '11px 8px', fontWeight: 800, textAlign: 'right', minWidth: 0, whiteSpace: 'nowrap' }}>DEBET</div>
+            <div style={{ padding: '11px 8px', fontWeight: 800, textAlign: 'right', minWidth: 0, whiteSpace: 'nowrap' }}>KREDIT</div>
 
             <div style={{ gridColumn: '1 / -1', padding: '14px 8px 7px', fontWeight: 800, background: '#f8fafc' }}>PENDAPATAN</div>
             {incomeTransactions.length ? incomeTransactions.map((item) => (
