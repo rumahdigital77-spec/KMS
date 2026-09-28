@@ -122,7 +122,7 @@ export default function UserPage() {
     const rooms = Math.max(0, Math.floor(Number(roomCount) || 0));
 
     if (!email || createPassword.length < 6 || !name || rooms < 1 || !['owner', 'admin'].includes(accountRole)) {
-      setCreateMsg('Email, password minimal 6 karakter, nama property, jumlah kamar minimal 1, dan role wajib diisi.');
+      setCreateMsg('Email, password minimal 6 karakter, nama property, dan jumlah kamar minimal 1 wajib diisi.');
       return;
     }
 
@@ -255,7 +255,7 @@ export default function UserPage() {
       <div className="top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
         <div>
           <div className="title">User & Akses</div>
-          <div className="sub">Satu tempat untuk membuat database, profil pemilik, property, dan role account.</div>
+          <div className="sub">Satu tempat untuk membuat database dan profil pemilik.</div>
         </div>
         <button
           className="btn"
@@ -303,7 +303,6 @@ export default function UserPage() {
                   <div className="form">
                     <div className="field"><label>Email Account</label><input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" required /></div>
                     <div className="field"><label>Password Login</label><input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password" required /></div>
-                    <div className="field"><label>Role</label><select value={accountRole} onChange={e => setAccountRole(e.target.value as 'owner' | 'admin')}><option value="owner">Owner</option><option value="admin">Admin</option></select><div className="sub">Pilih akses account: <b>Owner</b> atau <b>Admin</b>.</div></div>
                     <div className="field"><label>Nama Pemilik</label><input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Nama lengkap pemilik" /></div>
                     <div className="field"><label>Nama Property / Kost</label><input value={propertyName} onChange={e => setPropertyName(e.target.value)} placeholder="Nama kost / hotel" required /></div>
                     <div className="field"><label>Nomor Telepon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Nomor telepon" /></div>
@@ -326,7 +325,6 @@ export default function UserPage() {
             <div className="form">
               <div className="field"><label>Nama</label><input value={account.full_name || '-'} readOnly /></div>
               <div className="field"><label>Email Login</label><input value={account.email} readOnly /></div>
-              <div className="field"><label>Role</label><input value={account.role} readOnly /></div>
               <div className="field"><label>Status</label><input value={account.status} readOnly /></div>
             </div>
             <div className="sub" style={{ marginTop: 12, color: '#047857', fontWeight: 700 }}>✓ Database aktif. Semua data aplikasi dibatasi ke property account ini.</div>
@@ -339,7 +337,6 @@ export default function UserPage() {
               <div key={item.property_id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14 }}>
                 <b>{item.property?.name || 'Property'}</b>
                 <div className="sub">{item.property?.address || 'Alamat belum diisi'}</div>
-                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700 }}>Role: {item.role}</div>
                 <div style={{ marginTop: 4, fontSize: 12, color: '#047857', fontWeight: 700 }}>✓ Akses aktif</div>
               </div>
             ))}
