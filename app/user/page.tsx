@@ -33,7 +33,6 @@ export default function UserPage() {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [roomCount, setRoomCount] = useState('');
-  const [accountRole, setAccountRole] = useState<'owner' | 'admin'>('owner');
   const [createBusy, setCreateBusy] = useState(false);
   const [createMsg, setCreateMsg] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
@@ -122,7 +121,7 @@ export default function UserPage() {
     const name = propertyName.trim();
     const rooms = Math.max(0, Math.floor(Number(roomCount) || 0));
 
-    if (!email || createPassword.length < 6 || !name || rooms < 1 || !['owner', 'admin'].includes(accountRole)) {
+    if (!email || createPassword.length < 6 || !name || rooms < 1) {
       setCreateMsg('Email, password minimal 6 karakter, nama property, dan jumlah kamar minimal 1 wajib diisi.');
       return;
     }
@@ -147,7 +146,7 @@ export default function UserPage() {
               address,
               phone,
               room_count: rooms,
-              role: accountRole,
+              role: 'owner',
             },
           },
         });
@@ -178,7 +177,7 @@ export default function UserPage() {
         p_phone: phone.trim(),
         p_property_name: name,
         p_room_count: rooms,
-        p_role: accountRole,
+        p_role: 'owner',
       });
 
       if (provisionError) {
