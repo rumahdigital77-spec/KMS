@@ -525,3 +525,16 @@ input,select,textarea{font-size:16px}
     bottom:max(10px,env(safe-area-inset-bottom));
   }
 }
+
+ /* Reliable vector owner logo fallback — no white background */
+.sidebar-owner-logo-wrap::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  display:block;
+  background:url("/kostpro-owner-logo.svg?v=1.5") center/contain no-repeat;
+  z-index:2;
+}
+.sidebar-owner-logo-wrap .sidebar-owner-logo{
+  display:none!important;
+}
