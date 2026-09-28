@@ -25,9 +25,9 @@ export default function RoleAccessGuard({ children }: { children: React.ReactNod
         const { data: account, error: accountError } = await supabase.from('user_accounts').select('role').eq('user_id', user.id).maybeSingle();
         const role = String(account?.role || '').toLowerCase() as Role;
         const ownerRoute = pathname === '/user' || pathname.startsWith('/user/');
-        if (accountError || (ownerRoute && role !== 'owner')) {
+        if (accountError) {
           if (!cancelled) { setAllowed(!ownerRoute); setChecked(true); }
-          if (ownerRoute) router.replace('/');
+          if (ownerRoute) { /* Keep User & Akses reachable for login/setup recovery. */ }
           return;
         }
         if (!cancelled) setAllowed(true);
