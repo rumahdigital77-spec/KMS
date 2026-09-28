@@ -26,19 +26,33 @@ export default function EditRoomStatus() {
     };
   }, []);
 
-  const isOccupied = (room: Room) =>
-    Boolean(
-      (String(room.tenant ?? '').trim() !== '' &&
-        String(room.tenant ?? '').trim() !== '-') ||
-        room.status === 'occupied' ||
-        tenants.some(
-          (t) =>
-            String(t.room ?? '').trim() === String(room.id).trim() &&
-            String(t.name ?? '').trim() !== '' &&
-            String(t.name ?? '').trim() !== '-' &&
-            (t.status || 'active') !== 'history'
-        )
-    );
+  const normalizeRoomRef = (value: unknown) =>
+    String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/^kamar\\s+/i, '')
+      .replace(/\\s+/g, '');
+
+  const isOccupied = (room: Room) => {
+    const roomStatus = String(room.status ?? '').trim().toLowerCase();
+    const roomTenant = String(room.tenant ?? '').trim();
+
+    // Treat both current and legacy "occupied/terisi" values as occupied.
+    if (roomStatus === 'occupied' || roomStatus === 'terisi') return true;
+    if (roomTenant !== '' && roomTenant !== '-') return true;
+
+    const roomRef = normalizeRoomRef(room.id);
+    return tenants.some((t) => {
+      const tenantStatus = String(t.status ?? 'active').trim().toLowerCase();
+      const tenantRoom = normalizeRoomRef(t.room);
+      return (
+        tenantRoom === roomRef &&
+        String(t.name ?? '').trim() !== '' &&
+        String(t.name ?? '').trim() !== '-' &&
+        tenantStatus !== 'history'
+      );
+    });
+  };
 
   const change = async (id: string, status: Room['status']) => {
     const current = rooms.find((r) => r.id === id);
@@ -71,15 +85,21 @@ export default function EditRoomStatus() {
     return (
       <div className="kamar-status-actions">
         <button
+          type="button"
           className="btn"
           disabled={occupied || r.status === 'available'}
           aria-disabled={occupied || r.status === 'available'}
-          title={occupied ? 'Kamar terisi: gunakan C.O. atau Penghuni Aktif.' : undefined}
-          onClick={() => change(r.id, 'available')}
+          data-room-occupied={occupied ? 'true' : 'false'}
+          title={occupied ? 'Kamar terisi: tombol Siap Jual dinonaktifkan. Gunakan C.O. atau Penghuni Aktif.' : undefined}
+          onClick={() => {
+            if (occupied) return;
+            void change(r.id, 'available');
+          }}
         >
           Tersedia
         </button>
         <button
+          type="button"
           className="btn secondary"
           disabled={occupied || r.status === 'maintenance'}
           aria-disabled={occupied || r.status === 'maintenance'}
@@ -89,6 +109,7 @@ export default function EditRoomStatus() {
           Maintenance
         </button>
         <button
+          type="button"
           className="btn secondary"
           disabled={occupied || r.status === 'occupied'}
           aria-disabled={occupied || r.status === 'occupied'}
