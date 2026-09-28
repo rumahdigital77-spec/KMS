@@ -24,7 +24,8 @@ export default function MasterBill() {
     setTenants(active);
     setPayments(allPayments);
     setTransactions(allTransactions);
-    if (active.length) setSelectedId(active[0].id);
+    const requested = new URLSearchParams(location.search).get('id');
+    if (active.length) setSelectedId(requested && active.some(x => x.id === requested) ? requested : active[0].id);
   }, []);
 
   const rows = useMemo<MasterRow[]>(() => tenants.map(tenant => {
@@ -55,8 +56,8 @@ export default function MasterBill() {
   return <>
     <div className="top">
       <div>
-        <div className="title">Master Bill</div>
-        <div className="sub">Billing detail dan transaksi untuk tamu kamar yang masih aktif.</div>
+        <div className="title">Master Bill — Preview</div>
+        <div className="sub">Ringkasan billing dan transaksi tamu kamar aktif, ditampilkan sebagai preview informasi.</div>
       </div>
     </div>
 
@@ -87,13 +88,13 @@ export default function MasterBill() {
       </div>
 
       <div className="grid" style={{ marginBottom: 18 }}>
-        <div className="card"><div className="label">Total Billing</div><div className="metric">{money(totalBilling)}</div><div className="sub">{selected.payments.length} transaksi billing</div></div>
-        <div className="card"><div className="label">Sudah Dibayar</div><div className="metric">{money(totalPaid)}</div></div>
-        <div className="card"><div className="label">Belum Dibayar</div><div className="metric">{money(totalUnpaid)}</div></div>
+        <div className="card" style={{ borderTop:"3px solid #667eea" }}><div className="label">TOTAL BILLING</div><div className="metric">{money(totalBilling)}</div><div className="sub">{selected.payments.length} periode billing</div></div>
+        <div className="card" style={{ borderTop:"3px solid #16a34a" }}><div className="label">SUDAH DIBAYAR</div><div className="metric">{money(totalPaid)}</div><div className="sub">Penerimaan</div></div>
+        <div className="card" style={{ borderTop:"3px solid #dc2626" }}><div className="label">BELUM DIBAYAR</div><div className="metric">{money(totalUnpaid)}</div><div className="sub">Piutang aktif</div></div>
       </div>
 
       <div className="card" style={{ marginBottom: 18 }}>
-        <div className="section-title">Billing Detail</div>
+        <div className="section-title">Preview Billing</div>
         <div style={{ overflowX: 'auto' }}>
           <table className="table">
             <thead><tr><th>Periode</th><th>Nomor Billing</th><th>Nominal</th><th>Status</th><th>Tanggal Bayar</th><th>Metode</th></tr></thead>
@@ -113,7 +114,7 @@ export default function MasterBill() {
       </div>
 
       <div className="card">
-        <div className="section-title">Transaksi Terkait Tamu</div>
+        <div className="section-title">Preview Transaksi Tamu</div>
         <div style={{ overflowX: 'auto' }}>
           <table className="table">
             <thead><tr><th>Tanggal</th><th>Deskripsi</th><th>Kategori</th><th>Jenis</th><th>Nominal</th></tr></thead>
