@@ -1,7 +1,5 @@
 'use client';
 
-// Supabase client is created lazily inside browser-side handlers.
-
 import { FormEvent, useEffect, useState } from 'react';
 import { createClient } from '../../lib/supabase-browser';
 
@@ -50,7 +48,7 @@ export default function UserPage() {
       const { data, error: statusError } = await getSupabase().rpc('get_database_provisioning_status');
       if (!statusError) setDatabaseCreated(Boolean(data));
     } catch {
-      // Keep the create UI available only when the status cannot be checked.
+      // Keep the setup form available when status cannot be checked.
     }
   };
 
@@ -115,7 +113,6 @@ export default function UserPage() {
     return () => listener?.subscription.unsubscribe();
   }, []);
 
-
   const createDatabase = async (e: FormEvent) => {
     e.preventDefault();
     if (createBusy || account) return;
@@ -123,33 +120,56 @@ export default function UserPage() {
     const email = createEmail.trim().toLowerCase();
     const name = propertyName.trim();
     const rooms = Math.max(0, Math.floor(Number(roomCount) || 0));
-    if (!email || createPassword.length < 6 || !name || rooms < 1 || !['owner','admin'].includes(accountRole)) {
-      setCreateMsg('Email, password minimal 6 karakter, nama property, dan jumlah kamar (minimal 1) wajib diisi.');
+
+    if (!email || createPassword.length < 6 || !name || rooms < 1 || !['owner', 'admin'].includes(accountRole)) {
+      setCreateMsg('Email, password minimal 6 karakter, nama property, jumlah kamar minimal 1, dan role wajib diisi.');
       return;
     }
+
     setCreateBusy(true);
     try {
       let { data: { user } } = await getSupabase().auth.getUser();
-      if (user?.email?.toLowerCase() !== email) { await getSupabase().auth.signOut(); user = null; }
+
+      if (user?.email?.toLowerCase() !== email) {
+        await getSupabase().auth.signOut();
+        user = null;
+      }
+
       if (!user) {
         const sign = await getSupabase().auth.signUp({
-          email, password: createPassword,
-          options: { data: { full_name: ownerName || email, property_name: name, address, phone, room_count: rooms } }
+          email,
+          password: createPassword,
+          options: {
+            data: {
+              full_name: ownerName || email,
+              property_name: name,
+              address,
+              phone,
+              room_count: rooms,
+              role: accountRole,
+            },
+          },
         });
+
         if (sign.error) {
           if (/already registered|already exists/i.test(sign.error.message || '')) {
             const login = await getSupabase().auth.signInWithPassword({ email, password: createPassword });
-            if (login.error) throw new Error('Email sudah terdaftar tetapi password tidak cocok. Gunakan Database Login.');
+            if (login.error) throw new Error('Email sudah terdaftar tetapi password tidak cocok. Gunakan LOGIN DATABASE.');
             user = login.data.user;
-          } else throw sign.error;
+          } else {
+            throw sign.error;
+          }
         } else {
           user = sign.data.user;
           if (!sign.data.session) throw new Error('EMAIL_NOT_CONFIRMED');
         }
       }
+
       if (!user) throw new Error('AUTH_USER_MISSING');
+
       const { data: sessionData } = await getSupabase().auth.getSession();
       if (!sessionData.session) throw new Error('AUTH_SESSION_MISSING');
+
       const { data: provisionedPropertyId, error: provisionError } = await getSupabase().rpc('provision_owner_property', {
         p_address: address.trim(),
         p_email: email,
@@ -159,6 +179,7 @@ export default function UserPage() {
         p_room_count: rooms,
         p_role: accountRole,
       });
+
       if (provisionError) {
         const code = provisionError.message || '';
         if (/DATABASE_ALREADY_PROVISIONED/i.test(code)) {
@@ -166,17 +187,28 @@ export default function UserPage() {
         }
         throw new Error('DATABASE_PROVISIONING_FAILED: ' + code);
       }
-      if (!provisionedPropertyId) throw new Error('DATABASE_PROVISIONING_FAILED: property ID tidak dikembalikan server.');
-      setCreateMsg('✓ Database + account owner + property + akses berhasil dibuat.');
+
+      if (!provisionedPropertyId) {
+        throw new Error('DATABASE_PROVISIONING_FAILED: property ID tidak dikembalikan server.');
+      }
+
+      setCreateMsg('✓ Database, profil pemilik, property, dan akses berhasil dibuat.');
       setDatabaseCreated(true);
       setCreatePassword('');
       setRoomCount('');
       await loadAccount();
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
-      setCreateMsg(detail === 'EMAIL_NOT_CONFIRMED' ? 'Email belum terkonfirmasi. Pastikan Confirm email OFF pada project Supabase KMS.' :
-        detail === 'AUTH_SESSION_MISSING' ? 'Session login belum tersedia. Silakan LOGIN DATABASE lalu ulangi CREATE DATABASE.' : detail || 'Pembuatan database gagal.');
-    } finally { setCreateBusy(false); }
+      setCreateMsg(
+        detail === 'EMAIL_NOT_CONFIRMED'
+          ? 'Email belum terkonfirmasi. Pastikan Confirm email OFF pada project Supabase KMS.'
+          : detail === 'AUTH_SESSION_MISSING'
+            ? 'Session login belum tersedia. Silakan LOGIN DATABASE lalu ulangi CREATE DATABASE.'
+            : detail || 'Pembuatan database gagal.'
+      );
+    } finally {
+      setCreateBusy(false);
+    }
   };
 
   const loginDatabase = async (e: FormEvent) => {
@@ -185,7 +217,8 @@ export default function UserPage() {
     setLoginBusy(true);
     try {
       const { error: loginError } = await getSupabase().auth.signInWithPassword({
-        email: loginEmail.trim().toLowerCase(), password: loginPassword
+        email: loginEmail.trim().toLowerCase(),
+        password: loginPassword,
       });
       if (loginError) throw loginError;
       setLoginPassword('');
@@ -194,7 +227,9 @@ export default function UserPage() {
       await loadAccount();
     } catch (err) {
       setLoginMsg(err instanceof Error ? err.message : 'Login database gagal.');
-    } finally { setLoginBusy(false); }
+    } finally {
+      setLoginBusy(false);
+    }
   };
 
   const logout = async () => {
@@ -220,7 +255,7 @@ export default function UserPage() {
       <div className="top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
         <div>
           <div className="title">User & Akses</div>
-          <div className="sub">Akses database mengikuti account dan property yang sedang aktif.</div>
+          <div className="sub">Satu tempat untuk membuat database, profil pemilik, property, dan role account.</div>
         </div>
         <button
           className="btn"
@@ -250,34 +285,33 @@ export default function UserPage() {
                   <div className="field"><label>Password</label><input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Password" autoComplete="current-password" required /></div>
                 </div>
                 {loginMsg && <div className="sub" style={{ marginTop: 12, color: '#b45309', fontWeight: 700 }}>{loginMsg}</div>}
-                
               </form>
             </div>
           )}
 
           <div className="card" style={{ marginTop: loginOpen ? 18 : 0 }}>
-            <div className="section-title">🗄️ CREATE DATABASE</div>
+            <div className="section-title">🗄️ DATABASE & PROFIL PEMILIK</div>
             {databaseCreated ? (
               <div>
-                <div className="sub" style={{ marginBottom: 14 }}>✓ Database sudah pernah dibuat. CREATE DATABASE dikunci untuk mencegah property kedua dibuat tanpa sengaja.</div>
+                <div className="sub" style={{ marginBottom: 14 }}>✓ Database sudah pernah dibuat. Form CREATE DATABASE dikunci untuk mencegah pembuatan property tanpa sengaja.</div>
                 <button className="btn" type="button" disabled style={{ opacity: 0.55, cursor: 'not-allowed' }}>DATABASE SUDAH DIBUAT — TERKUNCI</button>
               </div>
             ) : (
               <div>
-                <div className="sub" style={{ marginBottom: 14 }}>Buat account owner dan database/property pertama.</div>
+                <div className="sub" style={{ marginBottom: 14 }}>Isi data penting sekali saja. Data ini dipakai sebagai identitas account dan property.</div>
                 <form onSubmit={createDatabase}>
                   <div className="form">
-                    <div className="field"><label>Email Account</label><input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" /></div>
-                    <div className="field"><label>Password Login</label><input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password" /></div>
-                    <div className="field"><label>Nama Property</label><input value={propertyName} onChange={e => setPropertyName(e.target.value)} placeholder="Nama kost / hotel" /></div>
-                    <div className="field"><label>Jumlah Kamar</label><input type="number" min="1" max="1000" value={roomCount} onChange={e => setRoomCount(e.target.value)} placeholder="Contoh: 20" required /><div className="sub">Kamar akan langsung dibuat sebagai <b>Tersedia</b> di menu Kamar.</div></div>
-                    <div className="field"><label>Role</label><select value={accountRole} onChange={e => setAccountRole(e.target.value as 'owner' | 'admin')}><option value="owner">Owner</option><option value="admin">Admin</option></select><div className="sub">Role account: <b>Owner</b> atau <b>Admin</b>.</div></div>
+                    <div className="field"><label>Email Account</label><input type="email" value={createEmail} onChange={e => setCreateEmail(e.target.value)} placeholder="owner@email.com" autoComplete="email" required /></div>
+                    <div className="field"><label>Password Login</label><input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password" required /></div>
+                    <div className="field"><label>Role</label><select value={accountRole} onChange={e => setAccountRole(e.target.value as 'owner' | 'admin')}><option value="owner">Owner</option><option value="admin">Admin</option></select><div className="sub">Pilih akses account: <b>Owner</b> atau <b>Admin</b>.</div></div>
                     <div className="field"><label>Nama Pemilik</label><input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Nama lengkap pemilik" /></div>
+                    <div className="field"><label>Nama Property / Kost</label><input value={propertyName} onChange={e => setPropertyName(e.target.value)} placeholder="Nama kost / hotel" required /></div>
                     <div className="field"><label>Nomor Telepon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Nomor telepon" /></div>
-                    <div className="field full"><label>Alamat Property</label><textarea value={address} onChange={e => setAddress(e.target.value)} rows={2} /></div>
+                    <div className="field"><label>Jumlah Kamar</label><input type="number" min="1" max="1000" value={roomCount} onChange={e => setRoomCount(e.target.value)} placeholder="Contoh: 20" required /><div className="sub">Kamar langsung dibuat sebagai <b>Tersedia</b>.</div></div>
+                    <div className="field full"><label>Alamat Property</label><textarea value={address} onChange={e => setAddress(e.target.value)} rows={2} placeholder="Alamat lengkap property" /></div>
                   </div>
                   <div className="actions" style={{ marginTop: 14 }}>
-                    <button className="btn" type="submit" disabled={createBusy}>{createBusy ? 'Membuat...' : 'CREATE DATABASE'}</button>
+                    <button className="btn" type="submit" disabled={createBusy}>{createBusy ? 'Membuat...' : 'CREATE DATABASE & SIMPAN PROFIL'}</button>
                   </div>
                 </form>
                 {createMsg && <div className="sub" style={{ marginTop: 12, color: createMsg.startsWith('✓') ? '#047857' : '#b45309', fontWeight: 700 }}>{createMsg}</div>}
