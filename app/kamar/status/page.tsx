@@ -30,8 +30,8 @@ export default function EditRoomStatus() {
     String(value ?? '')
       .trim()
       .toLowerCase()
-      .replace(/^kamar\\s+/i, '')
-      .replace(/\\s+/g, '');
+      .replace(/^kamar\s+/i, '')
+      .replace(/\s+/g, '');
 
   const isOccupied = (room: Room) => {
     const roomStatus = String(room.status ?? '').trim().toLowerCase();
