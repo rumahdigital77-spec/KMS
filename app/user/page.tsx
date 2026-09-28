@@ -35,6 +35,7 @@ export default function UserPage() {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [roomCount, setRoomCount] = useState('');
+  const [accountRole, setAccountRole] = useState<'owner' | 'admin'>('owner');
   const [createBusy, setCreateBusy] = useState(false);
   const [createMsg, setCreateMsg] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
@@ -122,7 +123,7 @@ export default function UserPage() {
     const email = createEmail.trim().toLowerCase();
     const name = propertyName.trim();
     const rooms = Math.max(0, Math.floor(Number(roomCount) || 0));
-    if (!email || createPassword.length < 6 || !name || rooms < 1) {
+    if (!email || createPassword.length < 6 || !name || rooms < 1 || !['owner','admin'].includes(accountRole)) {
       setCreateMsg('Email, password minimal 6 karakter, nama property, dan jumlah kamar (minimal 1) wajib diisi.');
       return;
     }
@@ -156,6 +157,7 @@ export default function UserPage() {
         p_phone: phone.trim(),
         p_property_name: name,
         p_room_count: rooms,
+        p_role: accountRole,
       });
       if (provisionError) {
         const code = provisionError.message || '';
@@ -269,6 +271,7 @@ export default function UserPage() {
                     <div className="field"><label>Password Login</label><input type="password" value={createPassword} onChange={e => setCreatePassword(e.target.value)} placeholder="Minimal 6 karakter" autoComplete="new-password" /></div>
                     <div className="field"><label>Nama Property</label><input value={propertyName} onChange={e => setPropertyName(e.target.value)} placeholder="Nama kost / hotel" /></div>
                     <div className="field"><label>Jumlah Kamar</label><input type="number" min="1" max="1000" value={roomCount} onChange={e => setRoomCount(e.target.value)} placeholder="Contoh: 20" required /><div className="sub">Kamar akan langsung dibuat sebagai <b>Tersedia</b> di menu Kamar.</div></div>
+                    <div className="field"><label>Role</label><select value={accountRole} onChange={e => setAccountRole(e.target.value as 'owner' | 'admin')}><option value="owner">Owner</option><option value="admin">Admin</option></select><div className="sub">Role account: <b>Owner</b> atau <b>Admin</b>.</div></div>
                     <div className="field"><label>Nama Pemilik</label><input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Nama lengkap pemilik" /></div>
                     <div className="field"><label>Nomor Telepon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Nomor telepon" /></div>
                     <div className="field full"><label>Alamat Property</label><textarea value={address} onChange={e => setAddress(e.target.value)} rows={2} /></div>
