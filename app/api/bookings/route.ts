@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const body = await req.json();
     const name = String(body?.name || '').trim();
     const phone = String(body?.phone || '').trim();
