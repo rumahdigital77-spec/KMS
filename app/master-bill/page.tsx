@@ -33,11 +33,17 @@ export default function MasterBill() {
       (p.tenantId && p.tenantId === tenant.id) ||
       (!p.tenantId && p.tenant === tenant.name && p.room === tenant.room)
     );
-    const tenantTransactions = transactions.filter(tx =>
-      tenantPayments.some(p => tx.referenceId === p.id) ||
-      tx.description.toLowerCase().includes(tenant.name.toLowerCase()) ||
-      tx.description.toLowerCase().includes(tenant.room.toLowerCase())
-    );
+    const tenantPaymentIds = new Set(tenantPayments.map(p => p.id));
+    const tenantTransactions = transactions.filter(tx => {
+      // A payment-linked transaction belongs to exactly one bill.
+      if (tx.referenceId) return tenantPaymentIds.has(tx.referenceId);
+      // Legacy transactions without referenceId must match the tenant AND room,
+      // never the tenant name alone (e.g. "Tes — K-01" must not enter K-02).
+      const haystack = tx.description.toLowerCase();
+      const tenantLabel = tenant.name.toLowerCase();
+      const roomLabel = tenant.room.toLowerCase();
+      return haystack.includes(tenantLabel) && haystack.includes(roomLabel);
+    });
     return { tenant, payments: tenantPayments, transactions: tenantTransactions };
   }), [tenants, payments, transactions]);
 
@@ -47,6 +53,13 @@ export default function MasterBill() {
   const masterTransactions = useMemo(() => [...(selected?.transactions || [])].sort((a, b) => String(a.date || '').localeCompare(String(b.date || ''))), [selected]);
   const totalIncome = masterTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = masterTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  // Master Bill is a receivable sub-ledger:
+  // billing creates a debit (Piutang), while payment settlement reduces
+  // that receivable on the credit side. The balance must never mix tenants.
+  const totalCreditSettlement = masterTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const outstandingReceivable = Math.max(0, totalBilling - totalCreditSettlement);
 
   if (!tenants.length) {
     return <div className="card"><div className="section-title">Master Bill</div><div className="sub">Belum ada penghuni aktif. Master Bill akan menampilkan billing setelah tamu melakukan C.I dan berstatus aktif.</div></div>;
@@ -56,7 +69,7 @@ export default function MasterBill() {
     <div className="top">
       <div>
         <div className="title">Master Bill — Preview</div>
-        <div className="sub">Pilih tamu/kamar aktif, lihat masa sewa dan harga, billing, pembayaran, transaksi terkait, serta ringkasan pendapatan dan pengeluaran.</div>
+        <div className="sub">Pilih tamu/kamar aktif, lihat billing, pembayaran, transaksi terkait, dan akumulasi piutang berdasarkan prinsip debit-kredit.</div>
       </div>
     </div>
 
@@ -121,7 +134,24 @@ export default function MasterBill() {
             )) : (
               <div className="master-empty">Belum ada transaksi terkait tamu ini.</div>
             )}
-            <div className="master-total"><b>TOTAL</b><b className="right">{money(totalExpense)}</b><b className="right">{money(totalIncome)}</b></div>
+            <div className="master-total"><b>TOTAL TRANSAKSI</b><b className="right">{money(totalExpense)}</b><b className="right">{money(totalIncome)}</b></div>
+
+            <div className="master-section">REKAP PIUTANG TAMU</div>
+            <div className="master-row">
+              <div><b>Total Billing / Piutang</b><span className="master-detail">Tagihan yang dibebankan kepada tamu</span></div>
+              <div className="right">{money(totalBilling)}</div>
+              <div className="right">—</div>
+            </div>
+            <div className="master-row">
+              <div><b>Pelunasan / Pengurangan Piutang</b><span className="master-detail">Pembayaran yang terhubung langsung ke billing tamu ini</span></div>
+              <div className="right">—</div>
+              <div className="right">{money(totalCreditSettlement)}</div>
+            </div>
+            <div className="master-total">
+              <b>SISA PIUTANG</b>
+              <b className="right">{money(outstandingReceivable)}</b>
+              <b className="right">—</b>
+            </div>
           </div>
         </div>
       </div>
