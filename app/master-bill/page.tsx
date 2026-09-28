@@ -44,12 +44,9 @@ export default function MasterBill() {
   const selected = rows.find(x => x.tenant.id === selectedId) || rows[0];
 
   const totalBilling = selected?.payments.reduce((sum, p) => sum + p.amount, 0) || 0;
-  const totalPaid = selected?.payments.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0) || 0;
-  const totalUnpaid = selected?.payments.filter(p => p.status !== 'paid').reduce((sum, p) => sum + p.amount, 0) || 0;
   const masterTransactions = useMemo(() => [...(selected?.transactions || [])].sort((a, b) => String(a.date || '').localeCompare(String(b.date || ''))), [selected]);
   const totalIncome = masterTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = masterTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-  const netResult = totalIncome - totalExpense;
 
   if (!tenants.length) {
     return <div className="card"><div className="section-title">Master Bill</div><div className="sub">Belum ada penghuni aktif. Master Bill akan menampilkan billing setelah tamu melakukan C.I dan berstatus aktif.</div></div>;
@@ -105,7 +102,7 @@ export default function MasterBill() {
             <div className="master-section">DETAIL BILLING</div>
             {selected.payments.length ? selected.payments.map(p => (
               <div key={'bill-'+p.id} className="master-row">
-                <div><b>{p.month}</b><span className="master-detail">{p.receiptNo || p.id}  · Nomor: {p.receiptNo || p.id} · Status: {p.status === 'paid' ? 'Sudah Dibayar' : 'Belum Dibayar'} · Metode: {p.method || '-'}</span></div>
+                <div><b>{p.month}</b><span className="master-detail">{p.receiptNo || p.id} · Nomor: {p.receiptNo || p.id} · Status: {p.status === 'paid' ? 'Sudah Dibayar' : 'Belum Dibayar'} · Metode: {p.method || '-'}</span></div>
                 <div className="right">{money(p.amount)}</div>
                 <div className="right">—</div>
               </div>
@@ -124,12 +121,7 @@ export default function MasterBill() {
             )) : (
               <div className="master-empty">Belum ada transaksi terkait tamu ini.</div>
             )}
-            <div className="master-total"><b>TOTAL AKUMULATIF</b><b className="right">{money(totalExpense)}</b><b className="right">{money(totalIncome)}</b></div>
-            <div className="master-net">
-              <b>LABA / (RUGI) BERSIH</b>
-              <b className="right">{netResult < 0 ? '(' + money(Math.abs(netResult)) + ')' : '—'}</b>
-              <b className="right">{netResult >= 0 ? money(netResult) : '—'}</b>
-            </div>
+            <div className="master-total"><b>TOTAL</b><b className="right">{money(totalExpense)}</b><b className="right">{money(totalIncome)}</b></div>
           </div>
         </div>
       </div>
@@ -151,16 +143,12 @@ export default function MasterBill() {
       .master-detail{display:block;font-size:10px;color:#6b7280;font-weight:400;margin-top:2px}
       .master-empty{grid-column:1 / -1;padding:8px 22px;color:#9ca3af}
       .master-total{display:contents}.master-total>div,.master-total>b{padding:10px 8px;border-top:1px solid #e5e7eb}
-      .master-net{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,120px) minmax(90px,120px);border-top:2px solid #111827;margin-top:6px;padding:14px 0;font-size:13px;font-weight:900}
-      .master-net>*{padding:0 8px}
       @media(max-width:560px){
         .master-report-sheet{padding:12px;border-radius:10px}.master-report-grid{font-size:9.5px;grid-template-columns:minmax(0,1fr) minmax(72px,86px) minmax(72px,86px)}
         .master-report-grid>div{overflow-wrap:anywhere}.master-head,.master-row>div{padding-left:5px;padding-right:5px}
         .master-report-title{font-size:16px}.master-kicker{font-size:10px}.master-report-sub{font-size:10px}.master-guest-line{font-size:11px}
-        .master-detail{font-size:8.5px}.master-net{grid-template-columns:minmax(0,1fr) minmax(72px,86px) minmax(72px,86px);font-size:11px}
-        .master-net>*{padding-left:5px;padding-right:5px}.master-label{font-size:9px!important}.master-metric{font-size:17px!important}
+        .master-detail{font-size:8.5px}.master-label{font-size:9px!important}.master-metric{font-size:17px!important}
       }
     `}</style>
   </>;
-
 }
