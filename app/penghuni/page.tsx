@@ -372,6 +372,7 @@ export default function Penghuni() {
             <button className="btn secondary" disabled={busy} onClick={()=>extend(x)}>Perpanjang</button>
             <button className="btn secondary" disabled={busy} onClick={()=>{setMoveTenant(x);setMoveRoom('')}}>Pindah Kamar</button>
             <button className="btn" disabled={busy} onClick={()=>checkout(x)}>C.O</button>
+            <button className="btn secondary" disabled={busy} onClick={()=>{ location.href='/master-bill?id='+encodeURIComponent(x.id); }}>Master Bill</button>
           </div>
         </div>)}
       </div>
