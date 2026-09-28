@@ -185,18 +185,26 @@ export default function Keuangan() {
       <style jsx>{`
         .result-positive{color:#15803d}
         .result-negative{color:#b91c1c}
-        .finance-page-title{font-size:20px!important}.finance-page-sub{font-size:12px!important}.finance-add-btn{font-size:12px!important;padding:8px 12px!important}.finance-label{font-size:10px!important;letter-spacing:.04em}.finance-metric{font-size:20px!important;line-height:1.15;letter-spacing:-.02em}
-        .report-sheet{max-width:100%;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.06)}
-        .report-grid{width:100%;max-width:100%;overflow:hidden}
-        .report-grid>div{transition:background .15s ease}
+        .finance-page-title{font-size:20px!important;font-weight:800!important;letter-spacing:-.025em}
+        .finance-page-sub{font-size:12px!important;line-height:1.45}
+        .finance-add-btn{font-size:12px!important;padding:8px 12px!important;font-weight:700!important}
+        .finance-label{font-size:10px!important;letter-spacing:.08em;font-weight:800!important;line-height:1.3}
+        .finance-metric{font-size:20px!important;line-height:1.15;font-weight:800!important;letter-spacing:-.02em;font-variant-numeric:tabular-nums lining-nums}
+        .report-sheet{max-width:100%;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.07);border-color:#d8dee6!important}
+        .report-grid{width:100%;max-width:100%;overflow:hidden;font-variant-numeric:tabular-nums lining-nums}
+        .report-grid>div{transition:background .15s ease;min-width:0}
         .report-grid>div:nth-child(3n+1){letter-spacing:.005em}
+        .report-grid>div:nth-child(3n+2),.report-grid>div:nth-child(3n){font-feature-settings:"tnum" 1,"lnum" 1}
+        .report-grid>div:nth-child(3n+2):not([style*="grid-column"]),.report-grid>div:nth-child(3n){white-space:nowrap}
+        .report-grid>div[style*="font-weight: 900"]{letter-spacing:-.01em}
         @media(max-width:560px){
           .finance-page-title{font-size:18px!important}.finance-page-sub{font-size:11px!important}.finance-add-btn{font-size:11px!important;padding:7px 10px!important}.finance-label{font-size:9px!important}.finance-metric{font-size:17px!important}
           .report-sheet{padding:12px!important;border-radius:10px!important}
-          .report-grid{font-size:9.5px!important;grid-template-columns:minmax(0,1fr) minmax(72px,86px) minmax(72px,86px)!important}
+          .report-grid{font-size:9.5px!important;grid-template-columns:minmax(0,1fr) minmax(88px,92px) minmax(88px,92px)!important}
           .report-grid>div{min-width:0;overflow-wrap:anywhere}
           .report-sheet .section-title{font-size:16px!important}
           .report-sheet .report-grid>div{padding-left:5px!important;padding-right:5px!important}
+          .report-grid>div:nth-child(3n+2),.report-grid>div:nth-child(3n){font-size:9.5px!important}
         }
       `}</style>
 
