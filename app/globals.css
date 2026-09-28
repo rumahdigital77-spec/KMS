@@ -450,3 +450,16 @@ input,select,textarea{font-size:16px}
   .kamar-status-editor-head{display:grid}
   .kamar-status-card .kamar-detail-grid{grid-template-columns:1fr}
 }
+
+/* Permanent owner logo + version footer */
+.brand-fallback{display:flex;gap:0;font-size:21px;font-weight:800;letter-spacing:.3px}
+.brand-fallback span:first-child{color:#67e8f9}
+.brand-fallback span:last-child{color:#fff}
+.sidebar-owner-footer{position:absolute;left:14px;right:14px;bottom:14px;display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(15,23,42,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.sidebar-owner-logo{display:block;width:38px;height:38px;object-fit:contain;object-position:center;flex:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.2))}
+.sidebar-owner-version{display:flex;flex-direction:column;gap:2px;min-width:0;line-height:1.1}
+.sidebar-owner-version span{font-size:10px;font-weight:800;letter-spacing:.7px;color:#cbd5e1}
+.sidebar-owner-version b{font-size:12px;font-weight:800;color:#fff;letter-spacing:.2px}
+@media(max-width:900px){
+  .sidebar-owner-footer{bottom:max(14px,env(safe-area-inset-bottom));}
+}
