@@ -107,10 +107,10 @@ export default function MasterBill() {
             <div className="master-head right">DEBET</div>
             <div className="master-head right">KREDIT</div>
 
-            <div className="master-section">BILLING / TAGIHAN</div>
+            <div className="master-section">DETAIL BILLING</div>
             {selected.payments.length ? selected.payments.map(p => (
               <div key={'bill-'+p.id} className="master-row">
-                <div><b>{p.month}</b><span className="master-detail">{p.receiptNo || p.id} · {p.status === 'paid' ? 'Lunas' : 'Belum Bayar'}</span></div>
+                <div><b>{p.month}</b><span className="master-detail">{p.receiptNo || p.id}  · Nomor: {p.receiptNo || p.id} · Status: {p.status === 'paid' ? 'Sudah Dibayar' : 'Belum Dibayar'} · Metode: {p.method || '-'}</span></div>
                 <div className="right">{money(p.amount)}</div>
                 <div className="right">—</div>
               </div>
@@ -129,7 +129,7 @@ export default function MasterBill() {
             )) : (
               <div className="master-empty">Belum ada pembayaran lunas.</div>
             )}
-            <div className="master-total"><b>Total Pembayaran</b><b className="right">—</b><b className="right">{money(totalPaid)}</b></div>
+            <div className="master-total"><b>Sudah Dibayar</b><b className="right">—</b><b className="right">{money(totalPaid)}</b></div>
 
             <div className="master-section">TRANSAKSI TERKAIT TAMU</div>
             {selected.transactions.length ? selected.transactions.map(tx => (
