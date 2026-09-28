@@ -46,8 +46,10 @@ export default function MasterBill() {
   const totalBilling = selected?.payments.reduce((sum, p) => sum + p.amount, 0) || 0;
   const totalPaid = selected?.payments.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0) || 0;
   const totalUnpaid = selected?.payments.filter(p => p.status !== 'paid').reduce((sum, p) => sum + p.amount, 0) || 0;
-  const totalIncome = selected?.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) || 0;
-  const totalExpense = selected?.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0) || 0;
+  const masterTransactions = useMemo(() => [...(selected?.transactions || [])].sort((a, b) => String(a.date || '').localeCompare(String(b.date || ''))), [selected]);
+  const totalIncome = masterTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpense = masterTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const netResult = totalIncome - totalExpense;
 
   if (!tenants.length) {
     return <div className="card"><div className="section-title">Master Bill</div><div className="sub">Belum ada penghuni aktif. Master Bill akan menampilkan billing setelah tamu melakukan C.I dan berstatus aktif.</div></div>;
@@ -112,20 +114,8 @@ export default function MasterBill() {
             )}
             <div className="master-total"><b>Total Billing</b><b className="right">{money(totalBilling)}</b><b className="right">—</b></div>
 
-            <div className="master-section">PEMBAYARAN</div>
-            {selected.payments.filter(p => p.status === 'paid').length ? selected.payments.filter(p => p.status === 'paid').map(p => (
-              <div key={'pay-'+p.id} className="master-row">
-                <div><b>{p.month}</b><span className="master-detail">{p.paidAt || '-'} · {p.method || 'Metode pembayaran'}</span></div>
-                <div className="right">—</div>
-                <div className="right">{money(p.amount)}</div>
-              </div>
-            )) : (
-              <div className="master-empty">Belum ada pembayaran lunas.</div>
-            )}
-            <div className="master-total"><b>Sudah Dibayar</b><b className="right">—</b><b className="right">{money(totalPaid)}</b></div>
-
             <div className="master-section">TRANSAKSI TERKAIT TAMU</div>
-            {selected.transactions.length ? selected.transactions.map(tx => (
+            {masterTransactions.length ? masterTransactions.map(tx => (
               <div key={tx.id} className="master-row">
                 <div><b>{tx.description}</b><span className="master-detail">{tx.date} · {tx.category}</span></div>
                 <div className="right">{tx.type === 'expense' ? money(tx.amount) : '—'}</div>
@@ -134,13 +124,11 @@ export default function MasterBill() {
             )) : (
               <div className="master-empty">Belum ada transaksi terkait tamu ini.</div>
             )}
-            <div className="master-total"><b>Ringkasan Pengeluaran</b><b className="right">{money(totalExpense)}</b><b className="right">—</b></div>
-            <div className="master-total"><b>Ringkasan Pendapatan</b><b className="right">—</b><b className="right">{money(totalIncome)}</b></div>
-
+            <div className="master-total"><b>TOTAL AKUMULATIF</b><b className="right">{money(totalExpense)}</b><b className="right">{money(totalIncome)}</b></div>
             <div className="master-net">
-              <b>SISA TAGIHAN</b>
-              <b className="right">{money(totalUnpaid)}</b>
-              <b className="right">—</b>
+              <b>LABA / (RUGI) BERSIH</b>
+              <b className="right">{netResult < 0 ? '(' + money(Math.abs(netResult)) + ')' : '—'}</b>
+              <b className="right">{netResult >= 0 ? money(netResult) : '—'}</b>
             </div>
           </div>
         </div>
