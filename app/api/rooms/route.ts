@@ -3,7 +3,7 @@ import { createServerSupabaseClient, getAuthenticatedPropertyId } from '@/lib/su
 
 export async function GET(req: Request) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const url = new URL(req.url);
     const publicMode = url.searchParams.get('public') === '1';
     const requestedProperty = url.searchParams.get('property_id');
