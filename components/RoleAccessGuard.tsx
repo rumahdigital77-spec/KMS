@@ -27,7 +27,7 @@ export default function RoleAccessGuard({ children }: { children: React.ReactNod
         const ownerRoute = pathname === '/user' || pathname.startsWith('/user/');
         if (accountError) {
           if (!cancelled) { setAllowed(!ownerRoute); setChecked(true); }
-          if (ownerRoute) { /* Keep User & Akses reachable for login/setup recovery. */ }
+          if (ownerRoute) { /* Keep User & Akses reachable when authentication/profile is unavailable. */ }
           return;
         }
         if (!cancelled) setAllowed(true);
