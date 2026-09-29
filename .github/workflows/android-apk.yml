@@ -49,7 +49,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y imagemagick
           mkdir -p /tmp/kostpro-icon
-          convert -background none public/kostpro-owner-logo.svg -resize 512x512 /tmp/kostpro-icon/icon.png
+          convert -background none public/kostpro-sidebar-logo.jpg -resize 512x512 /tmp/kostpro-icon/icon.png
           for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
             case "$density" in
               mdpi) size=48 ;;
@@ -70,8 +70,8 @@ jobs:
           from pathlib import Path
           p = Path('android/app/build.gradle')
           s = p.read_text()
-          s = s.replace('versionCode 1', 'versionCode 16')
-          s = s.replace('versionName "1.0"', 'versionName "1.6.0"')
+          s = s.replace('versionCode 1', 'versionCode 17')
+          s = s.replace('versionName "1.0"', 'versionName "1.7.0"')
           p.write_text(s)
           PY
 
@@ -88,7 +88,7 @@ jobs:
       - name: Upload dependency audit
         uses: actions/upload-artifact@v4
         with:
-          name: KOSTPRO-v1.6.0-dependency-audit
+          name: KOSTPRO-v1.7.0-dependency-audit
           path: npm-audit.json
           if-no-files-found: error
           retention-days: 30
@@ -96,7 +96,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KOSTPRO-v1.5.0-Android-debug
+          name: KOSTPRO-v1.7.0-Android-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
