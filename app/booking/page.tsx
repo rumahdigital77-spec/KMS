@@ -138,6 +138,7 @@ export default function BookingPage() {
         const response=await fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({propertyId,roomId:room.id,name:name.trim(),phone:phone.trim(),startDate,duration})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok) throw new Error(data.error||'Database online belum terhubung. Silakan hubungkan Supabase di Vercel.');
+        if (data?.room?.status !== 'reserved') throw new Error('Booking tersimpan tetapi status kamar belum berubah menjadi Reservasi. Silakan cek Room Status.');
         const booking:Booking={id:String(data.booking.id),room:data.booking.room_id,name:data.booking.name,phone:data.booking.phone,startDate:data.booking.start_date,duration:data.booking.duration,createdAt:data.booking.created_at,status:'pending'};
         const next=[booking,...loadData<Booking[]>('bookings',[]).filter(x=>x.id!==booking.id)];
         setBookings(next);await saveData('bookings',next);
