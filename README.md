@@ -37,3 +37,4 @@ For a new database, run `supabase/schema.sql` in Supabase SQL Editor.
 - Current main branch contains the production Supabase client and middleware alignment.
 
 <!-- deployment trigger: verified build 4fd0d1d5 -->
+<!-- deployment trigger: retry 2026-09-29 -->
