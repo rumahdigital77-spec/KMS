@@ -102,7 +102,7 @@ export default function Dashboard() {
         <Link href="/kamar/check-in" className="btn dashboard-primary-btn"><Users size={16}/> C.I Tamu</Link>
       </div>
 
-      <section className="dashboard-hero">
+      <section className="dashboard-hero" style={{ backgroundImage: "linear-gradient(90deg, rgba(2,15,42,.98) 0%, rgba(2,15,42,.88) 42%, rgba(2,15,42,.28) 72%, rgba(2,15,42,.08) 100%), url('/hotel-dashboard-banner.jpg')" }}>
         <div className="dashboard-hero-glow"/>
         <div className="dashboard-hero-copy">
           <div className="dashboard-hero-kicker">KOSTPRO MANAGEMENT SYSTEM</div>
