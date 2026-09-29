@@ -1,5 +1,7 @@
 'use client';
 
+// KOSTPRO active tenant UI
+
 import { useEffect, useState } from 'react';
 import { defaultRooms, defaultTenants, defaultPayments, loadData, money, normalizeMoney, Room, saveData, Tenant, Payment } from '@/lib/store';
 
