@@ -144,6 +144,7 @@ export default function BookingPage() {
         setBookings(next);await saveData('bookings',next);
         const syncedRooms = rooms.map(item => item.id === room.id ? { ...item, status: 'reserved' as const } : item);
         setRooms(syncedRooms);
+        window.dispatchEvent(new CustomEvent('kostpro:room-status-changed', { detail: { roomId: room.id, status: 'reserved' } }));
         const paymentId = 'P-' + Date.now();
         const month = new Date(startDate + 'T00:00:00').toLocaleDateString('id-ID', { month:'long', year:'numeric' });
         const paidPayment: Payment = { id:paymentId, tenantId:booking.id, tenant:booking.name, room:booking.room, month, amount:Number(paymentAmount), status:'paid', paidAt:paymentDate, method:paymentMethod };
