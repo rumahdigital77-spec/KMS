@@ -133,6 +133,9 @@ export default function BookingPage() {
         const booking:Booking={id:String(data.booking.id),room:data.booking.room_id,name:data.booking.name,phone:data.booking.phone,startDate:data.booking.start_date,duration:data.booking.duration,createdAt:data.booking.created_at,status:'pending'};
         const next=[booking,...loadData<Booking[]>('bookings',[]).filter(x=>x.id!==booking.id)];
         setBookings(next);await saveData('bookings',next);
+        const syncedRooms = rooms.map(item => item.id === room.id ? { ...item, status: 'reserved' as const } : item);
+        setRooms(syncedRooms);
+        await saveData('rooms', syncedRooms);
         setMsg('Booking berhasil dikirim. Data sudah masuk ke sistem pengelola.');
         setName('');setPhone('');setRoomId('');setSelectedRoom(null);
       }catch(error){
