@@ -28,7 +28,19 @@ export async function POST(req: Request) {
     const roomCode = String(body?.roomId || '').trim().toUpperCase();
     const startDate = String(body?.startDate || '').trim();
     const duration = String(body?.duration || '1 bulan').trim();
-    const propertyId = String(body?.propertyId || '').trim();
+    const requestedPropertyId = String(body?.propertyId || '').trim();
+    const publicMode = body?.public === true;
+
+    // Logged-in bookings MUST use the property resolved from the authenticated
+    // account. Never trust a client-supplied property_id for private booking.
+    let propertyId = requestedPropertyId;
+    if (!publicMode) {
+      const scope = await getAuthenticatedPropertyId(supabase);
+      if (!scope.propertyId) {
+        return NextResponse.json({ error: scope.error || 'AUTH_REQUIRED' }, { status: 401 });
+      }
+      propertyId = scope.propertyId;
+    }
 
     if (!name || !phone || !roomCode || !startDate || !propertyId) {
       return NextResponse.json({ error: 'Data booking belum lengkap.' }, { status: 400 });
