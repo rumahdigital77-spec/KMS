@@ -1,3 +1,271 @@
 'use client';
-import Link from'next/link';import{useEffect,useState}from'react';import{defaultPayments,defaultRooms,defaultTransactions,loadData,money,Payment,Room,Transaction}from'@/lib/store';
-export default function Dashboard(){const[r,setR]=useState<Room[]>(defaultRooms),[p,setP]=useState<Payment[]>(defaultPayments),[transactions,setTransactions]=useState<Transaction[]>(defaultTransactions),[owner,setOwner]=useState(''),[property,setProperty]=useState('Kost Harmoni'),[cctv,setCctv]=useState<{id:string;name:string;location:string;url:string;showOnDashboard:boolean}[]>([]);useEffect(()=>{setR(loadData('rooms',defaultRooms));setP(loadData('payments',defaultPayments));setTransactions(loadData('transactions',defaultTransactions));try{const s=JSON.parse(localStorage.getItem('kostpro_settings')||'{}');setOwner(s.ownerName||s.manager||'');setProperty(s.name||'Kost Harmoni')}catch{}try{const raw=localStorage.getItem('kostpro_cctv');const data=raw?JSON.parse(raw):[];setCctv(Array.isArray(data)?data.filter((x:any)=>x&&x.showOnDashboard&&typeof x.url==='string').map((x:any)=>({id:String(x.id||''),name:String(x.name||'CCTV'),location:String(x.location||''),url:x.url,showOnDashboard:Boolean(x.showOnDashboard)})):[])}catch{setCctv([])}},[]);const occ=r.filter(x=>x.status==='occupied').length,reserved=r.filter(x=>x.status==='reserved').length,maint=r.filter(x=>x.status==='maintenance').length,inc=transactions.filter(x=>x.type==='income').reduce((a,x)=>a+x.amount,0),unpaid=p.filter(x=>x.status!=='paid').reduce((a,x)=>a+x.amount,0);const pct=r.length?Math.round(occ/r.length*100):0;const statusMeta={occupied:{label:'Terisi',bg:'linear-gradient(145deg,#047857,#10b981)',soft:'#ecfdf5',text:'#047857',icon:'🛏️'},available:{label:'Tersedia',bg:'linear-gradient(145deg,#0369a1,#06b6d4)',soft:'#ecfeff',text:'#0369a1',icon:'🔑'},maintenance:{label:'Maintenance',bg:'linear-gradient(145deg,#b45309,#f59e0b)',soft:'#fffbeb',text:'#b45309',icon:'🔧'},reserved:{label:'Reservasi',bg:'linear-gradient(145deg,#7c3aed,#a855f7)',soft:'#f5f3ff',text:'#7c3aed',icon:'📅'}} as const;return <div style={{display:'grid',gap:22}}><div className="top"><div><div className="title">Dashboard</div><div className="sub">Selamat datang{owner?', '+owner:''} · Ringkasan operasional {property}</div></div></div><div className="card" style={{background:'linear-gradient(120deg,#0f172a 0%,#312e81 42%,#7c3aed 72%,#db2777 100%)',color:'#fff',border:'none',boxShadow:'0 22px 55px rgba(76,29,149,.28)',overflow:'hidden',position:'relative',minHeight:150}}><div style={{position:'relative',zIndex:2,padding:8}}><div style={{fontSize:12,fontWeight:800,letterSpacing:2,textTransform:'uppercase',opacity:.78}}>KOSTPRO • PROPERTY COMMAND CENTER</div><div style={{fontSize:'clamp(24px,4vw,32px)',fontWeight:850,margin:'10px 0 6px',overflowWrap:'anywhere'}}>{property}</div><div style={{opacity:.82,lineHeight:1.5}}>{owner?'Dikelola oleh '+owner:'Kelola kamar, penghuni, tagihan, dan keuangan dari satu tempat.'}</div><div style={{display:'flex',gap:10,marginTop:18,flexWrap:'wrap'}}><span style={{background:'rgba(255,255,255,.16)',padding:'7px 12px',borderRadius:999,fontSize:12}}>⚡ {pct}% okupansi</span><span style={{background:'rgba(255,255,255,.16)',padding:'7px 12px',borderRadius:999,fontSize:12,overflowWrap:'anywhere'}}>💳 {money(unpaid)} belum dibayar</span></div></div><div style={{position:'absolute',right:-25,top:-55,fontSize:180,opacity:.12,transform:'rotate(12deg)',pointerEvents:'none'}}>🏠</div><div style={{position:'absolute',right:100,bottom:-65,width:180,height:180,borderRadius:'50%',background:'rgba(255,255,255,.08)',pointerEvents:'none'}}/></div>{cctv.length>0&&<div className="card"><div className="section-title">📹 CCTV Shortcut</div><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:10}}>{cctv.map(x=><Link href="/cctv" key={x.id} style={{textDecoration:'none',color:'#0f172a',padding:'12px 14px',border:'1px solid #e5e7eb',borderRadius:12,background:'#f8fafc'}}><b style={{display:'block'}}>{x.name}</b><span className="sub">{x.location||'Buka CCTV'}</span></Link>)}</div></div>}<div className="grid"><div className="card" style={{background:'linear-gradient(145deg,#4f46e5,#7c3aed)',color:'#fff',border:'none',boxShadow:'0 12px 28px rgba(79,70,229,.22)'}}><div className="label" style={{color:'rgba(255,255,255,.8)'}}>🏢 Total Kamar</div><div className="metric" style={{color:'#fff'}}>{r.length}</div><div style={{opacity:.75,fontSize:13}}>Seluruh unit properti</div></div><div className="card" style={{background:'linear-gradient(145deg,#059669,#10b981)',color:'#fff',border:'none',boxShadow:'0 12px 28px rgba(5,150,105,.2)'}}><div className="label" style={{color:'rgba(255,255,255,.8)'}}>🛏️ Kamar Terisi</div><div className="metric" style={{color:'#fff'}}>{occ}</div><div style={{opacity:.78,fontSize:13}}>{pct}% tingkat okupansi</div></div><div className="card" style={{background:'linear-gradient(145deg,#7c3aed,#a855f7)',color:'#fff',border:'none',boxShadow:'0 12px 28px rgba(124,58,237,.2)'}}><div className="label" style={{color:'rgba(255,255,255,.82)'}}>📅 Kamar Reservasi</div><div className="metric" style={{color:'#fff'}}>{reserved}</div><div style={{opacity:.78,fontSize:13}}>Booking berhasil</div></div><div className="card" style={{background:'linear-gradient(145deg,#ea580c,#f59e0b)',color:'#fff',border:'none',boxShadow:'0 12px 28px rgba(234,88,12,.2)'}}><div className="label" style={{color:'rgba(255,255,255,.82)'}}>💎 Pendapatan Masuk</div><div className="metric" style={{fontSize:'clamp(18px,3vw,22px)',color:'#fff',overflowWrap:'anywhere'}}>{money(inc)}</div><div style={{opacity:.78,fontSize:13}}>Total pembayaran lunas</div></div></div><div className="two"><div className="card" style={{border:'1px solid #ddd6fe',boxShadow:'0 10px 30px rgba(15,23,42,.06)'}}><div className="section-title">🏠 Status Kamar</div><div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>{(['occupied','available','reserved','maintenance'] as const).map(s=><span key={s} style={{fontSize:12,fontWeight:700,padding:'6px 10px',borderRadius:999,background:statusMeta[s].soft,color:statusMeta[s].text}}>{statusMeta[s].icon} {statusMeta[s].label}: {r.filter(x=>x.status===s).length}</span>)}</div><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(135px,100%),1fr))',gap:12}}>{r.map(x=>{const m=statusMeta[x.status];return <Link href={`/kamar?room=${encodeURIComponent(x.id)}`} key={x.id} style={{textDecoration:'none',color:'#fff',background:m.bg,borderRadius:18,padding:'17px 15px',minHeight:125,display:'flex',flexDirection:'column',justifyContent:'space-between',boxShadow:'0 10px 22px rgba(15,23,42,.12)',transition:'transform .18s ease,box-shadow .18s ease',overflow:'hidden',position:'relative'}}><div style={{position:'absolute',right:-8,top:-12,fontSize:52,opacity:.13}}>{m.icon}</div><div style={{fontSize:20,fontWeight:850,position:'relative'}}>{x.id}</div><div style={{position:'relative'}}><div style={{fontWeight:700,fontSize:13,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{x.status==='occupied'?(x.tenant==='-'?'Terisi':x.tenant):x.status==='maintenance'?'Maintenance':x.status==='reserved'?'Reservasi':'Siap digunakan'}</div><div style={{fontSize:11,opacity:.82,marginTop:4}}>{m.label} · {money(x.price)}</div></div></Link>})}</div>{!r.length&&<div className="sub">Belum ada kamar.</div>}</div><div className="card" style={{border:'1px solid #fbcfe8',boxShadow:'0 10px 30px rgba(15,23,42,.06)'}}><div className="section-title">💰 Tagihan Bulan Ini</div>{p.map(x=><div key={x.id} style={{display:'flex',justifyContent:'space-between',gap:16,padding:'13px 0',borderBottom:'1px solid #f3f4f6',minWidth:0}}><div style={{minWidth:0,overflowWrap:'anywhere'}}><b>{x.tenant}</b><div className="sub">{x.room} · {x.month}</div></div><div style={{textAlign:'right',flexShrink:0}}><b>{money(x.amount)}</b><div><span className={'badge '+(x.status==='paid'?'green':'red')}>{x.status==='paid'?'Lunas':'Belum Bayar'}</span></div></div></div>)}{!p.length&&<div className="sub">Belum ada tagihan.</div>}</div></div></div>}
+
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Activity, ArrowDownRight, ArrowUpRight, BedDouble, CalendarCheck,
+  ChevronRight, DoorOpen, FileText, ReceiptText, Sparkles, Users, WalletCards
+} from 'lucide-react';
+import {
+  defaultPayments, defaultRooms, defaultTenants, defaultTransactions,
+  loadData, money, Payment, Room, Tenant, Transaction
+} from '@/lib/store';
+
+const statusMeta = {
+  occupied: { label: 'Terisi', icon: BedDouble, cls: 'dash-status-occupied' },
+  available: { label: 'Tersedia', icon: DoorOpen, cls: 'dash-status-available' },
+  reserved: { label: 'Reservasi', icon: CalendarCheck, cls: 'dash-status-reserved' },
+  maintenance: { label: 'Maintenance', icon: Activity, cls: 'dash-status-maintenance' },
+} as const;
+
+type CctvItem = { id:string; name:string; location:string; url:string; showOnDashboard:boolean };
+
+function formatDate(value:string) {
+  if (!value) return '-';
+  return new Date(value + 'T00:00:00').toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+export default function Dashboard() {
+  const [rooms, setRooms] = useState<Room[]>(defaultRooms);
+  const [payments, setPayments] = useState<Payment[]>(defaultPayments);
+  const [transactions, setTransactions] = useState<Transaction[]>(defaultTransactions);
+  const [tenants, setTenants] = useState<Tenant[]>(defaultTenants);
+  const [owner, setOwner] = useState('');
+  const [property, setProperty] = useState('Kost Harmoni');
+  const [cctv, setCctv] = useState<CctvItem[]>([]);
+
+  const loadDashboard = () => {
+    setRooms(loadData('rooms', defaultRooms));
+    setPayments(loadData('payments', defaultPayments));
+    setTransactions(loadData('transactions', defaultTransactions));
+    setTenants(loadData('tenants', defaultTenants).filter(x => (x.status || 'active') === 'active'));
+    try {
+      const settings = loadData<Record<string, unknown>>('settings', {});
+      setOwner(String(settings.ownerName || settings.manager || ''));
+      setProperty(String(settings.name || settings.propertyName || 'Kost Harmoni'));
+    } catch {}
+    try {
+      const raw = localStorage.getItem('kostpro_cctv');
+      const data = raw ? JSON.parse(raw) : [];
+      setCctv(Array.isArray(data)
+        ? data.filter((x:any) => x && x.showOnDashboard && typeof x.url === 'string')
+          .map((x:any) => ({ id:String(x.id || ''), name:String(x.name || 'CCTV'), location:String(x.location || ''), url:x.url, showOnDashboard:Boolean(x.showOnDashboard) }))
+        : []);
+    } catch { setCctv([]); }
+  };
+
+  useEffect(() => {
+    loadDashboard();
+    const refresh = () => loadDashboard();
+    window.addEventListener('kostpro:data-saved', refresh);
+    window.addEventListener('kostpro:data-scope-changed', refresh);
+    return () => {
+      window.removeEventListener('kostpro:data-saved', refresh);
+      window.removeEventListener('kostpro:data-scope-changed', refresh);
+    };
+  }, []);
+
+  const occupied = rooms.filter(x => x.status === 'occupied').length;
+  const available = rooms.filter(x => x.status === 'available').length;
+  const reserved = rooms.filter(x => x.status === 'reserved').length;
+  const maintenance = rooms.filter(x => x.status === 'maintenance').length;
+  const occupancy = rooms.length ? Math.round((occupied / rooms.length) * 100) : 0;
+  const income = transactions.filter(x => x.type === 'income').reduce((sum, x) => sum + x.amount, 0);
+  const expense = transactions.filter(x => x.type === 'expense').reduce((sum, x) => sum + x.amount, 0);
+  const cashNet = income - expense;
+  const unpaid = payments.filter(x => x.status !== 'paid').reduce((sum, x) => sum + x.amount, 0);
+  const paidCount = payments.filter(x => x.status === 'paid').length;
+
+  const monthlyBars = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      const key = d.toLocaleDateString('id-ID', { month:'short' });
+      const month = d.toLocaleDateString('id-ID', { month:'long', year:'numeric' });
+      const value = transactions.filter(x => x.type === 'income' && x.date.slice(0,7) === d.toISOString().slice(0,7)).reduce((s,x) => s + x.amount, 0);
+      return { key, month, value };
+    });
+  }, [transactions]);
+  const maxBar = Math.max(...monthlyBars.map(x => x.value), 1);
+
+  const recentTenants = tenants.slice().sort((a,b) => String(b.startDate).localeCompare(String(a.startDate))).slice(0,5);
+  const recentPayments = payments.slice().sort((a,b) => String(b.paidAt || '').localeCompare(String(a.paidAt || ''))).slice(0,5);
+
+  return (
+    <div className="dashboard-page">
+      <div className="dashboard-heading">
+        <div>
+          <div className="dashboard-eyebrow"><Sparkles size={14}/> PROPERTY COMMAND CENTER</div>
+          <div className="title">Dashboard</div>
+          <div className="sub">Ringkasan operasional {property}{owner ? ' · dikelola '+owner : ''}</div>
+        </div>
+        <Link href="/kamar/check-in" className="btn dashboard-primary-btn"><Users size={16}/> C.I Tamu</Link>
+      </div>
+
+      <section className="dashboard-hero">
+        <div className="dashboard-hero-glow"/>
+        <div className="dashboard-hero-copy">
+          <div className="dashboard-hero-kicker">KOSTPRO MANAGEMENT SYSTEM</div>
+          <h1>{property}</h1>
+          <p>Kelola kamar, penghuni, billing, pembayaran, dan aktivitas property dari satu dashboard.</p>
+          <div className="dashboard-hero-pills">
+            <span><Activity size={14}/> {occupancy}% okupansi</span>
+            <span><ReceiptText size={14}/> {money(unpaid)} piutang aktif</span>
+            <span><BedDouble size={14}/> {occupied} kamar terisi</span>
+          </div>
+        </div>
+        <div className="dashboard-hero-orb"><div className="dashboard-hero-orb-inner">KP</div></div>
+      </section>
+
+      <section className="dashboard-kpis">
+        <Link href="/kamar" className="dashboard-kpi kpi-blue">
+          <span className="dashboard-kpi-icon"><DoorOpen size={21}/></span>
+          <span className="dashboard-kpi-label">Total Kamar</span>
+          <strong>{rooms.length}</strong>
+          <small>{available} tersedia sekarang</small>
+          <ChevronRight size={17} className="dashboard-kpi-arrow"/>
+        </Link>
+        <Link href="/penghuni" className="dashboard-kpi kpi-green">
+          <span className="dashboard-kpi-icon"><BedDouble size={21}/></span>
+          <span className="dashboard-kpi-label">Kamar Terisi</span>
+          <strong>{occupied}</strong>
+          <small>{occupancy}% tingkat okupansi</small>
+          <ChevronRight size={17} className="dashboard-kpi-arrow"/>
+        </Link>
+        <Link href="/tagihan" className="dashboard-kpi kpi-purple">
+          <span className="dashboard-kpi-icon"><CalendarCheck size={21}/></span>
+          <span className="dashboard-kpi-label">Reservasi</span>
+          <strong>{reserved}</strong>
+          <small>{maintenance} kamar maintenance</small>
+          <ChevronRight size={17} className="dashboard-kpi-arrow"/>
+        </Link>
+        <Link href="/keuangan" className="dashboard-kpi kpi-gold">
+          <span className="dashboard-kpi-icon"><WalletCards size={21}/></span>
+          <span className="dashboard-kpi-label">Pendapatan Masuk</span>
+          <strong>{money(income)}</strong>
+          <small>{paidCount} transaksi lunas</small>
+          <ChevronRight size={17} className="dashboard-kpi-arrow"/>
+        </Link>
+      </section>
+
+      <section className="dashboard-main-grid">
+        <div className="card dashboard-room-card">
+          <div className="dashboard-card-head">
+            <div><div className="section-title">Status Kamar</div><div className="sub">Kondisi unit property saat ini</div></div>
+            <Link href="/kamar/status" className="dashboard-link">Kelola <ChevronRight size={15}/></Link>
+          </div>
+          <div className="dashboard-status-summary">
+            {(Object.keys(statusMeta) as Array<keyof typeof statusMeta>).map(key => {
+              const Meta = statusMeta[key];
+              const count = key === 'occupied' ? occupied : key === 'available' ? available : key === 'reserved' ? reserved : maintenance;
+              return <div className={'dashboard-status-chip '+Meta.cls} key={key}><Meta.icon size={15}/><b>{count}</b><span>{Meta.label}</span></div>;
+            })}
+          </div>
+          <div className="dashboard-room-grid">
+            {rooms.map(room => {
+              const Meta = statusMeta[room.status];
+              return <Link key={room.id} href={'/kamar?room='+encodeURIComponent(room.id)} className={'dashboard-room-tile '+Meta.cls}>
+                <div className="dashboard-room-top"><span>{room.id}</span><Meta.icon size={17}/></div>
+                <b>{room.status === 'occupied' ? (room.tenant === '-' ? 'Terisi' : room.tenant) : Meta.label}</b>
+                <small>{money(room.price)}</small>
+              </Link>;
+            })}
+            {!rooms.length && <div className="dashboard-empty">Belum ada kamar. Tambahkan kamar di Manajemen Kamar.</div>}
+          </div>
+        </div>
+
+        <div className="card dashboard-occupancy-card">
+          <div className="dashboard-card-head">
+            <div><div className="section-title">Occupancy Overview</div><div className="sub">Komposisi status kamar</div></div>
+          </div>
+          <div className="dashboard-ring-wrap">
+            <div className="dashboard-ring" style={{ ['--ring' as string]: occupancy*3.6+'deg' }}><div><strong>{occupancy}%</strong><span>Occupied</span></div></div>
+            <div className="dashboard-ring-legend">
+              <div><i className="legend-dot dot-green"/><span>Terisi</span><b>{occupied}</b></div>
+              <div><i className="legend-dot dot-blue"/><span>Tersedia</span><b>{available}</b></div>
+              <div><i className="legend-dot dot-purple"/><span>Reservasi</span><b>{reserved}</b></div>
+              <div><i className="legend-dot dot-amber"/><span>Maintenance</span><b>{maintenance}</b></div>
+            </div>
+          </div>
+          <div className="dashboard-occupancy-note"><Activity size={15}/> {rooms.length ? 'Sebanyak '+occupied+' dari '+rooms.length+' unit sedang menghasilkan okupansi.' : 'Tambahkan unit untuk mulai memantau okupansi.'}</div>
+        </div>
+      </section>
+
+      <section className="dashboard-finance-grid">
+        <div className="card dashboard-finance-card">
+          <div className="dashboard-card-head">
+            <div><div className="section-title">Financial Overview</div><div className="sub">Arus transaksi property</div></div>
+            <Link href="/keuangan" className="dashboard-link">Lihat laporan <ChevronRight size={15}/></Link>
+          </div>
+          <div className="dashboard-finance-metrics">
+            <div><span><ArrowUpRight size={15}/> Pendapatan</span><b>{money(income)}</b></div>
+            <div><span><ArrowDownRight size={15}/> Pengeluaran</span><b>{money(expense)}</b></div>
+            <div><span><WalletCards size={15}/> Total</span><b>{money(cashNet)}</b></div>
+          </div>
+          <div className="dashboard-bars">
+            {monthlyBars.map(item => <div className="dashboard-bar-col" key={item.key} title={item.month+' · '+money(item.value)}><div className="dashboard-bar-value">{item.value ? money(item.value).replace('Rp','').trim() : '-'}</div><div className="dashboard-bar" style={{ height: Math.max(8, Math.round((item.value/maxBar)*120)) }}/><span>{item.key}</span></div>)}
+          </div>
+        </div>
+
+        <div className="card dashboard-unpaid-card">
+          <div className="dashboard-card-head">
+            <div><div className="section-title">Billing Snapshot</div><div className="sub">Tagihan yang masih terbuka</div></div>
+            <Link href="/tagihan" className="dashboard-link">Buka <ChevronRight size={15}/></Link>
+          </div>
+          <div className="dashboard-billing-total"><span>Total Billing / Piutang</span><strong>{money(unpaid)}</strong></div>
+          <div className="dashboard-payment-list">
+            {payments.slice(0,5).map(item => <div className="dashboard-payment-row" key={item.id}>
+              <div><b>{item.tenant}</b><span>{item.room} · {item.month}</span></div>
+              <div><strong>{money(item.amount)}</strong><span className={'badge '+(item.status === 'paid' ? 'green' : 'red')}>{item.status === 'paid' ? 'Lunas' : 'Belum Bayar'}</span></div>
+            </div>)}
+            {!payments.length && <div className="dashboard-empty">Belum ada billing aktif.</div>}
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboard-bottom-grid">
+        <div className="card">
+          <div className="dashboard-card-head">
+            <div><div className="section-title">Penghuni Aktif</div><div className="sub">Tamu yang sedang menempati kamar</div></div>
+            <Link href="/penghuni" className="dashboard-link">Semua <ChevronRight size={15}/></Link>
+          </div>
+          <div className="dashboard-tenant-list">
+            {recentTenants.map(item => <Link href="/penghuni" className="dashboard-tenant-row" key={item.id}>
+              <span className="dashboard-avatar">{item.name.slice(0,1).toUpperCase()}</span>
+              <span><b>{item.name}</b><small>{item.room} · mulai {formatDate(item.startDate)}</small></span>
+              <ChevronRight size={16}/>
+            </Link>)}
+            {!recentTenants.length && <div className="dashboard-empty">Belum ada penghuni aktif.</div>}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="dashboard-card-head">
+            <div><div className="section-title">Aktivitas Pembayaran</div><div className="sub">Transaksi terbaru</div></div>
+            <Link href="/kwitansi" className="dashboard-link">Kwitansi <ChevronRight size={15}/></Link>
+          </div>
+          <div className="dashboard-tenant-list">
+            {recentPayments.map(item => <div className="dashboard-tenant-row" key={item.id}>
+              <span className="dashboard-avatar dashboard-avatar-purple"><ReceiptText size={16}/></span>
+              <span><b>{item.tenant}</b><small>{item.room} · {item.paidAt ? formatDate(item.paidAt) : item.month}</small></span>
+              <strong className={item.status === 'paid' ? 'dashboard-positive' : 'dashboard-negative'}>{money(item.amount)}</strong>
+            </div>)}
+            {!recentPayments.length && <div className="dashboard-empty">Belum ada transaksi pembayaran.</div>}
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboard-quick-grid">
+        <Link href="/kamar/check-in" className="dashboard-quick"><span><Users size={18}/></span><div><b>Check-In Tamu</b><small>Tambah penghuni baru</small></div><ChevronRight size={17}/></Link>
+        <Link href="/tagihan" className="dashboard-quick"><span><ReceiptText size={18}/></span><div><b>Kelola Tagihan</b><small>Billing & pelunasan</small></div><ChevronRight size={17}/></Link>
+        <Link href="/keuangan" className="dashboard-quick"><span><WalletCards size={18}/></span><div><b>Keuangan</b><small>Transaksi & laporan</small></div><ChevronRight size={17}/></Link>
+        <Link href="/laporan" className="dashboard-quick"><span><FileText size={18}/></span><div><b>Laporan</b><small>Riwayat property</small></div><ChevronRight size={17}/></Link>
+      </section>
+
+      {cctv.length > 0 && <section className="card dashboard-cctv-card">
+        <div className="dashboard-card-head"><div><div className="section-title">CCTV Shortcut</div><div className="sub">Akses kamera yang ditampilkan di dashboard</div></div><Link href="/cctv" className="dashboard-link">Semua CCTV <ChevronRight size={15}/></Link></div>
+        <div className="dashboard-cctv-grid">{cctv.map(item => <Link href="/cctv" className="dashboard-cctv-item" key={item.id}><span><Activity size={16}/></span><div><b>{item.name}</b><small>{item.location || 'Buka kamera'}</small></div><ChevronRight size={16}/></Link>)}</div>
+      </section>}
+    </div>
+  );
+}
