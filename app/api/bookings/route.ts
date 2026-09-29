@@ -56,7 +56,21 @@ export async function POST(req: Request) {
     }).select().single();
     if (error) throw error;
 
-    return NextResponse.json({ booking, room: { id: room.room_code, price: Number(room.price), status: room.status } });
+    const { data: reservedRoom, error: reserveError } = await supabase
+      .from('kost_rooms')
+      .update({ status: 'reserved', updated_at: new Date().toISOString() })
+      .eq('id', room.id)
+      .eq('property_id', propertyId)
+      .eq('status', 'available')
+      .select('id,room_code,price,status,tenant')
+      .maybeSingle();
+    if (reserveError) throw reserveError;
+    if (!reservedRoom) {
+      await supabase.from('kost_bookings').delete().eq('id', booking.id).eq('property_id', propertyId);
+      return NextResponse.json({ error: 'Kamar baru saja dipesan oleh pengguna lain.' }, { status: 409 });
+    }
+
+    return NextResponse.json({ booking, room: { id: reservedRoom.room_code, price: Number(reservedRoom.price), status: reservedRoom.status } });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Gagal menyimpan booking.' }, { status: 500 });
   }
