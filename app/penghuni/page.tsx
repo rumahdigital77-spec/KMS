@@ -38,6 +38,7 @@ export default function Penghuni() {
   const [moveTenant,setMoveTenant] = useState<Tenant|null>(null);
   const [moveRoom,setMoveRoom] = useState('');
   const [busy,setBusy] = useState(false);
+  const [selectedActiveRoom,setSelectedActiveRoom] = useState('');
 
   useEffect(() => {
     const run = async () => {
@@ -744,35 +745,76 @@ export default function Penghuni() {
       </div>
       <div className="actions"><button className="btn" disabled={busy} onClick={edit?update:add}>{busy?'Menyimpan...':edit?'Simpan Perubahan':'Simpan Penghuni'}</button><button className="btn secondary" disabled={busy} onClick={reset}>Batal</button></div>
     </div>}
-    <div className="card penghuni-active-list">
-      <div className="penghuni-desktop-table">
-        <div className="table-wrap">
-          <table className="table"><thead><tr><th>Nama</th><th>Kamar</th><th>Telepon</th><th>Mulai</th><th>Berakhir</th><th>Sewa</th><th>Aksi</th></tr></thead>
-          <tbody>{t.map(x=><tr key={x.id}><td><b>{x.name}</b></td><td>{x.room}</td><td>{x.phone || '-'}</td><td>{x.startDate}</td><td>{effectiveEndDate(x)}</td><td>{money(x.rent)}</td><td><div className="actions"><button className="btn secondary" disabled={busy} onClick={()=>startEdit(x)}>Edit</button><button className="btn secondary" disabled={busy} onClick={()=>extend(x)}>Perpanjang</button><button className="btn secondary" disabled={busy} onClick={()=>{setMoveTenant(x);setMoveRoom('')}}>Pindah Kamar</button><button className="btn" disabled={busy} onClick={()=>checkout(x)}>C.O</button><button className="btn secondary" disabled={busy} onClick={()=>{ location.href='/master-bill?id='+encodeURIComponent(x.id); }}>Master Bill</button></div></td></tr>)}{!t.length&&<tr><td colSpan={7}>Belum ada penghuni aktif.</td></tr>}</tbody></table>
+    <div className="card penghuni-active-panel">
+      <div className="active-panel-head">
+        <div>
+          <div className="section-title">Penghuni Aktif</div>
+          <div className="sub">Pilih kamar aktif untuk melihat informasi penghuni dan tindakan yang tersedia.</div>
         </div>
+        <div className="active-count"><b>{t.length}</b><span>Kamar Aktif</span></div>
       </div>
-      <div className="penghuni-mobile-cards">
-        {!t.length && <div className="penghuni-empty">Belum ada penghuni aktif.</div>}
-        {t.map(x=><div className="penghuni-mobile-card" key={x.id}>
-          <div className="penghuni-mobile-head">
-            <div><div className="penghuni-mobile-name">{x.name}</div><div className="penghuni-mobile-room">Kamar {x.room}</div></div>
-            <div className="badge blue">AKTIF</div>
-          </div>
-          <div className="penghuni-mobile-info">
-            <div><span>Telepon</span><b>{x.phone || '-'}</b></div>
-            <div><span>Mulai</span><b>{x.startDate}</b></div>
-            <div><span>Berakhir</span><b>{effectiveEndDate(x)}</b></div>
-            <div><span>Sewa / bulan</span><b>{money(x.rent)}</b></div>
-          </div>
-          <div className="penghuni-mobile-actions">
-            <button className="btn secondary" disabled={busy} onClick={()=>startEdit(x)}>Edit</button>
-            <button className="btn secondary" disabled={busy} onClick={()=>extend(x)}>Perpanjang</button>
-            <button className="btn secondary" disabled={busy} onClick={()=>{setMoveTenant(x);setMoveRoom('')}}>Pindah Kamar</button>
-            <button className="btn" disabled={busy} onClick={()=>checkout(x)}>C.O</button>
-            <button className="btn secondary" disabled={busy} onClick={()=>{ location.href='/master-bill?id='+encodeURIComponent(x.id); }}>Master Bill</button>
-          </div>
-        </div>)}
+      <div className="active-selector">
+        <label htmlFor="active-room-select">Pilih Kamar Aktif</label>
+        <select id="active-room-select" value={selectedActiveRoom} disabled={!t.length} onChange={e=>setSelectedActiveRoom(e.target.value)}>
+          <option value="">{t.length ? 'Pilih kamar aktif...' : 'Belum ada kamar aktif'}</option>
+          {t.map(x=><option key={x.id} value={x.id}>{x.room} — {x.name}</option>)}
+        </select>
       </div>
+      {selectedActiveRoom && (() => {
+        const activeTenant = t.find(x=>x.id===selectedActiveRoom);
+        if (!activeTenant) return null;
+        return (
+          <div className="active-detail">
+            <div className="active-detail-top">
+              <div>
+                <div className="active-room-label">KAMAR {activeTenant.room}</div>
+                <div className="active-tenant-name">{activeTenant.name}</div>
+              </div>
+              <div className="badge blue">AKTIF</div>
+            </div>
+            <div className="active-detail-grid">
+              <div><span>Telepon</span><b>{activeTenant.phone || '-'}</b></div>
+              <div><span>Mulai Sewa</span><b>{activeTenant.startDate}</b></div>
+              <div><span>Berakhir</span><b>{effectiveEndDate(activeTenant)}</b></div>
+              <div><span>Sewa / Bulan</span><b>{money(activeTenant.rent)}</b></div>
+            </div>
+            <div className="active-actions">
+              <button className="btn secondary" disabled={busy} onClick={()=>startEdit(activeTenant)}>Edit</button>
+              <button className="btn secondary" disabled={busy} onClick={()=>extend(activeTenant)}>Perpanjang</button>
+              <button className="btn secondary" disabled={busy} onClick={()=>{setMoveTenant(activeTenant);setMoveRoom('')}}>Pindah Kamar</button>
+              <button className="btn" disabled={busy} onClick={()=>checkout(activeTenant)}>C.O</button>
+              <button className="btn secondary" disabled={busy} onClick={()=>{ location.href='/master-bill?id='+encodeURIComponent(activeTenant.id); }}>Master Bill</button>
+            </div>
+          </div>
+        );
+      })()}
+      {!t.length && <div className="active-empty">Belum ada penghuni aktif.</div>}
     </div>
-  </>;
-}
+    <style jsx>{`
+      .active-panel-head{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:20px}
+      .active-count{min-width:88px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:14px;background:linear-gradient(145deg,#fff,#f7f8fb);text-align:center;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+      .active-count b{display:block;font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
+      .active-count span{display:block;margin-top:4px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em}
+      .active-selector{padding:18px;border:1px solid #e5e7eb;border-radius:18px;background:linear-gradient(145deg,#fff,#f8fafc);box-shadow:0 8px 24px rgba(15,23,42,.05)}
+      .active-selector label{display:block;margin-bottom:8px;font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.06em}
+      .active-selector select{width:100%;height:48px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;padding:0 14px;font-weight:700;color:#0f172a;outline:none}
+      .active-detail{margin-top:16px;padding:20px;border-radius:18px;background:linear-gradient(145deg,#f8fafc,#fff);border:1px solid #e2e8f0}
+      .active-detail-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+      .active-room-label{font-size:11px;font-weight:800;letter-spacing:.08em;color:#64748b}
+      .active-tenant-name{margin-top:4px;font-size:24px;font-weight:850;letter-spacing:-.02em;color:#0f172a}
+      .active-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:18px}
+      .active-detail-grid>div{padding:13px;border:1px solid #e5e7eb;border-radius:12px;background:#fff}
+      .active-detail-grid span{display:block;font-size:11px;color:#64748b;margin-bottom:5px}
+      .active-detail-grid b{display:block;font-size:14px;color:#0f172a;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+      .active-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+      .active-empty{padding:30px;text-align:center;color:#64748b}
+      @media(max-width:700px){
+        .active-panel-head{align-items:flex-start}
+        .active-count{min-width:78px}
+        .active-tenant-name{font-size:20px}
+        .active-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .active-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+        .active-actions .btn{width:100%}
+      }
+    `}</style>
+  </>;\n}
