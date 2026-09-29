@@ -38,3 +38,4 @@ For a new database, run `supabase/schema.sql` in Supabase SQL Editor.
 
 <!-- deployment trigger: verified build 4fd0d1d5 -->
 <!-- deployment trigger: retry 2026-09-29 -->
+<!-- deployment trigger: production retry after error audit -->
