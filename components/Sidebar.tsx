@@ -46,11 +46,32 @@ export default function Sidebar() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => setLoggedIn(!!data.session));
+    let mounted = true;
+
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          console.error('Session auth gagal:', error);
+          setLoggedIn(false);
+          return;
+        }
+        setLoggedIn(!!data.session);
+      })
+      .catch((error) => {
+        if (!mounted) return;
+        console.error('Session auth gagal:', error);
+        setLoggedIn(false);
+      });
+
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setLoggedIn(!!session);
+      if (mounted) setLoggedIn(!!session);
     });
-    return () => listener.subscription.unsubscribe();
+
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -68,14 +89,21 @@ export default function Sidebar() {
       router.push('/login');
       return;
     }
+
     setLoggingOut(true);
-    const { error } = await createClient().auth.signOut();
-    setLoggingOut(false);
-    if (error) {
+    try {
+      const { error } = await createClient().auth.signOut();
+      if (error) {
+        console.error('Logout gagal:', error);
+        return;
+      }
+      router.replace('/login');
+      router.refresh();
+    } catch (error) {
       console.error('Logout gagal:', error);
-      return;
+    } finally {
+      setLoggingOut(false);
     }
-    router.push('/login');
   };
 
   return <>
