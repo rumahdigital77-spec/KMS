@@ -817,4 +817,5 @@ export default function Penghuni() {
         .active-actions .btn{width:100%}
       }
     `}</style>
-  </>;\n}
+  </>;
+}
