@@ -102,7 +102,6 @@ export default function Dashboard() {
         </div>
         <div className="dashboard-heading-actions">
           <AdminLoginButton />
-          <Link href="/kamar/check-in" className="btn dashboard-primary-btn"><Users size={16}/> C.I Tamu</Link>
         </div>
       </div>
 
