@@ -804,3 +804,30 @@ input,select,textarea{font-size:16px}
     max-height:none;
   }
 }
+
+
+/* KOSTPRO supplied logo — transparent, integrated directly into the sidebar gradient */
+.brand-logo-wrap{
+  padding:8px 8px 18px;
+  min-height:190px;
+  align-items:center;
+  justify-content:center;
+}
+.brand-kostpro-logo{
+  width:auto;
+  max-width:205px;
+  height:auto;
+  max-height:178px;
+  aspect-ratio:auto;
+  object-fit:contain;
+  object-position:center;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  filter:drop-shadow(0 9px 20px rgba(0,0,0,.20)) drop-shadow(0 0 18px rgba(56,189,248,.16));
+  mix-blend-mode:normal;
+}
+@media(max-width:700px){
+  .brand-logo-wrap{padding:4px 8px 15px;min-height:178px}
+  .brand-kostpro-logo{max-width:190px;max-height:165px}
+}
