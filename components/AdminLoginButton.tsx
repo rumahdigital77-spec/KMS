@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase-browser';
+import { createClient } from '../lib/supabase-browser';
 
 export default function AdminLoginButton() {
   const supabase = createClient();
