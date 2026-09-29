@@ -576,3 +576,11 @@ input,select,textarea{font-size:16px}
 }
 
 /* KOSTPRO production deploy verification trigger */
+
+/* Sidebar logo deduplication — single clean owner mark */
+.sidebar .brand-fallback{display:flex!important;align-items:center;gap:0}
+.sidebar .brand-fallback span{display:inline!important}
+.sidebar-owner-logo-wrap{overflow:hidden!important}
+.sidebar-owner-logo{display:block!important}
+.sidebar-owner-logo-wrap::before{display:none!important;content:none!important}
+.sidebar-owner-logo-fallback{display:none!important}
