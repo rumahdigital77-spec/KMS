@@ -1,3 +1,175 @@
 'use client';
-import Link from'next/link';import{useEffect,useState}from'react';import{defaultPayments,defaultRooms,defaultTransactions,loadData,money,Payment,Room,Transaction}from'@/lib/store';
-export default function Dashboard(){const[r,setR]=useState<Room[]>(defaultRooms),[p,setP]=useState<Payment[]>(defaultPayments),[transactions,setTransactions]=useState<Transaction[]>(defaultTransactions),[owner,setOwner]=useState(''),[property,setProperty]=useState('Kost Harmoni'),[cctv,setCctv]=useState<{id:string;name:string;location:string;url:string;showOnDashboard:boolean}[]>([]);useEffect(()=>{setR(loadData('rooms',defaultRooms));setP(loadData('payments',defaultPayments));setTransactions(loadData('transactions',defaultTransactions));try{const s=JSON.parse(localStorage.getItem('kostpro_settings')||'{}');setOwner(s.ownerName||s.manager||'');setProperty(s.name||'Kost Harmoni')}catch{}try{const raw=localStorage.getItem('kostpro_cctv');const data=raw?JSON.parse(raw):[];setCctv(Array.isArray(data)?data.filter((x:any)=>x&&x.showOnDashboard&&typeof x.url==='string').map((x:any)=>({id:String(x.id||''),name:String(x.name||'CCTV'),location:String(x.location||''),url:x.url,showOnDashboard:Boolean(x.showOnDashboard)})):[])}catch{setCctv([])}},[]);const occ=r.filter(x=>x.status==='occupied').length,reserved=r.filter(x=>x.status==='reserved').length,maint=r.filter(x=>x.status==='maintenance').length,inc=transactions.filter(x=>x.type==='income').reduce((a,x)=>a+x.amount,0),unpaid=p.filter(x=>x.status!=='paid').reduce((a,x)=>a+x.amount,0);const pct=r.length?Math.round(occ/r.length*100):0;const statusMeta={occupied:{label:'Terisi',bg:'linear-gradient(145deg,#047857,#10b981)',soft:'#ecfdf5',text:'#047857',icon:'🛏️'},available:{label:'Tersedia',bg:'linear-gradient(145deg,#0369a1,#06b6d4)',soft:'#ecfeff',text:'#0369a1',icon:'🔑'},maintenance:{label:'Maintenance',bg:'linear-gradient(145deg,#b45309,#f59e0b)',soft:'#fffbeb',text:'#b45309',icon:'🔧'},reserved:{label:'Reservasi',bg:'linear-gradient(145deg,#7c3aed,#a855f7)',soft:'#f5f3ff',text:'#7c3aed',icon:'📅'}} as const;return <div style={{display:'grid',gap:22}}><div className="top"><div><div className="title">Dashboard</div><div className="sub">Selamat datang{owner?', '+owner:''} · Ringkasan operasional {property}</div></div></div><div className="card" style={{background:'linear-gradient(120deg,#0f172a 0%,#312e81 42%,#7c3aed 72%,#db2777 100%)',color:'#fff',border:'none',boxShadow:'0 22px 55px rgba(76,29,149,.28)',overflow:'hidden',position:'relative',minHeight:150}}><div style={{position:'relative',zIndex:2,padding:8}}><div style={{fontSize:12,fontWeight:800,letterSpacing:2,textTransform:'uppercase',opacity:.78}}>KOSTPRO • PROPERTY COMMAND CENTER</div><div style={{fontSize:'clamp(24px,4vw,32px)',fontWeight:850,margin:'10px 0 6px',overflowWrap:'anywhere'}}>{property}</div><div style={{opacity:.82,lineHeight:1.5}}>{owner?'Dikelola oleh '+owner:'Kelola kamar, penghuni, tagihan, dan keuangan dari satu tempat.'}</div><div style={{display:'flex',gap:10,marginTop:18,flexWrap:'wrap'}}><span style={{background:'rgba(255,255,255,.16)',padding:'7px 12px',borderRadius:999,fontSize:12}}>⚡ {pct}% okupansi</span><span style={{background:'rgba(255,255,255,.16)',padding:'7px 12px',borderRadius:999,fontSize:12,overflowWrap:'anywhere'}}>💳 {money(unpaid)} belum dibayar</span></div></div><div style={{position:'absolute',right:-25,top:-55,fontSize:180,opacity:.12,transform:'rotate(12deg)',pointerEvents:'none'}}>🏠</div><div style={{position:'absolute',right:100,bottom:-65,width:180,height:180,borderRadius:'50%',background:'rgba(255,255,255,.08)',pointerEvents:'none'}}/></div>{cctv.length>0&&<div className="card"><div className="section-title">📹 CCTV Shortcut</div><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:10}}>{cctv.map(x=><Link href="/cctv" key={x.id} style={{textDecoration:'none',color:'#0f172a',padding:'12px 14px',border:'1px solid #e5e7eb',borderRadius:12,background:'#f8fafc'}}><b style={{display:'block'}}>{x.name}</b><span className="sub">{x.location||'Buka CCTV'}</span></Link>)}</div></div>}<div className="grid"><div className="card" style={{background:'linear-gradient(145deg,#4f46e5,#7c3aed)',color:'#fff',border:'none',boxShadow:'0 12px 28px rgba(79,70,229,.22)'}}><div className="label" style={{color:'rgba(255,255,255,.8)'}}>🏢 Total Kamar</div><div className="metric" style={{color:'#fff'}}>{r.length}</div><div style={{opacity:.75,fontSize:13}}>Seluruh unit properti</div></div><div className="card" style={{background:'linear-gradient(145deg,#059669,#10b981)',color:'#fff',border:'none',boxShadow:'0 12px 28px rgba(5,150,105,.2)'}}><div className="label" style={{color:'rgba(255,255,255,.8)'}}>🛏️ Kamar Terisi</div><div className="metric" style={{color:'#fff'}}>{occ}</div><div style={{opacity:.78,fontSize:13}}>{pct}% tingkat okupansi</div></div><div className="card" style={{background:'linear-gradient(145deg,#7c3aed,#a855f7)',color:'#fff',border:'none',boxShadow:'0 12px 28px rgba(124,58,237,.2)'}}><div className="label" style={{color:'rgba(255,255,255,.82)'}}>📅 Kamar Reservasi</div><div className="metric" style={{color:'#fff'}}>{reserved}</div><div style={{opacity:.78,fontSize:13}}>Booking berhasil</div></div><div className="card" style={{background:'linear-gradient(145deg,#ea580c,#f59e0b)',color:'#fff',border:'none',boxShadow:'0 12px 28px rgba(234,88,12,.2)'}}><div className="label" style={{color:'rgba(255,255,255,.82)'}}>💎 Pendapatan Masuk</div><div className="metric" style={{fontSize:'clamp(18px,3vw,22px)',color:'#fff',overflowWrap:'anywhere'}}>{money(inc)}</div><div style={{opacity:.78,fontSize:13}}>Total pembayaran lunas</div></div></div><div className="two"><div className="card" style={{border:'1px solid #ddd6fe',boxShadow:'0 10px 30px rgba(15,23,42,.06)'}}><div className="section-title">🏠 Status Kamar</div><div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>{(['occupied','available','reserved','maintenance'] as const).map(s=><span key={s} style={{fontSize:12,fontWeight:700,padding:'6px 10px',borderRadius:999,background:statusMeta[s].soft,color:statusMeta[s].text}}>{statusMeta[s].icon} {statusMeta[s].label}: {r.filter(x=>x.status===s).length}</span>)}</div><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(135px,100%),1fr))',gap:12}}>{r.map(x=>{const m=statusMeta[x.status];return <Link href={`/kamar?room=${encodeURIComponent(x.id)}`} key={x.id} style={{textDecoration:'none',color:'#fff',background:m.bg,borderRadius:18,padding:'17px 15px',minHeight:125,display:'flex',flexDirection:'column',justifyContent:'space-between',boxShadow:'0 10px 22px rgba(15,23,42,.12)',transition:'transform .18s ease,box-shadow .18s ease',overflow:'hidden',position:'relative'}}><div style={{position:'absolute',right:-8,top:-12,fontSize:52,opacity:.13}}>{m.icon}</div><div style={{fontSize:20,fontWeight:850,position:'relative'}}>{x.id}</div><div style={{position:'relative'}}><div style={{fontWeight:700,fontSize:13,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{x.status==='occupied'?(x.tenant==='-'?'Terisi':x.tenant):x.status==='maintenance'?'Maintenance':x.status==='reserved'?'Reservasi':'Siap digunakan'}</div><div style={{fontSize:11,opacity:.82,marginTop:4}}>{m.label} · {money(x.price)}</div></div></Link>})}</div>{!r.length&&<div className="sub">Belum ada kamar.</div>}</div><div className="card" style={{border:'1px solid #fbcfe8',boxShadow:'0 10px 30px rgba(15,23,42,.06)'}}><div className="section-title">💰 Tagihan Bulan Ini</div>{p.map(x=><div key={x.id} style={{display:'flex',justifyContent:'space-between',gap:16,padding:'13px 0',borderBottom:'1px solid #f3f4f6',minWidth:0}}><div style={{minWidth:0,overflowWrap:'anywhere'}}><b>{x.tenant}</b><div className="sub">{x.room} · {x.month}</div></div><div style={{textAlign:'right',flexShrink:0}}><b>{money(x.amount)}</b><div><span className={'badge '+(x.status==='paid'?'green':'red')}>{x.status==='paid'?'Lunas':'Belum Bayar'}</span></div></div></div>)}{!p.length&&<div className="sub">Belum ada tagihan.</div>}</div></div></div>}
+
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  BarChart3, BedDouble, Bell, CalendarDays, Camera, CircleDollarSign, FileText,
+  Home, LogOut, Plus, Receipt, Settings, ShieldCheck, Sparkles, Users, Wallet
+} from 'lucide-react';
+import {
+  defaultPayments, defaultRooms, defaultTenants, defaultTransactions,
+  loadData, money, normalizeMoney, Payment, Room, Tenant, Transaction
+} from '@/lib/store';
+
+const LOGO = 'data:image/webp;base64,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';
+
+const iconBox = (children: React.ReactNode) => (
+  <span className="dash-icon-box">{children}</span>
+);
+
+export default function Dashboard() {
+  const [rooms, setRooms] = useState<Room[]>(defaultRooms);
+  const [payments, setPayments] = useState<Payment[]>(defaultPayments);
+  const [tenants, setTenants] = useState<Tenant[]>(defaultTenants);
+  const [transactions, setTransactions] = useState<Transaction[]>(defaultTransactions);
+  const [owner, setOwner] = useState('');
+  const [property, setProperty] = useState('Property Anda');
+  const [address, setAddress] = useState('');
+
+  useEffect(() => {
+    const refresh = () => {
+      setRooms(loadData('rooms', defaultRooms));
+      setPayments(loadData('payments', defaultPayments));
+      setTenants(loadData('tenants', defaultTenants));
+      setTransactions(loadData('transactions', defaultTransactions));
+      try {
+        const s = loadData<Record<string, unknown>>('settings', {});
+        setOwner(String(s.ownerName || s.manager || ''));
+        setProperty(String(s.name || s.propertyName || 'Property Anda'));
+        setAddress(String(s.address || ''));
+      } catch {}
+    };
+    refresh();
+    window.addEventListener('kostpro:data-saved', refresh);
+    window.addEventListener('kostpro:data-scope-changed', refresh);
+    return () => {
+      window.removeEventListener('kostpro:data-saved', refresh);
+      window.removeEventListener('kostpro:data-scope-changed', refresh);
+    };
+  }, []);
+
+  const occupied = rooms.filter(r => r.status === 'occupied').length;
+  const available = rooms.filter(r => r.status === 'available').length;
+  const reserved = rooms.filter(r => r.status === 'reserved').length;
+  const maintenance = rooms.filter(r => r.status === 'maintenance').length;
+  const paid = payments.filter(p => p.status === 'paid').reduce((s,p) => s + normalizeMoney(p.amount), 0);
+  const unpaid = payments.filter(p => p.status !== 'paid').reduce((s,p) => s + normalizeMoney(p.amount), 0);
+  const expenses = transactions.filter(t => t.type === 'expense').reduce((s,t) => s + normalizeMoney(t.amount), 0);
+  const otherIncome = transactions.filter(t => t.type === 'income' && t.category !== 'Pendapatan Kamar').reduce((s,t) => s + normalizeMoney(t.amount), 0);
+  const income = paid + otherIncome;
+  const net = income - expenses;
+  const occupancy = rooms.length ? Math.round((occupied / rooms.length) * 100) : 0;
+
+  const recentTenants = useMemo(() => [...tenants].filter(t => t.status !== 'history').slice(-5).reverse(), [tenants]);
+  const activities = useMemo(() => {
+    const rows = [
+      ...payments.slice(-4).map(p => ({ id:'p'+p.id, icon:<CircleDollarSign size={16}/>, text:'Pembayaran sewa', detail:`${p.tenant} — ${p.room}`, amount:money(p.amount), date:p.paidAt || p.month })),
+      ...transactions.slice(-4).map(t => ({ id:'t'+t.id, icon:t.type==='expense'?<Wallet size={16}/>:<BarChart3 size={16}/>, text:t.type==='expense'?'Pengeluaran':'Pendapatan', detail:t.description, amount:money(t.amount), date:t.date }))
+    ];
+    return rows.slice(-6).reverse();
+  }, [payments, transactions]);
+
+  const maxBar = Math.max(1, ...rooms.map(r => normalizeMoney(r.price)), paid, expenses);
+  const chartBars = rooms.length ? rooms.slice(0, 12).map((r,i) => Math.max(10, Math.round((r.price/maxBar)*100))) : [18,35,24,52,44,67,48,78,62,88];
+  const status = {
+    occupied: {label:'Terisi', dot:'#10b981', soft:'#e8f8f0'},
+    available: {label:'Tersedia', dot:'#3b82f6', soft:'#edf5ff'},
+    reserved: {label:'Reservasi', dot:'#8b5cf6', soft:'#f4efff'},
+    maintenance: {label:'Maintenance', dot:'#f59e0b', soft:'#fff7e6'}
+  } as const;
+
+  return (
+    <div className="dashboard-premium">
+      <header className="dash-header">
+        <div>
+          <div className="dash-welcome">Selamat Datang,</div>
+          <div className="dash-owner">{owner || 'Bapak/Ibu Pemilik'} <span className="owner-pill">Owner</span></div>
+        </div>
+        <div className="dash-profile"><Bell size={19}/><span className="notification-dot">3</span><span className="profile-avatar">👤</span><b>Pemilik Property</b><span>⌄</span></div>
+      </header>
+
+      <section className="dash-hero">
+        <div className="dash-hero-copy">
+          <div className="hero-kicker">Selamat Datang di</div>
+          <img src={LOGO} alt="KOSTPRO" className="dash-hero-logo"/>
+          <p>Kelola kost Anda dengan lebih mudah, aman dan profesional.</p>
+          <div className="hero-chips"><span>⚡ {occupancy}% okupansi</span><span>💳 {money(unpaid)} belum lunas</span></div>
+        </div>
+        <div className="hero-property"><b>{property}</b>{address && <span>{address}</span>}</div>
+      </section>
+
+      <section className="dash-kpis">
+        <div className="dash-kpi blue">{iconBox(<Home size={25}/>)}<div><span>Total Kamar</span><strong>{rooms.length}</strong><small>{occupied} Terisi · {available} Tersedia</small></div></div>
+        <div className="dash-kpi green">{iconBox(<Users size={25}/>)}<div><span>Total Penghuni</span><strong>{tenants.filter(t=>t.status!=='history').length}</strong><small>Penghuni aktif</small></div></div>
+        <div className="dash-kpi purple">{iconBox(<Receipt size={25}/>)}<div><span>Total Tagihan</span><strong>{money(unpaid)}</strong><small>{payments.filter(p=>p.status!=='paid').length} Belum Lunas</small></div></div>
+        <div className="dash-kpi orange">{iconBox(<Wallet size={25}/>)}<div><span>Saldo Kas</span><strong>{money(net)}</strong><small>Bulan / periode berjalan</small></div></div>
+      </section>
+
+      <section className="dash-two-col">
+        <div className="dash-panel">
+          <div className="dash-panel-head"><h3><BedDouble size={20}/> Status Kamar</h3><Link href="/kamar">Lihat Semua →</Link></div>
+          <div className="status-summary">
+            {(Object.keys(status) as Array<keyof typeof status>).map(k => <span key={k} style={{background:status[k].soft,color:status[k].dot}}><i style={{background:status[k].dot}}/>{status[k].label}: {k==='occupied'?occupied:k==='available'?available:k==='reserved'?reserved:maintenance}</span>)}
+          </div>
+          <div className="room-grid">
+            {rooms.slice(0, 12).map(room => {
+              const s = status[room.status];
+              return <Link href={`/kamar?room=${encodeURIComponent(room.id)}`} key={room.id} className="room-tile" style={{background:s.soft,borderColor:s.dot+'33'}}>
+                <div><b>{room.id}</b><i style={{background:s.dot}}/></div><strong style={{color:s.dot}}>{room.status==='occupied' ? (room.tenant || 'Terisi') : s.label}</strong><small>{money(room.price)}</small>
+              </Link>;
+            })}
+            {!rooms.length && <div className="empty-dash">Belum ada kamar. Tambahkan kamar di Manajemen Kamar.</div>}
+          </div>
+        </div>
+
+        <div className="dash-panel finance-card">
+          <div className="dash-panel-head"><h3><CircleDollarSign size={20}/> Ringkasan Keuangan</h3><Link href="/keuangan">Lihat Laporan →</Link></div>
+          <div className="finance-summary">
+            <div className="donut" style={{background:`conic-gradient(#1687f9 0 66%, #10b981 66% 76%, #8b5cf6 76% 88%, #f59e0b 88% 100%)`}}><div><b>{money(income)}</b><span>Total</span></div></div>
+            <div className="finance-legend"><div><i className="dot blue-dot"/>Pendapatan<strong>{money(income)}</strong></div><div><i className="dot green-dot"/>Lunas<strong>{money(paid)}</strong></div><div><i className="dot purple-dot"/>Piutang<strong>{money(unpaid)}</strong></div><div><i className="dot orange-dot"/>Pengeluaran<strong>{money(expenses)}</strong></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="dash-two-col lower">
+        <div className="dash-panel">
+          <div className="dash-panel-head"><h3><BarChart3 size={20}/> Grafik Keuangan</h3><span className="period-pill">Periode Berjalan ▾</span></div>
+          <div className="chart-legend"><span><i className="dot green-dot"/>Pendapatan</span><span><i className="dot blue-dot"/>Pengeluaran</span></div>
+          <div className="bar-chart">{chartBars.map((h,i)=><div className="bar-group" key={i}><div className="bars"><span className="bar income-bar" style={{height:`${h}%`}}/><span className="bar expense-bar" style={{height:`${Math.max(7,h*0.42)}%`}}/></div><small>{i+1}</small></div>)}</div>
+        </div>
+
+        <div className="dash-panel">
+          <div className="dash-panel-head"><h3><Sparkles size={20}/> Aksi Cepat</h3></div>
+          <div className="quick-actions">
+            <Link href="/penghuni"><Users size={24}/><b>Tambah Penghuni</b></Link>
+            <Link href="/booking"><CalendarDays size={24}/><b>Booking Kamar</b></Link>
+            <Link href="/tagihan"><Receipt size={24}/><b>Buat Tagihan</b></Link>
+            <Link href="/keuangan"><BarChart3 size={24}/><b>Laporan Keuangan</b></Link>
+            <Link href="/user"><ShieldCheck size={24}/><b>Backup Database</b></Link>
+            <Link href="/pengaturan"><Settings size={24}/><b>Pengaturan</b></Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="dash-two-col lower">
+        <div className="dash-panel">
+          <div className="dash-panel-head"><h3><Users size={20}/> Penghuni Terbaru</h3><Link href="/penghuni">Lihat Semua →</Link></div>
+          <div className="tenant-list">
+            {recentTenants.map(t => <div className="tenant-row" key={t.id}><span className="tenant-avatar">{t.name?.charAt(0)?.toUpperCase() || '?'}</span><div><b>{t.name}</b><small>{t.room} · Masuk {t.startDate}</small></div><span className="active-pill">Aktif</span></div>)}
+            {!recentTenants.length && <div className="empty-dash">Belum ada penghuni aktif.</div>}
+          </div>
+        </div>
+
+        <div className="dash-panel">
+          <div className="dash-panel-head"><h3><Bell size={20}/> Aktivitas Terbaru</h3><Link href="/laporan">Lihat Semua →</Link></div>
+          <div className="activity-list">
+            {activities.map(a => <div className="activity-row" key={a.id}><span className="activity-icon">{a.icon}</span><div><b>{a.text}</b><small>{a.detail} · {a.date}</small></div><strong>{a.amount}</strong></div>)}
+            {!activities.length && <div className="empty-dash">Belum ada aktivitas.</div>}
+          </div>
+        </div>
+      </section>
+
+      <footer className="dash-footer"><span><ShieldCheck size={14}/> Data property tersinkronisasi dengan account aktif</span><span> KOSTPRO • V.1.6</span></footer>
+    </div>
+  );
+}
