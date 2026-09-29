@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const room = body?.room;
-    if (!room?.id || !['available','occupied','maintenance'].includes(room.status)) {
+    if (!room?.id || !['available','occupied','reserved','maintenance'].includes(room.status)) {
       return NextResponse.json({ error: 'Data kamar tidak valid.' }, { status: 400 });
     }
 
