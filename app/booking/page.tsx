@@ -252,7 +252,7 @@ export default function BookingPage() {
           </div>
         </div>
         <div className="actions">
-          <button className="btn" onClick={submit} disabled={!roomId || !name.trim() || !phone.trim() || !startDate || !paymentAmount || !paymentDate || !paymentMethod}>Kirim Booking</button>
+          <button className="btn" onClick={submit}>Kirim Booking</button>
           {roomId && <button className="btn secondary" onClick={() => shareLink(availableRooms.find(x => x.id === roomId) || availableRooms[0])}><MessageCircle size={16} style={{verticalAlign:'middle',marginRight:6}} /> Share Form ke WhatsApp</button>}
         </div>
       </div>
