@@ -852,6 +852,9 @@ input,select,textarea{font-size:16px}
 
 /* KOSTPRO mobile dashboard — final responsive pass */
 @media (max-width: 640px){
+  .admin-login-trigger{width:39px;min-height:46px;gap:1px}
+  .admin-login-icon{width:27px;height:27px}
+  .admin-login-trigger span{font-size:7px;letter-spacing:.65px}
   .dashboard-page{
     width:100%;
     max-width:100%;
