@@ -36,5 +36,4 @@ For a new database, run `supabase/schema.sql` in Supabase SQL Editor.
 - Property-scoped cloud persistence repair verified against production Supabase on 2026-09-27.
 - Current main branch contains the production Supabase client and middleware alignment.
 
-<!-- deployment trigger: property app-state persistence repair verified -->
-
+<!-- deployment trigger: verified build 4fd0d1d5 -->
