@@ -97,7 +97,8 @@ export default function Dashboard() {
       <div className="dashboard-heading">
         <div>
           <div className="title">Dashboard</div>
-          <div className="sub">Ringkasan operasional {property}{owner ? ' · dikelola '+owner : ''}</div>
+          <div className="sub">Ringkasan operasional Kost-Pro.</div>
+          <div className="sub">Selamat datang{owner ? ' ' + owner : ' Bpk/Ibu'}</div>
         </div>
         <div className="dashboard-heading-actions">
           <AdminLoginButton />
@@ -261,7 +262,7 @@ export default function Dashboard() {
         <Link href="/kamar/check-in" className="dashboard-quick"><span><Users size={18}/></span><div><b>Check-In Tamu</b><small>Tambah penghuni baru</small></div><ChevronRight size={17}/></Link>
         <Link href="/tagihan" className="dashboard-quick"><span><ReceiptText size={18}/></span><div><b>Kelola Tagihan</b><small>Billing & pelunasan</small></div><ChevronRight size={17}/></Link>
         <Link href="/keuangan" className="dashboard-quick"><span><WalletCards size={18}/></span><div><b>Keuangan</b><small>Transaksi & laporan</small></div><ChevronRight size={17}/></Link>
-        <Link href="/laporan" className="dashboard-quick"><span><FileText size={18}/></span><div><b>Laporan</b><small>Riwayat property</small></div><ChevronRight size={17}/></Link>
+        <Link href="/laporan" className="dashboard-quick"><span><FileText size={18}/span><div><b>Laporan</b><small>Riwayat property</small></div><ChevronRight size={17}/></Link>
       </section>
 
       {cctv.length > 0 && <section className="card dashboard-cctv-card">
