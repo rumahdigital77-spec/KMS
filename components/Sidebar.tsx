@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { LayoutDashboard, DoorOpen, Receipt, Wallet, BarChart3, Settings, FileText, Camera, Menu, X, UserRound, Users } from 'lucide-react';
 import { loadData } from '@/lib/store';
 
-const KOSTPRO_LOGO = '/kostpro-sidebar-logo.svg';
+const KOSTPRO_LOGO = '/kostpro-sidebar-logo.jpg';
 
 const items = [
   ['/', 'Dashboard', LayoutDashboard],
