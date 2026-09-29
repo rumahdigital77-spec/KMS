@@ -1,7 +1,7 @@
 'use client';
 import{useEffect,useState}from'react';import{defaultRooms,loadData,money,Room,saveData}from'@/lib/store';
 const label=(s:Room['status'])=>s==='occupied'?'Terisi':s==='available'?'Tersedia':s==='reserved'?'Reservasi':'Maintenance';
-export default function Kamar(){const[r,setR]=useState<Room[]>(defaultRooms),[add,setAdd]=useState(false),[detail,setDetail]=useState<Room|null>(null),[code,setCode]=useState(''),[price,setPrice]=useState(''),[status,setStatus]=useState<Room['status']>('available'),[msg,setMsg]=useState('');
+export default function Kamar(){const[r,setR]=useState<Room[]>(defaultRooms),[add,setAdd]=useState(false),[detail,setDetail]=useState<Room|null>(null),[code,setCode]=useState(''),[price,setPrice]=useState(''),[msg,setMsg]=useState('');
 useEffect(()=>{
   const load=()=>{
     const local=loadData<Room[]>('rooms',defaultRooms);
