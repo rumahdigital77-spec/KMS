@@ -18,8 +18,7 @@ async function waitForCloudHydration() {
   if (sessionStorage.getItem(HYDRATION_READY_KEY) === '1') return;
 
   const supabase = createSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
   await new Promise<void>((resolve) => {
@@ -49,7 +48,7 @@ async function syncLocalStateToCloud(name: string, value: unknown) {
 
   cloudSyncQueue = cloudSyncQueue.catch(() => undefined).then(async () => {
     const supabase = createSupabaseClient();
-    const { data: { user } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       // Data entered before login is explicitly marked as a temporary draft.
