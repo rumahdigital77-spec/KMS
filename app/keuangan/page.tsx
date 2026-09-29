@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { defaultTransactions, loadData, money, normalizeMoney, saveData, Transaction } from '@/lib/store';
+import { defaultPayments, defaultTransactions, loadData, money, normalizeMoney, saveData, Payment, Transaction } from '@/lib/store';
 
 export default function Keuangan() {
   const [transactions, setTransactions] = useState<Transaction[]>(defaultTransactions);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [show, setShow] = useState(false);
   const [type, setType] = useState<Transaction['type']>('expense');
   const [desc, setDesc] = useState('');
@@ -14,13 +15,28 @@ export default function Keuangan() {
 
   useEffect(() => {
     setTransactions(loadData('transactions', defaultTransactions));
+    const activePayments = loadData<Payment[]>('payments', defaultPayments);
+    const paidPayments = loadData<Payment[]>('paymentHistory', defaultPayments);
+    const monthlyPayments = loadData<Payment[]>('paymentMonthlyHistory', defaultPayments);
+    const byId = new Map<string, Payment>();
+    [...activePayments, ...paidPayments, ...monthlyPayments].forEach((item) => byId.set(item.id, item));
+    setPayments([...byId.values()]);
     if (new URLSearchParams(location.search).get('aksi') === 'tambah') setShow(true);
   }, []);
 
-  const income = useMemo(
-    () => transactions.filter((item) => item.type === 'income').reduce((sum, item) => sum + item.amount, 0),
+  const roomIncome = useMemo(
+    () => payments.reduce((sum, item) => sum + normalizeMoney(item.amount), 0),
+    [payments]
+  );
+  const otherIncomeTransactions = useMemo(
+    () => transactions.filter((item) => item.type === 'income' && item.category !== 'Pendapatan Kamar'),
     [transactions]
   );
+  const otherIncome = useMemo(
+    () => otherIncomeTransactions.reduce((sum, item) => sum + normalizeMoney(item.amount), 0),
+    [otherIncomeTransactions]
+  );
+  const income = roomIncome + otherIncome;
   const expense = useMemo(
     () => transactions.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0),
     [transactions]
@@ -28,7 +44,14 @@ export default function Keuangan() {
   const result = income - expense;
   const resultDisplay = result < 0 ? '(' + money(Math.abs(result)) + ')' : '+' + money(result);
 
-  const incomeTransactions = useMemo(() => transactions.filter((item) => item.type === 'income'), [transactions]);
+  const incomeTransactions = useMemo(() => [
+    ...payments.map((item) => ({
+      id: item.id,
+      description: `PENDAPATAN KAMAR — ${item.room} — ${item.tenant} — ${item.month}`,
+      amount: normalizeMoney(item.amount),
+    })),
+    ...otherIncomeTransactions.map((item) => ({ id: item.id, description: item.description, amount: normalizeMoney(item.amount) })),
+  ], [payments, otherIncomeTransactions]);
   const expenseTransactions = useMemo(() => transactions.filter((item) => item.type === 'expense'), [transactions]);
 
   const add = async () => {
@@ -128,7 +151,7 @@ export default function Keuangan() {
         <div className="finance-report-header">
           <div>
             <div className="section-title finance-report-title">Laporan Laba Rugi</div>
-            <div className="sub">Laporan hasil usaha berdasarkan transaksi yang tercatat.</div>
+            <div className="sub">Laporan laba rugi berbasis akrual: pendapatan kamar diakui berdasarkan periode tagihan; pembayaran hanya melunasi piutang.</div>
           </div>
           <button className="btn secondary" onClick={() => window.print()}>Cetak Laporan</button>
         </div>
@@ -137,7 +160,7 @@ export default function Keuangan() {
           <div className="report-heading">
             <div className="report-brand">KOSTPRO • LAPORAN KEUANGAN</div>
             <div className="report-title">LAPORAN LABA RUGI</div>
-            <div className="report-subtitle">Berdasarkan transaksi yang tercatat dalam sistem</div>
+            <div className="report-subtitle">Basis akrual — pendapatan kamar berdasarkan tagihan yang diterbitkan</div>
           </div>
 
           <div className="report-table" role="table" aria-label="Laporan laba rugi">
