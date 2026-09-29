@@ -99,7 +99,10 @@ export default function Dashboard() {
           <div className="title">Dashboard</div>
           <div className="sub">Ringkasan operasional {property}{owner ? ' · dikelola '+owner : ''}</div>
         </div>
-        <Link href="/kamar/check-in" className="btn dashboard-primary-btn"><Users size={16}/> C.I Tamu</Link>
+        <div className="dashboard-heading-actions">
+          <AdminLoginButton />
+          <Link href="/kamar/check-in" className="btn dashboard-primary-btn"><Users size={16}/> C.I Tamu</Link>
+        </div>
       </div>
 
       <section className="dashboard-hero" style={{ backgroundImage: "linear-gradient(90deg, rgba(2,15,42,.98) 0%, rgba(2,15,42,.88) 42%, rgba(2,15,42,.28) 72%, rgba(2,15,42,.08) 100%), url('/hotel-dashboard-banner.jpg')" }}>
