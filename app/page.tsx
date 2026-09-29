@@ -96,7 +96,6 @@ export default function Dashboard() {
     <div className="dashboard-page">
       <div className="dashboard-heading">
         <div>
-          <div className="dashboard-eyebrow"><Sparkles size={14}/> PROPERTY COMMAND CENTER</div>
           <div className="title">Dashboard</div>
           <div className="sub">Ringkasan operasional {property}{owner ? ' · dikelola '+owner : ''}</div>
         </div>
