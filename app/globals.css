@@ -1253,3 +1253,69 @@ input,select,textarea{font-size:16px}
   }
   .brand-kostpro-logo{max-width:200px;max-height:112px}
 }
+
+
+/* KOSTPRO — luxury light accents: subtle pearl glow at top & footer */
+.sidebar{
+  position:fixed;
+  isolation:isolate;
+  overflow:hidden;
+}
+.sidebar::before,
+.sidebar::after{
+  content:"";
+  position:absolute;
+  left:-18%;
+  width:136%;
+  height:150px;
+  pointer-events:none;
+  z-index:0;
+}
+.sidebar::before{
+  top:-78px;
+  background:
+    radial-gradient(ellipse at 50% 58%,rgba(255,255,255,.22) 0%,rgba(186,230,253,.11) 26%,rgba(125,211,252,.045) 45%,transparent 70%);
+  filter:blur(8px);
+}
+.sidebar::after{
+  bottom:-92px;
+  background:
+    radial-gradient(ellipse at 50% 36%,rgba(255,255,255,.16) 0%,rgba(251,191,36,.065) 24%,rgba(125,211,252,.045) 43%,transparent 70%);
+  filter:blur(10px);
+}
+.sidebar>*{
+  position:relative;
+  z-index:1;
+}
+.sidebar .brand-logo-wrap{
+  position:relative;
+  border-bottom:1px solid rgba(255,255,255,.12);
+  box-shadow:0 10px 22px rgba(0,0,0,.08);
+}
+.sidebar .brand-logo-wrap::after{
+  content:"";
+  position:absolute;
+  left:12%;
+  right:12%;
+  bottom:-1px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),rgba(251,191,36,.28),transparent);
+  opacity:.72;
+}
+.sidebar-owner-footer{
+  position:relative;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,.025));
+}
+.sidebar-owner-footer::before{
+  content:"";
+  position:absolute;
+  left:8%;
+  right:8%;
+  top:-1px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),rgba(251,191,36,.25),transparent);
+}
+@media(max-width:900px){
+  .sidebar::before{height:125px}
+  .sidebar::after{height:130px}
+}
