@@ -575,7 +575,7 @@ input,select,textarea{font-size:16px}
   padding-top:10px!important;
 }
 
-/* KOSTPRO production deploy verification trigger */
+/* KOSTPRO production deploy verification trigger — final build retry */
 
 /* Sidebar logo deduplication — single clean owner mark */
 .sidebar .brand-fallback{display:flex!important;align-items:center;gap:0}
