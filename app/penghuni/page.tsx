@@ -36,7 +36,6 @@ export default function Penghuni() {
   const [moveTenant,setMoveTenant] = useState<Tenant|null>(null);
   const [moveRoom,setMoveRoom] = useState('');
   const [busy,setBusy] = useState(false);
-  const [selectedActiveRoom,setSelectedActiveRoom] = useState('');
 
   useEffect(() => {
     const run = async () => {
