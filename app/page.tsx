@@ -114,7 +114,12 @@ export default function Dashboard() {
             <span><BedDouble size={14}/> {occupied} kamar terisi</span>
           </div>
         </div>
-        <div className="dashboard-hero-orb"><div className="dashboard-hero-orb-inner">kost.jpg</div></div>
+      <div className="dashboard-hero-photo">
+  <img
+    src="/kost.jpg"
+    alt="Logo Pemilik"
+  />
+</div>
       </section>
 
       <section className="dashboard-kpis">
