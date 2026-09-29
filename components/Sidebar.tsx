@@ -45,7 +45,7 @@ export default function Sidebar() {
     <button type="button" className="mobile-menu-btn" aria-label={open ? 'Tutup menu' : 'Buka menu'} aria-expanded={open} onClick={() => setOpen(v => !v)}>{open ? <X size={23} /> : <Menu size={23} />}</button>
     {open && <button type="button" className="sidebar-overlay" aria-label="Tutup menu" onClick={() => setOpen(false)} />}
     <aside className={'sidebar ' + (open ? 'sidebar-open' : '')}>
-      <div className="brand"><div className="brand-fallback"><span>KOST</span><span>PRO</span></div><div className="sub" style={{ color: '#98a2b3' }}>Kost Management System</div></div>
+      <div className="brand"><div className="brand-fallback">{ownerLogo ? <img src={ownerLogo} alt="Logo pemilik" style={{ width: 56, height: 40, objectFit: 'contain' }} /> : <><span>KOST</span><span>PRO</span></>}</div><div className="sub" style={{ color: '#98a2b3' }}>Kost Management System</div></div>
       <nav className="nav">{items.map(([href, label, Icon]) => label === 'Manajemen Kamar' ? <div className="nav-group" key={href}>
         <button type="button" className={'nav-parent-link nav-parent ' + (p === href || p.startsWith('/kamar/') ? 'active' : '')} onClick={() => setKamarOpen(v => !v)} aria-expanded={kamarOpen}><Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />{label}</button>
         {kamarOpen && <div className="nav-submenu">
@@ -58,8 +58,8 @@ export default function Sidebar() {
         <button type="button" className={'nav-parent-link nav-parent ' + (p === href || p === '/keuangan' ? 'active' : '')} onClick={() => setLaporanOpen(v => !v)} aria-expanded={laporanOpen}><Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />{label}</button>
         {laporanOpen && <div className="nav-submenu"><Link className={p === '/keuangan' ? 'active' : ''} href="/keuangan"><Wallet size={15} />Keuangan</Link><Link className={p === '/laporan/bulanan' ? 'active' : ''} href="/laporan/bulanan"><BarChart3 size={15} />History Laporan Bulanan</Link></div>}
       </div> : <Link className={p === href ? 'active' : ''} href={href} key={href}><Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />{label}</Link>)}</nav>
-      <div className="sidebar-owner-footer">{ownerLogo ? <div className="sidebar-owner-logo-wrap"><img src={ownerLogo} alt="Logo pemilik" className="sidebar-owner-logo" /></div> : null}<div className="sidebar-owner-version"><b>V.1.6</b></div></div>
+      <div className="sidebar-owner-footer"><div className="sidebar-owner-version"><b>V.1.6</b></div></div>
     </aside>
   </>;
 }
-// sidebar logo deduplication
+// owner logo restored to sidebar brand
