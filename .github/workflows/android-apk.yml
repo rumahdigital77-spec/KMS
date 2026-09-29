@@ -39,12 +39,10 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y imagemagick curl
+          sudo apt-get install -y imagemagick librsvg2-bin
           mkdir -p /tmp/kostpro-icon
-          curl -L --fail --silent --show-error "https://sdmntpraustraliaeast.oaiusercontent.com/files/00000000-4a88-81fa-bb5b-805928f81627/raw?se=2026-09-29T23%3A05%3A53Z&sp=r&sv=2026-02-06&sr=b&scid=b9df7e26-398d-5019-9a13-b8713051a0dd&skoid=cb94e22a-e3df-4e6a-9e17-1696f40fa435&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-29T23%3A00%3A23Z&ske=2026-09-30T23%3A00%3A23Z&sks=b&skv=2026-02-06&sig=4xi%2Bt%2Bt5YsFARIlq5DVIcQaSmOovLZyGY2aKHf%2FYruY%3D" -o /tmp/kostpro-icon/owner-logo.jpg
-          test -s /tmp/kostpro-icon/owner-logo.jpg
-          identify /tmp/kostpro-icon/owner-logo.jpg
-          convert /tmp/kostpro-icon/owner-logo.jpg -resize 512x512^ -gravity center -extent 512x512 /tmp/kostpro-icon/icon.png
+          rsvg-convert -w 512 -h 512 public/kostpro-owner-logo.svg -o /tmp/kostpro-icon/icon.png
+          test -s /tmp/kostpro-icon/icon.png
           for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
             case "$density" in
               mdpi) size=48 ;;
