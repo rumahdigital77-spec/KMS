@@ -27,7 +27,28 @@ export default function Sidebar() {
   const [kamarOpen, setKamarOpen] = useState(false);
 
   useEffect(() => { setOpen(false); setLaporanOpen(false); }, [p]);
-  useEffect(() => { try { const s = loadData<{ logo?: string }>('settings', {}); if (s?.logo) setLogo(s.logo); } catch {} }, [p]);
+  useEffect(() => {
+    const refreshLogo = () => {
+      try {
+        const s = loadData<{ logo?: string }>('settings', {});
+        setLogo(s?.logo || KOSTPRO_LOGO);
+      } catch {
+        setLogo(KOSTPRO_LOGO);
+      }
+    };
+    refreshLogo();
+    const onDataSaved = (event: Event) => {
+      const detail = (event as CustomEvent<{ name?: string }>).detail;
+      if (!detail?.name || detail.name === 'settings') refreshLogo();
+    };
+    const onScopeChanged = () => refreshLogo();
+    window.addEventListener('kostpro:data-saved', onDataSaved);
+    window.addEventListener('kostpro:data-scope-changed', onScopeChanged);
+    return () => {
+      window.removeEventListener('kostpro:data-saved', onDataSaved);
+      window.removeEventListener('kostpro:data-scope-changed', onScopeChanged);
+    };
+  }, [p]);
   useEffect(() => { if (p === '/keuangan') setLaporanOpen(true); if (p === '/kamar' || p.startsWith('/kamar/')) setKamarOpen(true); }, [p]);
   useEffect(() => { document.body.style.overflow = open ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [open]);
 
@@ -36,7 +57,7 @@ export default function Sidebar() {
     {open && <button type="button" className="sidebar-overlay" aria-label="Tutup menu" onClick={() => setOpen(false)} />}
     <aside className={'sidebar ' + (open ? 'sidebar-open' : '')}>
       <div className="brand brand-logo-wrap">
-        <img src={logo} alt="Logo property" className="brand-kostpro-logo" />
+        <img src={logo} alt="Logo KOSTPRO" className="brand-kostpro-logo" onError={() => setLogo(KOSTPRO_LOGO)} />
       </div>
       <nav className="nav">{items.map(([href, label, Icon]) => label === 'Manajemen Kamar' ? <div className="nav-group" key={href}>
         <button type="button" className={'nav-parent-link nav-parent ' + (p === href || p.startsWith('/kamar/') ? 'active' : '')} onClick={() => setKamarOpen(v => !v)} aria-expanded={kamarOpen}><Icon size={17} style={{ verticalAlign: 'middle', marginRight: 10 }} />{label}</button>
