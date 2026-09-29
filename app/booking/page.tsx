@@ -1,285 +1,89 @@
-'use client';
+import { NextResponse } from 'next/server';
+import { createServerSupabaseClient, getAuthenticatedPropertyId } from '@/lib/supabase-server';
 
-import { useEffect, useMemo, useState } from 'react';
-import { CalendarCheck, MessageCircle, CheckCircle2, Copy } from 'lucide-react';
-import { defaultRooms, defaultPayments, defaultTransactions, loadData, money, Room, saveData, Payment, Transaction } from '@/lib/store';
+export async function GET(req: Request) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const scope = await getAuthenticatedPropertyId(supabase);
+    if (!scope.propertyId) return NextResponse.json({ error: scope.error || 'AUTH_REQUIRED' }, { status: 401 });
 
-type Booking = {
-  id: string;
-  room: string;
-  name: string;
-  phone: string;
-  startDate: string;
-  duration: string;
-  createdAt: string;
-  status: 'pending';
-};
+    const { data, error } = await supabase
+      .from('kost_bookings')
+      .select('*')
+      .eq('property_id', scope.propertyId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return NextResponse.json({ bookings: data ?? [] });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Database belum terhubung.' }, { status: 503 });
+  }
+}
 
-const today = new Date().toISOString().slice(0, 10);
+export async function POST(req: Request) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const body = await req.json();
+    const name = String(body?.name || '').trim();
+    const phone = String(body?.phone || '').trim();
+    const roomCode = String(body?.roomId || '').trim().toUpperCase();
+    const startDate = String(body?.startDate || '').trim();
+    const duration = String(body?.duration || '1 bulan').trim();
+    const requestedPropertyId = String(body?.propertyId || '').trim();
+    const publicMode = body?.public === true;
 
-export default function BookingPage() {
-  const [rooms, setRooms] = useState<Room[]>(defaultRooms);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [roomId, setRoomId] = useState('');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [startDate, setStartDate] = useState(today);
-  const [duration, setDuration] = useState('1 bulan');
-  const [paymentAmount, setPaymentAmount] = useState('');
-  const [paymentDate, setPaymentDate] = useState(today);
-  const [paymentMethod, setPaymentMethod] = useState('transfer');
-  const [msg, setMsg] = useState('');
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [publicMode, setPublicMode] = useState(false);
-  const [managerPhone, setManagerPhone] = useState('');
-  const [propertyId, setPropertyId] = useState('');
-
-  useEffect(() => {
-    const loadedRooms = loadData<Room[]>('rooms', defaultRooms);
-    setRooms(loadedRooms);
-    setBookings(loadData<Booking[]>('bookings', []));
-    const settings = loadData<Record<string, unknown>>('settings', {});
-    setManagerPhone(String(settings.phone || ''));
-    const query = new URLSearchParams(window.location.search);
-    const publicPropertyId = query.get('property_id') || '';
-    setPublicMode(query.get('public') === '1');
-    setPropertyId(publicPropertyId);
-    if (query.get('public') !== '1') {
-      const loadProperty = async () => {
-        try {
-          const { createClient } = await import('@/lib/supabase-browser');
-          const supabase = createClient();
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
-          const { data } = await supabase.from('user_accounts').select('property_id').eq('user_id', user.id).maybeSingle();
-          if (data?.property_id) setPropertyId(data.property_id);
-        } catch {}
-      };
-      void loadProperty();
-    }
-    const roomsEndpoint = publicPropertyId
-      ? '/api/rooms?public=1&property_id=' + encodeURIComponent(publicPropertyId)
-      : '/api/rooms';
-    fetch(roomsEndpoint,{cache:'no-store'}).then(r=>r.json()).then(data=>{
-      if(Array.isArray(data.rooms) && data.rooms.length){setRooms(data.rooms);void saveData('rooms',data.rooms);}
-    }).catch(()=>{});
-    if (!publicPropertyId) {
-      fetch('/api/bookings',{cache:'no-store'}).then(r=>r.json()).then(data=>{
-        if(Array.isArray(data.bookings)){
-          const mapped=data.bookings.map((x:any)=>({id:String(x.id),room:x.room_id,name:x.name,phone:x.phone,startDate:x.start_date,duration:x.duration,createdAt:x.created_at,status:x.status}));
-          setBookings(mapped);saveData('bookings',mapped);
-        }
-      }).catch(()=>{});
-    }
-    const requestedRoom = new URLSearchParams(window.location.search).get('room');
-    if (requestedRoom) {
-      const room = loadedRooms.find(x => x.id === requestedRoom);
-      if (room?.status === 'available') {
-        setRoomId(room.id);
-        setSelectedRoom(room);
-      } else if (room) {
-        setMsg('Kamar ' + room.id + ' sudah tidak tersedia. Silakan pilih kamar lain yang berstatus Tersedia.');
+    // Logged-in bookings MUST use the property resolved from the authenticated
+    // account. Never trust a client-supplied property_id for private booking.
+    let propertyId = requestedPropertyId;
+    if (!publicMode) {
+      const scope = await getAuthenticatedPropertyId(supabase);
+      if (!scope.propertyId) {
+        return NextResponse.json({ error: scope.error || 'AUTH_REQUIRED' }, { status: 401 });
       }
+      propertyId = scope.propertyId;
     }
-  }, []);
 
-  const availableRooms = useMemo(
-    () => rooms.filter(room => room.status === 'available'),
-    [rooms]
-  );
-
-  const bookingUrl = (room: Room) =>
-    window.location.origin + '/booking?public=1&property_id=' + encodeURIComponent(propertyId) + '&room=' + encodeURIComponent(room.id);
-
-  const shareLink = (room: Room) => {
-    const url = bookingUrl(room);
-    const text = [
-      'Halo, saya ingin booking kamar ' + room.id + '.',
-      'Harga: ' + money(room.price) + '/bulan',
-      'Silakan isi data booking melalui link berikut:',
-      url,
-    ].join('\n');
-    const normalized = phone.replace(/\D/g, '').replace(/^0/, '62');
-    const waUrl = normalized.length >= 10
-      ? 'https://wa.me/' + normalized + '?text=' + encodeURIComponent(text)
-      : 'https://wa.me/?text=' + encodeURIComponent(text);
-    window.open(waUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  const copyLink = async (room: Room) => {
-    const url = bookingUrl(room);
-    try {
-      await navigator.clipboard.writeText(url);
-      setMsg('Link booking ' + room.id + ' berhasil disalin. Silakan tempel ke WhatsApp.');
-    } catch {
-      window.prompt('Salin link booking berikut:', url);
+    if (!name || !phone || !roomCode || !startDate || !propertyId) {
+      return NextResponse.json({ error: 'Data booking belum lengkap.' }, { status: 400 });
     }
-  };
 
-  const submit = () => {
-    const room = rooms.find(x => x.id === roomId) || loadData<Room[]>( 'rooms', defaultRooms).find(x => x.id === roomId);
-    const requiredAmount = room?.price || 0;
-    if (!propertyId || !roomId || !name.trim() || !phone.trim() || !startDate || !paymentAmount || !paymentDate || !paymentMethod) {
-      setMsg('Lengkapi seluruh form booking dan pembayaran terlebih dahulu. Pembayaran wajib diisi sebelum booking dapat dikirim.');
-      return;
-    }
-    if (Number(paymentAmount) !== Number(requiredAmount)) {
-      setMsg('Nominal pembayaran wajib sama dengan harga sewa kamar ' + money(requiredAmount) + '.');
-      return;
-    }
+    const { data: room, error: roomError } = await supabase
+      .from('kost_rooms')
+      .select('id,room_code,property_id,price,status,tenant')
+      .eq('property_id', propertyId)
+      .eq('room_code', roomCode)
+      .maybeSingle();
+    if (roomError) throw roomError;
     if (!room || room.status !== 'available') {
-      setMsg('Kamar sudah tidak tersedia. Silakan pilih kamar yang masih berstatus Tersedia.');
-      return;
+      return NextResponse.json({ error: 'Kamar sudah tidak tersedia.' }, { status: 409 });
     }
 
-    const send=async()=>{
-      try{
-        setMsg('Mengirim booking...');
-        const response=await fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({propertyId,roomId:room.id,name:name.trim(),phone:phone.trim(),startDate,duration})});
-        const data=await response.json().catch(()=>({}));
-        if(!response.ok) throw new Error(data.error||'Database online belum terhubung. Silakan hubungkan Supabase di Vercel.');
-        if (data?.room?.status !== 'reserved') throw new Error('Booking tersimpan tetapi status kamar belum berubah menjadi Reservasi. Silakan cek Room Status.');
-        const booking:Booking={id:String(data.booking.id),room:data.booking.room_id,name:data.booking.name,phone:data.booking.phone,startDate:data.booking.start_date,duration:data.booking.duration,createdAt:data.booking.created_at,status:'pending'};
-        const next=[booking,...loadData<Booking[]>('bookings',[]).filter(x=>x.id!==booking.id)];
-        setBookings(next);await saveData('bookings',next);
-        const syncedRooms = rooms.map(item => item.id === room.id ? { ...item, status: 'reserved' as const } : item);
-        setRooms(syncedRooms);
-        window.dispatchEvent(new CustomEvent('kostpro:room-status-changed', { detail: { roomId: room.id, status: 'reserved' } }));
-        const paymentId = 'P-' + Date.now();
-        const month = new Date(startDate + 'T00:00:00').toLocaleDateString('id-ID', { month:'long', year:'numeric' });
-        const paidPayment: Payment = { id:paymentId, tenantId:booking.id, tenant:booking.name, room:booking.room, month, amount:Number(paymentAmount), status:'paid', paidAt:paymentDate, method:paymentMethod };
-        const paymentHistory = [...loadData<Payment[]>('paymentHistory', defaultPayments).filter(x => x.id !== paymentId), paidPayment];
-        const existingTransactions = loadData<Transaction[]>('transactions', defaultTransactions);
-        const tx: Transaction = { id:'TR-'+Date.now(), date:paymentDate, description:'Pembayaran booking '+paymentMethod.toUpperCase()+' — '+booking.name+' — '+booking.room+' — '+month, category:'Pendapatan sewa', amount:Number(paymentAmount), type:'income', referenceId:booking.id };
-        const transactions = existingTransactions.some(x => x.referenceId === booking.id) ? existingTransactions : [...existingTransactions, tx];
-        await Promise.all([saveData('rooms', syncedRooms), saveData('paymentHistory', paymentHistory), saveData('transactions', transactions)]);
-        setMsg('Booking berhasil dikirim setelah pembayaran dicatat. Kamar '+room.id+' sekarang berstatus Reservasi dan transaksi sudah masuk ke laporan.');
-        setName('');setPhone('');setRoomId('');setSelectedRoom(null);setPaymentAmount('');
-      }catch(error){
-        setMsg(error instanceof Error?error.message:'Gagal mengirim booking. Coba lagi.');
-      }
-    };
-    send();
-  };
+    const { data: booking, error } = await supabase.from('kost_bookings').insert({
+      property_id: propertyId,
+      room_id: room.id,
+      name,
+      phone,
+      start_date: startDate,
+      duration,
+      status: 'pending',
+    }).select().single();
+    if (error) throw error;
 
-  return (
-    <>
-      <div className="top">
-        <div>
-          <div className="title">{publicMode ? 'Form Booking Kamar' : 'Booking'}</div>
-          <div className="sub">{publicMode ? 'Isi data untuk mengajukan booking kamar' : 'Ketersediaan kamar mengikuti status kamar saat ini'}</div>
-        </div>
-        {!publicMode && <div className="badge blue"><CalendarCheck size={15} style={{verticalAlign:'middle',marginRight:5}} /> {availableRooms.length} kamar tersedia</div>}
-      </div>
+    const { data: reservedRoom, error: reserveError } = await supabase
+      .from('kost_rooms')
+      .update({ status: 'reserved', updated_at: new Date().toISOString() })
+      .eq('id', room.id)
+      .eq('property_id', propertyId)
+      .eq('status', 'available')
+      .select('id,room_code,price,status,tenant')
+      .maybeSingle();
+    if (reserveError) throw reserveError;
+    if (!reservedRoom) {
+      await supabase.from('kost_bookings').delete().eq('id', booking.id).eq('property_id', propertyId);
+      return NextResponse.json({ error: 'Kamar baru saja dipesan oleh pengguna lain.' }, { status: 409 });
+    }
 
-      {msg && <div className="card" style={{marginBottom:18}}>{msg}</div>}
-
-      {!publicMode && <div className="grid">
-        {availableRooms.map(room => (
-          <div className="card" key={room.id}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
-              <div>
-                <div className="section-title">{room.id}</div>
-                <div className="sub">Siap dibooking</div>
-              </div>
-              <span className="badge green">Tersedia</span>
-            </div>
-            <div className="metric" style={{fontSize:24,marginTop:14}}>{money(room.price)}</div>
-            <div className="sub">per bulan</div>
-            <div className="actions" style={{marginTop:16}}>
-              <button className="btn" onClick={() => { setRoomId(room.id); setSelectedRoom(room); setMsg('Form booking untuk ' + room.id + ' sudah dipilih. Silakan isi data calon penghuni.'); document.getElementById('booking-form')?.scrollIntoView({behavior:'smooth',block:'start'}); }}>
-                Booking {room.id}
-              </button>
-              <button className="btn secondary" onClick={() => shareLink(room)}>
-                <MessageCircle size={16} style={{verticalAlign:'middle',marginRight:6}} /> Share Link WA
-              </button>
-              <button className="btn secondary" onClick={() => copyLink(room)} title="Salin link booking">
-                <Copy size={16} style={{verticalAlign:'middle',marginRight:6}} /> Salin Link
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>}
-
-      {!publicMode && !availableRooms.length && (
-        <div className="card" style={{marginTop:18}}>
-          <div className="section-title">Tidak ada kamar tersedia</div>
-          <div className="sub">Kamar dengan status Terisi atau Maintenance tidak ditampilkan untuk booking.</div>
-        </div>
-      )}
-
-      <div id="booking-form" className="card" style={{marginTop:18}}>
-        <div className="section-title">{publicMode ? 'Isi Data Booking' : 'Form Booking'}</div>
-        <div className="sub" style={{marginBottom:14}}>{publicMode ? 'Data akan diteruskan kepada pengelola untuk diproses.' : 'Form ini dapat dibuka langsung dari link WhatsApp.'}</div>
-        <div className="form">
-          <div className="field">
-            <label>Kamar tersedia</label>
-            <select value={roomId} onChange={e => setRoomId(e.target.value)}>
-              <option value="">Pilih kamar</option>
-              {availableRooms.map(room => <option key={room.id} value={room.id}>{room.id} — {money(room.price)}/bulan</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label>Nama calon penghuni</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Nama lengkap" />
-          </div>
-          <div className="field">
-            <label>Nomor WhatsApp</label>
-            <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="08123456789" />
-          </div>
-          <div className="field">
-            <label>Tanggal mulai</label>
-            <input type="date" min={today} value={startDate} onChange={e => setStartDate(e.target.value)} />
-          </div>
-          <div className="field">
-            <label>Durasi sewa</label>
-            <select value={duration} onChange={e => setDuration(e.target.value)}>
-              <option>1 bulan</option><option>3 bulan</option><option>6 bulan</option><option>12 bulan</option>
-            </select>
-          </div>
-          <div className="field">
-            <label>Nominal Pembayaran <b>(Wajib)</b></label>
-            <input type="number" min="0" value={paymentAmount} onChange={e=>setPaymentAmount(e.target.value)} placeholder={roomId ? money(rooms.find(x=>x.id===roomId)?.price || 0) : 'Isi setelah pilih kamar'} required />
-          </div>
-          <div className="field">
-            <label>Tanggal Pembayaran <b>(Wajib)</b></label>
-            <input type="date" value={paymentDate} onChange={e=>setPaymentDate(e.target.value)} required />
-          </div>
-          <div className="field">
-            <label>Metode Pembayaran <b>(Wajib)</b></label>
-            <select value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)} required>
-              <option value="">Pilih metode</option><option value="transfer">Transfer</option><option value="cash">Cash</option><option value="qris">QRIS</option>
-            </select>
-          </div>
-        </div>
-        <div className="actions">
-          <button className="btn" onClick={submit}>Kirim Booking</button>
-          {roomId && <button className="btn secondary" onClick={() => shareLink(availableRooms.find(x => x.id === roomId) || availableRooms[0])}><MessageCircle size={16} style={{verticalAlign:'middle',marginRight:6}} /> Share Form ke WhatsApp</button>}
-        </div>
-      </div>
-
-      {!publicMode && <div className="card" style={{marginTop:18}}>
-        <div className="section-title">Booking Masuk</div>
-        <div className="table-wrap">
-          <table className="table">
-            <thead><tr><th>ID</th><th>Nama</th><th>Kamar</th><th>Mulai</th><th>Durasi</th><th>WhatsApp</th><th>Status</th></tr></thead>
-            <tbody>
-              {bookings.slice().reverse().map(booking => (
-                <tr key={booking.id}>
-                  <td><b>{booking.id}</b></td>
-                  <td>{booking.name}</td>
-                  <td>{booking.room}</td>
-                  <td>{booking.startDate}</td>
-                  <td>{booking.duration}</td>
-                  <td>{booking.phone}</td>
-                  <td><span className="badge amber"><CheckCircle2 size={13} style={{verticalAlign:'middle',marginRight:4}} /> Menunggu</span></td>
-                </tr>
-              ))}
-              {!bookings.length && <tr><td colSpan={7}>Belum ada booking masuk.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </div>}
-    </>
-  );
+    return NextResponse.json({ booking, room: { id: reservedRoom.room_code, price: Number(reservedRoom.price), status: reservedRoom.status } });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Gagal menyimpan booking.' }, { status: 500 });
+  }
 }
