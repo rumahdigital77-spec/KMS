@@ -74,4 +74,4 @@ const changeStatus=async(id:string,s:Room['status'])=>{const current=r.find(x=>x
 .active-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .active-actions .btn{width:100%}
 }
-`}</style></></>}
+`}</style></>}
