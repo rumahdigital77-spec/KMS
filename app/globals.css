@@ -756,3 +756,51 @@ input,select,textarea{font-size:16px}
   .brand-logo-wrap{padding-top:4px;padding-bottom:16px}
   .brand-kostpro-logo{max-width:210px}
 }
+
+
+/* KOSTPRO — sidebar menu scroll hardening
+   Keeps logo/footer fixed while the menu area scrolls when items/submenus exceed viewport. */
+.sidebar{
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+  overflow:hidden;
+}
+.sidebar .brand{
+  flex:0 0 auto;
+}
+.sidebar .nav{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  align-content:start;
+  padding:2px 2px 10px 0;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,.28) transparent;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.sidebar .nav::-webkit-scrollbar{width:6px}
+.sidebar .nav::-webkit-scrollbar-track{background:transparent}
+.sidebar .nav::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.28);
+  border-radius:999px;
+}
+.sidebar .nav::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.45)}
+.sidebar .nav-group{min-width:0}
+.sidebar .nav-submenu{min-width:0}
+.sidebar-owner-footer{
+  flex:0 0 auto;
+}
+@media(max-width:900px){
+  .sidebar{
+    height:100dvh;
+    min-height:100dvh;
+    overflow:hidden;
+  }
+  .sidebar .nav{
+    min-height:0;
+    max-height:none;
+  }
+}
