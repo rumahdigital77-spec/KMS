@@ -848,3 +848,274 @@ input,select,textarea{font-size:16px}
 .admin-login-modal h3{margin:4px 0 5px;text-align:center;font-size:18px}.admin-login-modal p{margin:0 0 16px;text-align:center;color:#667085;font-size:12px;line-height:1.5}
 .admin-login-modal form{display:grid;gap:7px}.admin-login-modal label{font-size:12px;font-weight:800;color:#344054;margin-top:3px}.admin-login-modal input{width:100%;border:1px solid #d9def0;border-radius:10px;padding:10px 11px;background:#fff}.admin-login-submit{margin-top:6px;width:100%}.admin-login-error{padding:9px 10px;border-radius:9px;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:11px;font-weight:700;line-height:1.4}
 @media(max-width:640px){.dashboard-heading-actions{gap:6px}.admin-login-trigger{width:48px;min-height:58px}.admin-login-icon{width:34px;height:34px}.admin-login-trigger span{font-size:8px}.dashboard-heading-actions .dashboard-primary-btn{padding:10px 11px}.admin-login-backdrop{padding:70px 12px 20px;justify-content:center}.admin-login-modal{width:100%}}
+
+
+/* KOSTPRO mobile dashboard — final responsive pass */
+@media (max-width: 640px){
+  .dashboard-page{
+    width:100%;
+    max-width:100%;
+    gap:12px;
+    overflow:hidden;
+  }
+  .dashboard-heading{
+    width:100%;
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:2px;
+  }
+  .dashboard-heading > div:first-child{
+    min-width:0;
+    flex:1 1 auto;
+  }
+  .dashboard-eyebrow{
+    font-size:8px;
+    letter-spacing:1.1px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .dashboard-heading .title{
+    font-size:24px;
+    line-height:1.1;
+  }
+  .dashboard-heading .sub{
+    font-size:10px;
+    line-height:1.35;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .dashboard-heading-actions{
+    flex:0 0 auto;
+    align-items:center;
+    gap:4px;
+  }
+  .dashboard-heading-actions .dashboard-primary-btn{
+    min-height:42px;
+    padding:8px 9px;
+    font-size:10px;
+    border-radius:10px;
+  }
+  .dashboard-heading-actions .dashboard-primary-btn svg{
+    width:14px;
+    height:14px;
+  }
+  .admin-login-trigger{
+    width:43px;
+    min-height:52px;
+    padding:1px;
+  }
+  .admin-login-icon{
+    width:31px;
+    height:31px;
+  }
+
+  .dashboard-hero{
+    min-height:190px;
+    padding:20px 17px;
+    border-radius:17px;
+  }
+  .dashboard-hero-copy{
+    max-width:100%;
+    padding-right:5px;
+  }
+  .dashboard-hero-kicker{
+    font-size:8px;
+    letter-spacing:1.3px;
+  }
+  .dashboard-hero h1{
+    font-size:25px;
+    margin:6px 0;
+  }
+  .dashboard-hero p{
+    max-width:92%;
+    font-size:10px;
+    line-height:1.5;
+  }
+  .dashboard-hero-pills{
+    max-width:100%;
+    gap:5px;
+    margin-top:13px;
+  }
+  .dashboard-hero-pills span{
+    padding:5px 7px;
+    font-size:8px;
+  }
+
+  .dashboard-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .dashboard-kpi{
+    min-height:92px;
+    padding:11px 9px;
+    border-radius:13px;
+    column-gap:7px;
+  }
+  .dashboard-kpi-icon{
+    width:32px;
+    height:32px;
+    border-radius:9px;
+  }
+  .dashboard-kpi-label{font-size:8px}
+  .dashboard-kpi strong{font-size:17px}
+  .dashboard-kpi small{
+    font-size:7px;
+    line-height:1.25;
+  }
+
+  .dashboard-main-grid,
+  .dashboard-finance-grid,
+  .dashboard-bottom-grid{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+  .dashboard-page .card{
+    padding:13px;
+    border-radius:14px;
+  }
+  .dashboard-card-head{
+    gap:7px;
+    margin-bottom:11px;
+  }
+  .dashboard-card-head .section-title{
+    font-size:14px;
+  }
+  .dashboard-card-head .sub{
+    font-size:9px;
+  }
+  .dashboard-link{
+    font-size:9px;
+  }
+
+  .dashboard-status-summary{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:5px;
+  }
+  .dashboard-status-chip{
+    padding:7px 6px;
+    border-radius:9px;
+  }
+  .dashboard-room-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+  }
+  .dashboard-room-tile{
+    min-height:91px;
+    padding:10px;
+    border-radius:12px;
+  }
+  .dashboard-room-top{font-size:14px}
+  .dashboard-room-tile b{font-size:10px}
+  .dashboard-room-tile small{font-size:8px}
+
+  .dashboard-ring-wrap{
+    justify-content:center;
+    gap:13px;
+    min-height:135px;
+  }
+  .dashboard-ring{
+    width:112px;
+    height:112px;
+    flex-basis:112px;
+  }
+  .dashboard-ring::before{inset:10px}
+  .dashboard-ring strong{font-size:22px}
+  .dashboard-ring-legend{gap:8px}
+  .dashboard-ring-legend div{font-size:9px}
+
+  .dashboard-finance-metrics{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
+  }
+  .dashboard-finance-metrics div{padding:8px 7px}
+  .dashboard-finance-metrics span{font-size:8px}
+  .dashboard-finance-metrics b{font-size:10px}
+  .dashboard-bars{
+    height:135px;
+    gap:5px;
+    padding-top:12px;
+  }
+  .dashboard-bar-value{font-size:6px;max-width:45px}
+  .dashboard-bar-col>span{font-size:8px}
+
+  .dashboard-billing-total{
+    padding:11px;
+    border-radius:11px;
+  }
+  .dashboard-billing-total span{font-size:9px}
+  .dashboard-billing-total strong{font-size:14px}
+  .dashboard-payment-row{
+    gap:7px;
+    padding:8px 0;
+  }
+  .dashboard-payment-row b{font-size:9px}
+  .dashboard-payment-row span:not(.badge){font-size:8px}
+  .dashboard-payment-row strong{font-size:9px}
+  .dashboard-payment-row .badge{font-size:8px;padding:4px 7px}
+
+  .dashboard-tenant-row{
+    grid-template-columns:30px 1fr auto;
+    gap:7px;
+    padding:8px 0;
+  }
+  .dashboard-avatar{
+    width:30px;
+    height:30px;
+    border-radius:9px;
+    font-size:10px;
+  }
+  .dashboard-tenant-row b{font-size:9px}
+  .dashboard-tenant-row small{font-size:8px}
+  .dashboard-tenant-row>strong{font-size:8px}
+
+  .dashboard-quick-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+  }
+  .dashboard-quick{
+    grid-template-columns:auto 1fr;
+    gap:7px;
+    padding:10px 8px;
+    border-radius:11px;
+  }
+  .dashboard-quick>span{
+    width:29px;
+    height:29px;
+    border-radius:8px;
+  }
+  .dashboard-quick b{font-size:9px}
+  .dashboard-quick small{font-size:7px}
+  .dashboard-quick>svg{display:none}
+
+  .dashboard-cctv-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width: 380px){
+  .dashboard-heading .title{font-size:21px}
+  .dashboard-heading .sub{font-size:9px}
+  .dashboard-heading-actions .dashboard-primary-btn{
+    font-size:9px;
+    padding:8px 7px;
+  }
+  .dashboard-kpi{
+    padding:10px 7px;
+  }
+  .dashboard-kpi-icon{
+    width:29px;
+    height:29px;
+  }
+  .dashboard-kpi strong{font-size:15px}
+  .dashboard-ring{
+    width:100px;
+    height:100px;
+    flex-basis:100px;
+  }
+  .dashboard-finance-metrics span{font-size:7px}
+  .dashboard-finance-metrics b{font-size:9px}
+}
