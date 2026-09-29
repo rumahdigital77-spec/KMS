@@ -31,7 +31,7 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>(defaultTransactions);
   const [tenants, setTenants] = useState<Tenant[]>(defaultTenants);
   const [owner, setOwner] = useState('');
-  const [property, setProperty] = useState('Kost Harmoni');
+  const [property, setProperty] = useState('Kost-Pro');
   const [cctv, setCctv] = useState<CctvItem[]>([]);
 
   const loadDashboard = () => {
@@ -42,7 +42,7 @@ export default function Dashboard() {
     try {
       const settings = loadData<Record<string, unknown>>('settings', {});
       setOwner(String(settings.ownerName || settings.manager || ''));
-      setProperty(String(settings.name || settings.propertyName || 'Kost Harmoni'));
+      setProperty(String(settings.name || settings.propertyName || 'Kost-Pro'));
     } catch {}
     try {
       const raw = localStorage.getItem('kostpro_cctv');
@@ -114,7 +114,7 @@ export default function Dashboard() {
             <span><BedDouble size={14}/> {occupied} kamar terisi</span>
           </div>
         </div>
-        <div className="dashboard-hero-orb"><div className="dashboard-hero-orb-inner">KP</div></div>
+        <div className="dashboard-hero-orb"><div className="dashboard-hero-orb-inner">kost.jpg</div></div>
       </section>
 
       <section className="dashboard-kpis">
