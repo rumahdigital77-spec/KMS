@@ -83,7 +83,7 @@ async function syncLocalStateToCloud(name: string, value: unknown) {
   await cloudSyncQueue;
 }
 
-export type RoomStatus = 'occupied'|'available'|'maintenance';
+export type RoomStatus = 'occupied'|'available'|'reserved'|'maintenance';
 export type Room = { id:string; tenant:string; price:number; status:RoomStatus };
 export type Payment = { receiptNo?:string; id:string; tenantId?:string; tenant:string; room:string; month:string; amount:number; status:'paid'|'unpaid'; paidAt?:string; method?:string };
 export type Tenant = { id:string; name:string; room:string; phone:string; startDate:string; rent:number; endDate?:string; status?:'active'|'history'; checkoutReason?:'checkout'|'expired'|'transferred' };
