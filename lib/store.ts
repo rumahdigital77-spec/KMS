@@ -18,7 +18,8 @@ async function waitForCloudHydration() {
   if (sessionStorage.getItem(HYDRATION_READY_KEY) === '1') return;
 
   const supabase = createSupabaseClient();
-  const { data: { user } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return;
 
   await new Promise<void>((resolve) => {
