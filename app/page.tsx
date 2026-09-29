@@ -97,7 +97,6 @@ export default function Dashboard() {
       <div className="dashboard-heading">
         <div>
           <div className="title">Dashboard</div>
-          <div className="sub">Ringkasan operasional Kost-Pro.</div>
           <div className="sub">Selamat datang{owner ? ' ' + owner : ' Bpk/Ibu'}</div>
         </div>
         <div className="dashboard-heading-actions">
