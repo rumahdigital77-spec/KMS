@@ -31,6 +31,9 @@ useEffect(()=>{
     if(roomId){const target=local.find(x=>x.id===roomId);if(target)setDetail(target);}
   };
   void load();
+  const refreshFromBooking = () => { void load(); };
+  window.addEventListener('kostpro:room-status-changed', refreshFromBooking);
+  return () => window.removeEventListener('kostpro:room-status-changed', refreshFromBooking);
 },[]);
 const save=async()=>{if(!code.trim()||!price)return setMsg('Kode dan harga wajib diisi.');if(r.some(x=>x.id.toLowerCase()===code.trim().toLowerCase()))return setMsg('Kode kamar sudah ada.');const room={id:code.trim().toUpperCase(),tenant:'-',price:+price,status:'available' as const};
 const n=[...r,room];setR(n);
