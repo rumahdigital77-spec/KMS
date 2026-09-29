@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarCheck, MessageCircle, CheckCircle2, Copy } from 'lucide-react';
-import { defaultRooms, loadData, money, Room, saveData } from '@/lib/store';
+import { defaultRooms, defaultPayments, defaultTransactions, loadData, money, Room, saveData, Payment, Transaction } from '@/lib/store';
 
 type Booking = {
   id: string;
@@ -25,6 +25,9 @@ export default function BookingPage() {
   const [phone, setPhone] = useState('');
   const [startDate, setStartDate] = useState(today);
   const [duration, setDuration] = useState('1 bulan');
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentDate, setPaymentDate] = useState(today);
+  const [paymentMethod, setPaymentMethod] = useState('transfer');
   const [msg, setMsg] = useState('');
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [publicMode, setPublicMode] = useState(false);
@@ -114,11 +117,16 @@ export default function BookingPage() {
   };
 
   const submit = () => {
-    if (!propertyId || !roomId || !name.trim() || !phone.trim() || !startDate) {
-      setMsg('Kamar, nama, nomor WhatsApp, dan tanggal masuk wajib diisi.');
+    const room = rooms.find(x => x.id === roomId) || loadData<Room[]>( 'rooms', defaultRooms).find(x => x.id === roomId);
+    const requiredAmount = room?.price || 0;
+    if (!propertyId || !roomId || !name.trim() || !phone.trim() || !startDate || !paymentAmount || !paymentDate || !paymentMethod) {
+      setMsg('Lengkapi seluruh form booking dan pembayaran terlebih dahulu. Pembayaran wajib diisi sebelum booking dapat dikirim.');
       return;
     }
-    const room = rooms.find(x => x.id === roomId) || loadData<Room[]>( 'rooms', defaultRooms).find(x => x.id === roomId);
+    if (Number(paymentAmount) !== Number(requiredAmount)) {
+      setMsg('Nominal pembayaran wajib sama dengan harga sewa kamar ' + money(requiredAmount) + '.');
+      return;
+    }
     if (!room || room.status !== 'available') {
       setMsg('Kamar sudah tidak tersedia. Silakan pilih kamar yang masih berstatus Tersedia.');
       return;
@@ -135,9 +143,16 @@ export default function BookingPage() {
         setBookings(next);await saveData('bookings',next);
         const syncedRooms = rooms.map(item => item.id === room.id ? { ...item, status: 'reserved' as const } : item);
         setRooms(syncedRooms);
-        await saveData('rooms', syncedRooms);
-        setMsg('Booking berhasil dikirim. Data sudah masuk ke sistem pengelola.');
-        setName('');setPhone('');setRoomId('');setSelectedRoom(null);
+        const paymentId = 'P-' + Date.now();
+        const month = new Date(startDate + 'T00:00:00').toLocaleDateString('id-ID', { month:'long', year:'numeric' });
+        const paidPayment: Payment = { id:paymentId, tenantId:booking.id, tenant:booking.name, room:booking.room, month, amount:Number(paymentAmount), status:'paid', paidAt:paymentDate, method:paymentMethod };
+        const paymentHistory = [...loadData<Payment[]>('paymentHistory', defaultPayments).filter(x => x.id !== paymentId), paidPayment];
+        const existingTransactions = loadData<Transaction[]>('transactions', defaultTransactions);
+        const tx: Transaction = { id:'TR-'+Date.now(), date:paymentDate, description:'Pembayaran booking '+paymentMethod.toUpperCase()+' — '+booking.name+' — '+booking.room+' — '+month, category:'Pendapatan sewa', amount:Number(paymentAmount), type:'income', referenceId:booking.id };
+        const transactions = existingTransactions.some(x => x.referenceId === booking.id) ? existingTransactions : [...existingTransactions, tx];
+        await Promise.all([saveData('rooms', syncedRooms), saveData('paymentHistory', paymentHistory), saveData('transactions', transactions)]);
+        setMsg('Booking berhasil dikirim setelah pembayaran dicatat. Kamar '+room.id+' sekarang berstatus Reservasi dan transaksi sudah masuk ke laporan.');
+        setName('');setPhone('');setRoomId('');setSelectedRoom(null);setPaymentAmount('');
       }catch(error){
         setMsg(error instanceof Error?error.message:'Gagal mengirim booking. Coba lagi.');
       }
@@ -220,9 +235,23 @@ export default function BookingPage() {
               <option>1 bulan</option><option>3 bulan</option><option>6 bulan</option><option>12 bulan</option>
             </select>
           </div>
+          <div className="field">
+            <label>Nominal Pembayaran <b>(Wajib)</b></label>
+            <input type="number" min="0" value={paymentAmount} onChange={e=>setPaymentAmount(e.target.value)} placeholder={roomId ? money(rooms.find(x=>x.id===roomId)?.price || 0) : 'Isi setelah pilih kamar'} required />
+          </div>
+          <div className="field">
+            <label>Tanggal Pembayaran <b>(Wajib)</b></label>
+            <input type="date" value={paymentDate} onChange={e=>setPaymentDate(e.target.value)} required />
+          </div>
+          <div className="field">
+            <label>Metode Pembayaran <b>(Wajib)</b></label>
+            <select value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)} required>
+              <option value="">Pilih metode</option><option value="transfer">Transfer</option><option value="cash">Cash</option><option value="qris">QRIS</option>
+            </select>
+          </div>
         </div>
         <div className="actions">
-          <button className="btn" onClick={submit}>Kirim Booking</button>
+          <button className="btn" onClick={submit} disabled={!roomId || !name.trim() || !phone.trim() || !startDate || !paymentAmount || !paymentDate || !paymentMethod}>Kirim Booking</button>
           {roomId && <button className="btn secondary" onClick={() => shareLink(availableRooms.find(x => x.id === roomId) || availableRooms[0])}><MessageCircle size={16} style={{verticalAlign:'middle',marginRight:6}} /> Share Form ke WhatsApp</button>}
         </div>
       </div>
