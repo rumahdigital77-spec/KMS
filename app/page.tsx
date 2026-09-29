@@ -269,3 +269,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+// dashboard visual system deployed with globals.css
