@@ -1,19 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 320" role="img" aria-labelledby="title desc">
 <title id="title">KOSTPRO</title><desc id="desc">KOSTPRO Managed Smart Your Property</desc>
 <defs>
-<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".28" stop-color="#bfc7d2"/><stop offset=".5" stop-color="#fff"/><stop offset=".72" stop-color="#9da8b6"/><stop offset="1" stop-color="#fff"/></linearGradient>
-<linearGradient id="word" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#f8fafc"/><stop offset="1" stop-color="#d6dee8"/></linearGradient>
-<linearGradient id="tag" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#aeb8c5"/><stop offset=".5" stop-color="#f1f5f9"/><stop offset="1" stop-color="#9aa6b5"/></linearGradient>
-<radialGradient id="halo"><stop offset="0" stop-color="#7dd3fc" stop-opacity=".35"/><stop offset=".65" stop-color="#38bdf8" stop-opacity=".08"/><stop offset="1" stop-color="#38bdf8" stop-opacity="0"/></radialGradient>
-<filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#020617" flood-opacity=".28"/></filter>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".25" stop-color="#b9c2ce"/><stop offset=".48" stop-color="#ffffff"/><stop offset=".72" stop-color="#9aa6b5"/><stop offset="1" stop-color="#ffffff"/></linearGradient>
+<linearGradient id="word" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#f8fafc"/><stop offset="1" stop-color="#d5dee9"/></linearGradient>
+<linearGradient id="tag" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#aeb9c7"/><stop offset=".5" stop-color="#e8eef5"/><stop offset="1" stop-color="#98a6b6"/></linearGradient>
+<radialGradient id="halo"><stop offset="0" stop-color="#38bdf8" stop-opacity=".28"/><stop offset=".62" stop-color="#38bdf8" stop-opacity=".06"/><stop offset="1" stop-color="#38bdf8" stop-opacity="0"/></radialGradient>
+<filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#020617" flood-opacity=".28"/></filter>
 </defs>
-<ellipse cx="150" cy="150" rx="145" ry="145" fill="url(#halo)"/>
+<ellipse cx="145" cy="160" rx="135" ry="135" fill="url(#halo)"/>
 <g fill="none" stroke="url(#metal)" stroke-linecap="round" filter="url(#shadow)">
-<circle cx="150" cy="150" r="82" stroke-width="16"/>
-<path d="M150 76v58" stroke-width="16"/>
-<path d="M116 93a58 58 0 1 0 68 0" stroke-width="16"/>
+<circle cx="145" cy="160" r="92" stroke-width="18"/>
+<path d="M145 77v66" stroke-width="18"/>
+<path d="M106 96a65 65 0 1 0 78 0" stroke-width="18"/>
 </g>
-<g fill="#dff6ff" opacity=".7"><circle cx="235" cy="82" r="2.5"/><circle cx="248" cy="96" r="1.5"/><circle cx="70" cy="212" r="2.2"/></g>
-<text x="270" y="151" font-family="Arial, Helvetica, sans-serif" font-size="88" font-weight="800" letter-spacing="2" fill="url(#word)" filter="url(#shadow)">KOSTPRO</text>
-<text x="274" y="193" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="500" letter-spacing="1.2" fill="url(#tag)">MANAGED SMART YOUR PROPERTY</text>
+<g fill="#dff6ff" opacity=".68"><circle cx="240" cy="91" r="2.5"/><circle cx="253" cy="105" r="1.5"/><circle cx="67" cy="231" r="2"/></g>
+<text x="285" y="157" font-family="Arial, Helvetica, sans-serif" font-size="92" font-weight="800" letter-spacing="1.5" fill="url(#word)" filter="url(#shadow)">KOSTPRO</text>
+<text x="289" y="199" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="500" letter-spacing=".7" fill="url(#tag)">Managed Smart Your Property</text>
 </svg>
