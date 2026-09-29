@@ -174,32 +174,6 @@ export default function BookingPage() {
 
       {msg && <div className="card" style={{marginBottom:18}}>{msg}</div>}
 
-      {!publicMode && <div className="grid">
-        {availableRooms.map(room => (
-          <div className="card" key={room.id}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
-              <div>
-                <div className="section-title">{room.id}</div>
-                <div className="sub">Siap dibooking</div>
-              </div>
-              <span className="badge green">Tersedia</span>
-            </div>
-            <div className="metric" style={{fontSize:24,marginTop:14}}>{money(room.price)}</div>
-            <div className="sub">per bulan</div>
-            <div className="actions" style={{marginTop:16}}>
-              <button className="btn" onClick={() => { setRoomId(room.id); setSelectedRoom(room); setMsg('Form booking untuk ' + room.id + ' sudah dipilih. Silakan isi data calon penghuni.'); document.getElementById('booking-form')?.scrollIntoView({behavior:'smooth',block:'start'}); }}>
-                Booking {room.id}
-              </button>
-              <button className="btn secondary" onClick={() => shareLink(room)}>
-                <MessageCircle size={16} style={{verticalAlign:'middle',marginRight:6}} /> Share Link WA
-              </button>
-              <button className="btn secondary" onClick={() => copyLink(room)} title="Salin link booking">
-                <Copy size={16} style={{verticalAlign:'middle',marginRight:6}} /> Salin Link
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>}
 
       {!publicMode && !availableRooms.length && (
         <div className="card" style={{marginTop:18}}>
@@ -254,7 +228,7 @@ export default function BookingPage() {
         </div>
         <div className="actions">
           <button className="btn" onClick={submit}>Kirim Booking</button>
-          {roomId && <button className="btn secondary" onClick={() => shareLink(availableRooms.find(x => x.id === roomId) || availableRooms[0])}><MessageCircle size={16} style={{verticalAlign:'middle',marginRight:6}} /> Share Form ke WhatsApp</button>}
+          {roomId && <button className="btn secondary" onClick={() => { const room = availableRooms.find(x => x.id === roomId); if (room) shareLink(room); }}><MessageCircle size={16} style={{verticalAlign:'middle',marginRight:6}} /> Share Form ke WhatsApp</button>}
         </div>
       </div>
 
