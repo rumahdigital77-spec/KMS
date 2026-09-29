@@ -23,7 +23,6 @@ export default function Sidebar() {
   const [open, setOpen] = useState(false);
   const [laporanOpen, setLaporanOpen] = useState(false);
   const [kamarOpen, setKamarOpen] = useState(false);
-  const [role, setRole] = useState<'owner' | 'admin' | null>(null);
   const [ownerLogo, setOwnerLogo] = useState('');
 
   useEffect(() => { setOpen(false); setLaporanOpen(false); }, [p]);
@@ -39,25 +38,6 @@ export default function Sidebar() {
       window.removeEventListener('kostpro:data-saved', loadLogo);
       window.removeEventListener('kostpro:data-scope-changed', loadLogo);
     };
-  }, []);
-  useEffect(() => {
-    let cancelled = false;
-    const loadRole = async () => {
-      try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { if (!cancelled) setRole(null); return; }
-        const { data } = await supabase.from('user_accounts').select('role').eq('user_id', user.id).maybeSingle();
-        if (!cancelled) {
-          const normalized = String(data?.role || '').toLowerCase();
-          setRole(normalized === 'admin' ? 'admin' : normalized === 'owner' ? 'owner' : null);
-        }
-      } catch { if (!cancelled) setRole(null); }
-    };
-    void loadRole();
-    const supabase = createClient();
-    const { data: listener } = supabase.auth.onAuthStateChange(() => { window.setTimeout(() => void loadRole(), 0); });
-    return () => { cancelled = true; listener.subscription.unsubscribe(); };
   }, []);
   useEffect(() => { if (p === '/keuangan') setLaporanOpen(true); if (p === '/kamar' || p.startsWith('/kamar/')) setKamarOpen(true); }, [p]);
   useEffect(() => { document.body.style.overflow = open ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [open]);
