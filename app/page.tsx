@@ -106,7 +106,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <section className="dashboard-hero" style={{ backgroundImage: "linear-gradient(90deg, rgba(2,15,42,.98) 0%, rgba(2,15,42,.88) 42%, rgba(2,15,42,.28) 72%, rgba(2,15,42,.08) 100%), url('/hotel-dashboard-banner.jpg')" }}>
+      <section className="dashboard-hero dashboard-hero-property-bg">
         <div className="dashboard-hero-glow"/>
         <div className="dashboard-hero-copy">
           <div className="dashboard-hero-kicker">KOSTPRO MANAGEMENT SYSTEM</div>
@@ -118,12 +118,7 @@ export default function Dashboard() {
             <span><BedDouble size={14}/> {occupied} kamar terisi</span>
           </div>
         </div>
-      <div className="dashboard-hero-photo">
-  <img
-    src="/kost.jpg"
-    alt="Logo Pemilik"
-  />
-</div>
+      
       </section>
 
       <section className="dashboard-kpis">
