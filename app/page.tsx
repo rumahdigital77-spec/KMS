@@ -6,6 +6,7 @@ import {
   Activity, ArrowDownRight, ArrowUpRight, BedDouble, CalendarCheck,
   ChevronRight, DoorOpen, FileText, ReceiptText, Sparkles, Users, WalletCards
 } from 'lucide-react';
+import AdminLoginButton from '@/components/AdminLoginButton';
 import {
   defaultPayments, defaultRooms, defaultTenants, defaultTransactions,
   loadData, money, Payment, Room, Tenant, Transaction
