@@ -3,35 +3,16 @@ import{useEffect,useState}from'react';import{defaultRooms,loadData,money,Room,sa
 const label=(s:Room['status'])=>s==='occupied'?'Terisi':s==='available'?'Tersedia':s==='reserved'?'Reservasi':'Maintenance';
 export default function Kamar(){const[r,setR]=useState<Room[]>(defaultRooms),[add,setAdd]=useState(false),[detail,setDetail]=useState<Room|null>(null),[code,setCode]=useState(''),[price,setPrice]=useState(''),[status,setStatus]=useState<Room['status']>('available'),[msg,setMsg]=useState('');
 useEffect(()=>{
-  const load=async()=>{
+  const load=()=>{
     const local=loadData<Room[]>('rooms',defaultRooms);
-    try {
-      const res=await fetch('/api/rooms',{cache:'no-store'});
-      const data=await res.json();
-      const cloud=Array.isArray(data.rooms)?data.rooms as Room[]:[];
-      // property_app_state is the canonical application state. The normalized
-      // room table is only a secondary index for booking/public availability.
-      // Never let a partial/empty normalized response erase local property data.
-      const source=local.length?local:cloud;
-      setR(source);
-      if(source.length){
-        await saveData('rooms',source);
-        await Promise.all(source.map(async room=>{
-          const response=await fetch('/api/rooms',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room})});
-          if(!response.ok) throw new Error('Gagal menyinkronkan kamar ke database.');
-        }));
-      }
-    } catch(error) {
-      setR(local);
-      if(error instanceof Error && local.length===0) setMsg(error.message);
-    }
+    setR(local);
     const q=new URLSearchParams(window.location.search);
     if(q.get('aksi')==='tambah')setAdd(true);
     const roomId=q.get('room');
     if(roomId){const target=local.find(x=>x.id===roomId);if(target)setDetail(target);}
   };
-  void load();
-  const refreshFromBooking = () => { void load(); };
+  load();
+  const refreshFromBooking = () => load();
   window.addEventListener('kostpro:room-status-changed', refreshFromBooking);
   return () => window.removeEventListener('kostpro:room-status-changed', refreshFromBooking);
 },[]);
