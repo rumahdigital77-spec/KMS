@@ -21,7 +21,7 @@ export default function Tagihan(){
   const nextPaymentHistory=[...historyWithoutDuplicate,paidPayment];
   const existing=loadData('transactions',defaultTransactions);
   const alreadyRecorded=existing.some(x=>x.referenceId===current.id);
-  const tx:Transaction={id:'TR-'+Date.now(),date:paidAt,description:'Pembayaran '+method.toUpperCase()+' — '+current.tenant+' — '+current.room+' — '+current.month,category:'Pendapatan sewa',amount:paymentAmount,type:'income',referenceId:current.id};
+  const tx:Transaction={id:'TR-'+Date.now(),date:paidAt,description:'POSTING KAMAR — '+current.room+' — '+current.tenant+' — '+current.month+' — '+method.toUpperCase(),category:'Pendapatan Kamar',amount:paymentAmount,type:'income',referenceId:current.id};
   const transactions=alreadyRecorded?existing:[...existing,tx];
   try{setP(n);await Promise.all([saveData('payments',n),saveData('paymentHistory',nextPaymentHistory),saveData('transactions',transactions)]);}catch(error){setMsg(error instanceof Error?`Gagal menyimpan pelunasan: ${error.message}`:'Gagal menyimpan pelunasan ke database.');return;}setShow(false);setMsg(alreadyRecorded?'Tagihan lunas dan dipindahkan dari daftar tagihan aktif. Membuka kwitansi...':'Pelunasan berhasil. Tagihan dipindahkan ke History Payment dan nomor kwitansi sudah dicatat. Membuka kwitansi...');
   location.href='/kwitansi?id='+encodeURIComponent(current.id);
