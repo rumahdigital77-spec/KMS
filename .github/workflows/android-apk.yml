@@ -39,13 +39,12 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y imagemagick curl unzip
+          sudo apt-get install -y imagemagick curl
           mkdir -p /tmp/kostpro-icon
-          curl -L --fail --silent --show-error "https://sdmntpraustraliaeast.oaiusercontent.com/files/00000000-4a88-81fa-bb5b-805928f81627/raw?se=2026-09-29T23%3A05%3A53Z&sp=r&sv=2026-02-06&sr=b&scid=b9df7e26-398d-5019-9a13-b8713051a0dd&skoid=cb94e22a-e3df-4e6a-9e17-1696f40fa435&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-29T23%3A00%3A23Z&ske=2026-09-30T23%3A00%3A23Z&sks=b&skv=2026-02-06&sig=4xi%2Bt%2Bt5YsFARIlq5DVIcQaSmOovLZyGY2aKHf%2FYruY%3D" -o /tmp/kostpro-icon/artifact.zip
-          unzip -o /tmp/kostpro-icon/artifact.zip -d /tmp/kostpro-icon/artifact
-          LOGO="$(find /tmp/kostpro-icon/artifact -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) | head -n 1)"
-          test -n "$LOGO"
-          convert "$LOGO" -background none -resize 512x512^ -gravity center -extent 512x512 /tmp/kostpro-icon/icon.png
+          curl -L --fail --silent --show-error "https://sdmntpraustraliaeast.oaiusercontent.com/files/00000000-4a88-81fa-bb5b-805928f81627/raw?se=2026-09-29T23%3A05%3A53Z&sp=r&sv=2026-02-06&sr=b&scid=b9df7e26-398d-5019-9a13-b8713051a0dd&skoid=cb94e22a-e3df-4e6a-9e17-1696f40fa435&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-29T23%3A00%3A23Z&ske=2026-09-30T23%3A00%3A23Z&sks=b&skv=2026-02-06&sig=4xi%2Bt%2Bt5YsFARIlq5DVIcQaSmOovLZyGY2aKHf%2FYruY%3D" -o /tmp/kostpro-icon/owner-logo.jpg
+          test -s /tmp/kostpro-icon/owner-logo.jpg
+          identify /tmp/kostpro-icon/owner-logo.jpg
+          convert /tmp/kostpro-icon/owner-logo.jpg -resize 512x512^ -gravity center -extent 512x512 /tmp/kostpro-icon/icon.png
           for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
             case "$density" in
               mdpi) size=48 ;;
@@ -72,19 +71,20 @@ jobs:
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
-      - name: Verify APK
+      - name: Verify and rename APK
         run: |
           test -s android/app/build/outputs/apk/debug/app-debug.apk
-          ls -lh android/app/build/outputs/apk/debug/app-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk "KOSTPRO V1.7.0.apk"
+          ls -lh "KOSTPRO V1.7.0.apk"
       - name: Upload dependency audit
         uses: actions/upload-artifact@v4
         with:
-          name: KOSTPRO-v1.7.0-dependency-audit
+          name: KOSTPRO V1.7.0 - dependency audit
           path: npm-audit.json
           retention-days: 30
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KOSTPRO-v1.7.0-Android-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: KOSTPRO V1.7.0
+          path: "KOSTPRO V1.7.0.apk"
           retention-days: 30
