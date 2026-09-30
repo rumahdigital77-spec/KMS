@@ -3,12 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const KMS_SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://vynsxajbqkgkudfbraog.supabase.co';
-
-const KMS_PUBLISHABLE_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-  'sb_publishable_0_9DNdvMlgPAebzVzk0HZw_iLlbg7GI';
+const KMS_SUPABASE_URL = 'https://vynsxajbqkgkudfbraog.supabase.co';
+const KMS_PUBLISHABLE_KEY = 'sb_publishable_0_9DNdvMlgPAebzVzk0HZw_iLlbg7GI';
 
 export async function GET() {
   try {
@@ -25,12 +21,12 @@ export async function GET() {
       );
     }
 
-    const properties = Array.isArray(data)
-      ? data
-      : [];
-
     return NextResponse.json(
-      { source: 'kostpro', read_only: true, properties },
+      {
+        source: 'kostpro',
+        read_only: true,
+        properties: Array.isArray(data) ? data : []
+      },
       {
         headers: {
           'Cache-Control': 'no-store, max-age=0'
