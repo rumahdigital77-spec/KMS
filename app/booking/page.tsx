@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { CalendarCheck, CheckCircle2, Clock3, RefreshCw, UserRound, XCircle, ArrowRight, Sparkles } from 'lucide-react';
 import { createClient } from '@/lib/supabase-browser';
+import BookingPremiumStyles from '@/components/BookingPremiumStyles';
 
 type Booking = {
   id: string; guest_name: string; guest_phone: string; check_in: string;
@@ -54,7 +55,7 @@ export default function BookingPage() {
   const visible = filter === 'ALL' ? rows : rows.filter(b => b.status === filter);
 
   return (
-    <main className="page booking-premium">
+    <><BookingPremiumStyles/><main className="page booking-premium">
       <header className="booking-hero">
         <div>
           <span className="booking-eyebrow"><Sparkles size={13}/> KOSTIN BOOKING CENTER</span>
@@ -127,6 +128,6 @@ export default function BookingPage() {
             </table>
           </div>}
       </section>
-    </main>
+    </main></>
   );
 }
