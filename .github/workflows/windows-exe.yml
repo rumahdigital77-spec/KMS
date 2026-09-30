@@ -5,10 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'package.json'
-      - 'electron/**'
-      - 'public/kostpro-owner-logo.svg'
-      - '.github/workflows/windows-exe.yml'
+      - '**'
 
 jobs:
   build-windows:
@@ -31,6 +28,15 @@ jobs:
           choco install imagemagick.app --no-progress -y
           magick -background none public/kostpro-owner-logo.svg -define icon:auto-resize=16,24,32,48,64,128,256 build/icon.ico
           if (!(Test-Path build/icon.ico)) { throw 'Owner icon was not generated' }
+      - name: Set automatic desktop version
+        shell: pwsh
+        run: |
+          $runNo = [int]"${{ github.run_number }}"
+          $version = "1.7.$runNo"
+          $pkg = Get-Content package.json -Raw | ConvertFrom-Json
+          $pkg.version = $version
+          $pkg | ConvertTo-Json -Depth 100 | Set-Content package.json
+          Write-Host "Automatic EXE version: $version"
       - name: Build KOSTPRO Windows installer
         run: npm run desktop:build
       - name: Verify installer
@@ -42,6 +48,6 @@ jobs:
       - name: Upload KOSTPRO Setup
         uses: actions/upload-artifact@v4
         with:
-          name: KOSTPRO Windows Setup V1.7.0
+          name: KOSTPRO Windows Setup V1.7.${{ github.run_number }}
           path: dist-windows/*.exe
           retention-days: 30
