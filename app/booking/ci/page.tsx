@@ -44,7 +44,7 @@ export default function BookingCheckInPage() {
     if (!booking || saving) return;
     if (!name.trim() || !phone.trim() || !checkIn || duration < 1) { setMsg('Lengkapi data C.I. terlebih dahulu.'); return; }
     setSaving(true); setMsg('');
-    const { error } = await supabase.rpc('save_kostin_booking_checkin', {
+    const { error } = await supabase.rpc('save_kostin_booking_checkin_v2', {
       p_booking_id: booking.id, p_guest_name: name.trim(), p_guest_phone: phone.trim(),
       p_check_in: checkIn, p_duration_months: duration,
     });
