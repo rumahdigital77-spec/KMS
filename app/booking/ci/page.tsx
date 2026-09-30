@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, CalendarDays, CheckCircle2, Home, Loader2, Phone, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-browser';
-import BookingPremiumStyles from '@/components/BookingPremiumStyles';
 
 type Booking = {
   id: string; guest_name: string; guest_phone: string; check_in: string;
@@ -53,7 +52,7 @@ export default function BookingCheckInPage() {
   }
 
   return (
-    <><BookingPremiumStyles/><main className="page booking-ci-premium">
+    <main className="page booking-ci-premium">
       <div className="booking-ci-top">
         <div><span className="booking-eyebrow">CHECK-IN CENTER</span><h1>Form C.I. Booking</h1><p>Data dari KostIn sudah terisi. Petugas cukup memeriksa, mengubah bila perlu, lalu simpan.</p></div>
         <Link className="booking-back-btn" href="/booking"><ArrowLeft size={16}/> Kembali</Link>
@@ -98,7 +97,7 @@ export default function BookingCheckInPage() {
           </div>
         </section> :
         <div className="booking-ci-loading"><XCircleIcon/><b>{msg || 'Form C.I. tidak tersedia.'}</b><Link className="booking-back-btn" href="/booking">Kembali ke Booking</Link></div>}
-    </main></>
+    </main>
   );
 }
 
