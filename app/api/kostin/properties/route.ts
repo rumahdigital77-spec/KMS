@@ -5,7 +5,13 @@ export const dynamic = 'force-dynamic';
 
 const KMS_SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://vynsxajbqkgkudfbraog.supabase.co';
-const KMS_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Prefer the server-only service role key. The publishable key is a safe fallback
+// for a public read-only feed when the database grants the required SELECT access.
+const KMS_SERVER_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  'sb_publishable_0_9DNdvMlgPAebzVzk0HZw_iLlbg7GI';
 
 type Room = {
   id?: string;
@@ -27,14 +33,7 @@ type PropertyState = {
 };
 
 export async function GET() {
-  if (!KMS_SERVICE_ROLE_KEY) {
-    return NextResponse.json(
-      { source: 'kostpro', properties: [], error: 'KOSTPRO server key is not configured' },
-      { status: 503 }
-    );
-  }
-
-  const admin = createClient(KMS_SUPABASE_URL, KMS_SERVICE_ROLE_KEY, {
+  const admin = createClient(KMS_SUPABASE_URL, KMS_SERVER_KEY, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
@@ -50,32 +49,34 @@ export async function GET() {
     );
   }
 
-  const properties = (data ?? []).map((property: any) => {
-    const state = (property.property_app_state?.[0]?.state ?? {}) as PropertyState;
-    const settings = state.kostpro_settings ?? {};
-    const rooms = Array.isArray(state.kostpro_rooms) ? state.kostpro_rooms : [];
+  const properties = (data ?? [])
+    .map((property: any) => {
+      const state = (property.property_app_state?.[0]?.state ?? {}) as PropertyState;
+      const settings = state.kostpro_settings ?? {};
+      const rooms = Array.isArray(state.kostpro_rooms) ? state.kostpro_rooms : [];
 
-    const availableRooms = rooms
-      .filter((room) => String(room.status ?? '').toLowerCase() === 'available')
-      .map((room) => ({
-        source_room_id: String(room.id ?? ''),
-        name: String(room.id ?? 'Kamar'),
-        room_type: room.room_type ?? room.type ?? null,
-        price_monthly: Number(room.price ?? 0),
-        status: 'AVAILABLE'
-      }))
-      .filter((room) => room.source_room_id);
+      const availableRooms = rooms
+        .filter((room) => String(room.status ?? '').toLowerCase() === 'available')
+        .map((room) => ({
+          source_room_id: String(room.id ?? ''),
+          name: String(room.id ?? 'Kamar'),
+          room_type: room.room_type ?? room.type ?? null,
+          price_monthly: Number(room.price ?? 0),
+          status: 'AVAILABLE'
+        }))
+        .filter((room) => room.source_room_id);
 
-    return {
-      source_property_id: String(property.id),
-      name: settings.name || property.name || 'Property',
-      city: null,
-      address: settings.address || property.address || null,
-      cover_url: settings.logo || null,
-      facilities: [],
-      rooms: availableRooms
-    };
-  }).filter((property) => property.rooms.length > 0);
+      return {
+        source_property_id: String(property.id),
+        name: settings.name || property.name || 'Property',
+        city: null,
+        address: settings.address || property.address || null,
+        cover_url: settings.logo || null,
+        facilities: [],
+        rooms: availableRooms
+      };
+    })
+    .filter((property) => property.rooms.length > 0);
 
   return NextResponse.json(
     { source: 'kostpro', read_only: true, properties },
