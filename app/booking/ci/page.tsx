@@ -28,13 +28,13 @@ export default function BookingCheckInPage() {
 
   useEffect(() => {
     async function load() {
-      if (!id) { setMsg('Booking tidak ditemukan.'); setLoading(false); return; }
+      if (!id) return;
       const { data, error } = await supabase.rpc('get_kostin_bookings_for_owner');
       if (error) { setMsg(error.message || 'Gagal memuat booking.'); setLoading(false); return; }
       const row = (Array.isArray(data) ? data : []).find((x: Booking) => x.id === id) as Booking | undefined;
       if (!row) { setMsg('Booking tidak ditemukan atau bukan milik property yang dapat diakses.'); setLoading(false); return; }
       if (row.status !== 'CONFIRMED') { setMsg('Booking belum berstatus CONFIRMED.'); setBooking(row); setLoading(false); return; }
-      setBooking(row); setName(row.guest_name || ''); setPhone(row.guest_phone || '');
+      setBooking(row); setMsg(''); setName(row.guest_name || ''); setPhone(row.guest_phone || '');
       setCheckIn(row.check_in || ''); setDuration(row.duration_months || 1); setLoading(false);
     }
     void load();
