@@ -5,10 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'capacitor.config.ts'
-      - 'package.json'
-      - 'VERSION'
-      - '.github/workflows/android-apk.yml'
+      - '**'
 
 jobs:
   build-android:
@@ -55,16 +52,20 @@ jobs:
             convert /tmp/kostpro-icon/icon.png -resize "${size}x${size}" "android/app/src/main/res/mipmap-$density/ic_launcher.png"
             cp "android/app/src/main/res/mipmap-$density/ic_launcher.png" "android/app/src/main/res/mipmap-$density/ic_launcher_round.png"
           done
-      - name: Set app version
+      - name: Set automatic build version
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
+          run_no = int("${{ github.run_number }}")
+          version_name = f"1.7.{run_no}"
           p = Path('android/app/build.gradle')
           s = p.read_text()
-          s = s.replace('versionCode 1', 'versionCode 17')
-          s = s.replace('versionName "1.0"', 'versionName "1.7.0"')
+          s = re.sub(r'versionCode\\s+\\d+', f'versionCode {run_no}', s, count=1)
+          s = re.sub(r'versionName\\s+"[^"]+"', f'versionName "{version_name}"', s, count=1)
           p.write_text(s)
+          print(f"Automatic APK version: {version_name} (versionCode {run_no})")
           PY
       - name: Build debug APK
         working-directory: android
@@ -72,17 +73,17 @@ jobs:
       - name: Verify and rename APK
         run: |
           test -s android/app/build/outputs/apk/debug/app-debug.apk
-          cp android/app/build/outputs/apk/debug/app-debug.apk "KOSTPRO V1.7.0.apk"
-          ls -lh "KOSTPRO V1.7.0.apk"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "KOSTPRO V1.7.${{ github.run_number }}.apk"
+          ls -lh "KOSTPRO V1.7.${{ github.run_number }}.apk"
       - name: Upload dependency audit
         uses: actions/upload-artifact@v4
         with:
-          name: KOSTPRO V1.7.0 - dependency audit
+          name: KOSTPRO V1.7.${{ github.run_number }} - dependency audit
           path: npm-audit.json
           retention-days: 30
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KOSTPRO V1.7.0
-          path: "KOSTPRO V1.7.0.apk"
+          name: KOSTPRO V1.7.${{ github.run_number }}
+          path: "KOSTPRO V1.7.${{ github.run_number }}.apk"
           retention-days: 30
