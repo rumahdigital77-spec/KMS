@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, CalendarDays, CheckCircle2, Home, Loader2, Phone, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-browser';
@@ -16,12 +16,15 @@ const supabase = createClient();
 
 export default function BookingCheckInPage() {
   const router = useRouter();
-  const params = useSearchParams();
-  const id = params.get('id') || '';
+  const [id, setId] = useState('');
   const [booking, setBooking] = useState<Booking | null>(null);
   const [name, setName] = useState(''); const [phone, setPhone] = useState('');
   const [checkIn, setCheckIn] = useState(''); const [duration, setDuration] = useState(1);
   const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false); const [msg, setMsg] = useState('');
+
+  useEffect(() => {
+    setId(new URLSearchParams(window.location.search).get('id') || '');
+  }, []);
 
   useEffect(() => {
     async function load() {
