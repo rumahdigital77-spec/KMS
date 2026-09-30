@@ -1,5 +1,5 @@
 export default function BookingPremiumStyles() {
-  return <style jsx global>{`
+  return <style>{`
 .booking-premium,.booking-ci-premium{max-width:1440px;margin:0 auto;padding-bottom:30px}
 .booking-hero,.booking-ci-top{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:18px;padding:24px 26px;border-radius:24px;color:#fff;background:radial-gradient(circle at 90% 10%,rgba(255,255,255,.16),transparent 28%),linear-gradient(125deg,#071326 0%,#172554 52%,#4338ca 100%);box-shadow:0 20px 50px rgba(30,41,59,.16);position:relative;overflow:hidden}
 .booking-hero:after,.booking-ci-top:after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;right:-75px;bottom:-120px;background:rgba(125,211,252,.14);filter:blur(2px)}
