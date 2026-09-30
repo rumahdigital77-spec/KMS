@@ -1,0 +1,47 @@
+name: Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'electron/**'
+      - 'public/kostpro-owner-logo.svg'
+      - '.github/workflows/windows-exe.yml'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Convert owner logo to Windows ICO
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+          choco install imagemagick.app --no-progress -y
+          magick -background none public/kostpro-owner-logo.svg -define icon:auto-resize=16,24,32,48,64,128,256 build/icon.ico
+          if (!(Test-Path build/icon.ico)) { throw 'Owner icon was not generated' }
+      - name: Build KOSTPRO Windows installer
+        run: npm run desktop:build
+      - name: Verify installer
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem dist-windows -Filter '*.exe' | Select-Object -First 1
+          if ($null -eq $exe) { throw 'KOSTPRO Windows installer was not generated' }
+          Write-Host "Generated: $($exe.FullName)"
+      - name: Upload KOSTPRO Setup
+        uses: actions/upload-artifact@v4
+        with:
+          name: KOSTPRO Windows Setup V1.7.0
+          path: dist-windows/*.exe
+          retention-days: 30
