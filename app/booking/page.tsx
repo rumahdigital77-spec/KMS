@@ -14,6 +14,15 @@ type Booking = {
 
 const supabase = createClient();
 
+const flowSteps = [
+  { n: '1', label: 'Booking Masuk', note: 'Dari KostIn', icon: Clock3 },
+  { n: '2', label: 'APPROVE / DENIED', note: 'Proses', icon: CheckCircle2 },
+  { n: '3', label: 'CONFIRMED', note: 'Proses', icon: CheckCircle2 },
+  { n: '4', label: 'FORM C.I.', note: 'Data otomatis terisi', icon: UserRound },
+  { n: '5', label: 'SIMPAN C.I.', note: 'Kamar → OCCUPIED', icon: CalendarCheck },
+  { n: '6', label: 'COMPLETED', note: 'Booking selesai', icon: CheckCircle2 },
+];
+
 export default function BookingPage() {
   const [rows, setRows] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,17 +79,10 @@ export default function BookingPage() {
       <section className="booking-flow-card">
         <div className="booking-flow-title">Alur Booking <span>REAL-TIME</span></div>
         <div className="booking-flow">
-          {[
-            ['1', 'Booking Masuk', Clock3],
-            ['2', 'APPROVE / DENIED', CheckCircle2],
-            ['3', 'CONFIRMED', CheckCircle2],
-            ['4', 'FORM C.I.', UserRound],
-            ['5', 'SIMPAN C.I.', CalendarCheck],
-            ['6', 'COMPLETED', CheckCircle2],
-          ].map(([n, label, Icon], i) => (
-            <div className="booking-flow-step" key={String(n)}>
+          {flowSteps.map(({ n, label, note, icon: Icon }, i) => (
+            <div className="booking-flow-step" key={n}>
               <div className="booking-flow-icon"><Icon size={17}/></div>
-              <div><b>{label as string}</b><small>{i === 0 ? 'Dari KostIn' : i === 3 ? 'Data otomatis terisi' : i === 4 ? 'Kamar → OCCUPIED' : i === 5 ? 'Booking selesai' : 'Proses'}</small></div>
+              <div><b>{label}</b><small>{note}</small></div>
               {i < 5 && <ArrowRight className="booking-flow-arrow" size={16}/>}
             </div>
           ))}
