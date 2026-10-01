@@ -3,9 +3,10 @@ import { cookies } from 'next/headers';
 
 export async function createServerSupabaseClient() {
   const cookieStore = await cookies();
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error('Supabase environment variables are not configured.');
+  // Production fallback must match the browser client while Vercel envs are repaired.
+  // Publishable/anon keys are safe for the client; never use service_role here.
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vynsxajbqkgkudfbraog.supabase.co';
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_0_9DNdvMlgPAebzVzk0HZw_iLlbg7GI';
 
   return createServerClient(url, key, {
     cookies: {
