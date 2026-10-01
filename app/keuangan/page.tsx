@@ -51,6 +51,9 @@ export default function Keuangan() {
         category: cat.trim() || 'Operasional',
         amount,
         type,
+        debitAccount: type === 'expense' ? (cat.trim() || 'Beban Operasional') : 'Kas',
+        creditAccount: type === 'expense' ? 'Kas' : (cat.trim() || 'Pendapatan Lain-lain'),
+        accountingBasis: 'cash',
       },
     ];
 
