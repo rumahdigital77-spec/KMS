@@ -80,6 +80,32 @@ export default function EditRoomStatus() {
     }
   };
 
+  const changePrice = async (id: string, rawPrice: string) => {
+    const price = Number(rawPrice);
+    if (!Number.isFinite(price) || price < 0) {
+      setMsg('Harga kamar harus berupa angka 0 atau lebih.');
+      return;
+    }
+    const next = rooms.map((r) => (r.id === id ? { ...r, price } : r));
+    setRooms(next);
+    setMsg('');
+    try {
+      await saveData('rooms', next);
+      const room = next.find((r) => r.id === id);
+      if (room) {
+        const response = await fetch('/api/rooms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room }),
+        });
+        if (!response.ok) throw new Error('Gagal menyinkronkan harga kamar ke database.');
+      }
+      setMsg('Harga kamar berhasil diperbarui dan disimpan.');
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Gagal menyimpan harga kamar.');
+    }
+  };
+
   const actions = (r: Room) => {
     const occupied = isOccupied(r);
     return (
@@ -128,7 +154,16 @@ export default function EditRoomStatus() {
               </div>
 
               <div className="kamar-detail-grid">
-                <div><span>Harga / bulan</span><b>{money(r.price)}</b></div>
+                <div className="kamar-price-edit">
+                  <span>Harga / bulan</span>
+                  <div className="kamar-price-row">
+                    <input aria-label={`Harga kamar ${r.id}`} type="number" min="0" step="1000" defaultValue={r.price} key={r.id + '-' + r.price} />
+                    <button type="button" className="btn" onClick={(e) => {
+                      const input = e.currentTarget.previousElementSibling as HTMLInputElement | null;
+                      if (input) void changePrice(r.id, input.value);
+                    }}>Simpan Harga</button>
+                  </div>
+                </div>
                 <div><span>Status</span><b>{label(r.status)}</b></div>
                 <div><span>Penghuni</span><b>{r.tenant === '-' ? 'Kosong' : r.tenant}</b></div>
               </div>
