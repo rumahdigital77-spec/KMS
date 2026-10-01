@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     const scope = await getAuthenticatedPropertyId(supabase);
     if (!scope.propertyId) return NextResponse.json({ error: scope.error || 'AUTH_REQUIRED' }, { status: 401 });
 
-    // Canonical cloud state is property-scoped by the RPC using auth.uid().
+    // LIVE ROOM SOURCE: canonical cloud state is property-scoped by the RPC using auth.uid().
     // This avoids the obsolete kost_rooms table and prevents cross-property reads.
     const { data, error } = await supabase.rpc('get_property_app_state');
     if (error) throw error;
