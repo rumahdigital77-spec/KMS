@@ -68,7 +68,7 @@ export default function Dashboard() {
   useEffect(() => {
     loadDashboard();
     const refresh = () => loadDashboard();
-    const interval = window.setInterval(refresh, 5000);
+    const interval = window.setInterval(refresh, 1000);
     window.addEventListener('kostpro:data-saved', refresh);
     window.addEventListener('kostpro:data-scope-changed', refresh);
     return () => {
