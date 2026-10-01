@@ -47,6 +47,7 @@ export default function BookingPremiumStyles() {
 .approve-btn{background:linear-gradient(135deg,#16a34a,#059669);box-shadow:0 5px 12px rgba(16,185,129,.18)}
 .deny-btn{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 5px 12px rgba(239,68,68,.14)}
 .ci-btn{background:linear-gradient(135deg,#2563eb,#4f46e5);box-shadow:0 6px 15px rgba(79,70,229,.22)}
+.deny-small-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;border:0;border-radius:8px;padding:7px 8px;background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 10px rgba(239,68,68,.14);color:#fff;font-size:7px;font-weight:900;cursor:pointer}
 .completed-label,.denied-label{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:900}.completed-label{color:#15803d}.denied-label{color:#b91c1c}
 .booking-empty,.booking-ci-loading{min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#667085;font-size:12px}.booking-empty span{font-size:10px;color:#98a2b3}
 .spin{animation:bookingSpin .9s linear infinite}@keyframes bookingSpin{to{transform:rotate(360deg)}}
