@@ -12,14 +12,12 @@ const KEYS = [
 const ACTIVE_USER_KEY = 'kostpro-active-user';
 const PENDING_DRAFT_KEY = 'kostpro-pending-draft';
 const HYDRATION_READY_KEY = 'kostpro-hydration-ready';
-const ACTIVE_PROPERTY_KEY = 'kostpro-active-property';
 
 const clearLocalScope = () => {
   KEYS.forEach(key => localStorage.removeItem(key));
   sessionStorage.removeItem(ACTIVE_USER_KEY);
   sessionStorage.removeItem(PENDING_DRAFT_KEY);
   sessionStorage.removeItem(HYDRATION_READY_KEY);
-  sessionStorage.removeItem(ACTIVE_PROPERTY_KEY);
   sessionStorage.removeItem('kostpro-post-hydration-reload');
   Object.keys(sessionStorage)
     .filter(key => key.startsWith('kostpro-hydrated-user:'))
@@ -71,25 +69,6 @@ export default function AccountDataSync() {
         if (previousUser && previousUser !== user.id) {
           clearLocalScope();
         }
-
-        const { data: account, error: accountError } = await supabase
-          .from('user_accounts')
-          .select('property_id,status')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        if (accountError || !account?.property_id) {
-          clearLocalDataOnly();
-          sessionStorage.removeItem(ACTIVE_PROPERTY_KEY);
-          window.dispatchEvent(new CustomEvent('kostpro:data-scope-error', {
-            detail: { message: accountError?.message || 'Account belum memiliki property aktif.' }
-          }));
-          window.dispatchEvent(new Event('kostpro:data-scope-changed'));
-          return;
-        }
-
-        sessionStorage.setItem(ACTIVE_PROPERTY_KEY, account.property_id);
 
         const { data: state, error } = await supabase.rpc('get_property_app_state');
         if (error) {
