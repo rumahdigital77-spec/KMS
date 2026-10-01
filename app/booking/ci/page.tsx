@@ -49,9 +49,9 @@ export default function BookingCheckInPage() {
       p_check_in: checkIn, p_duration_months: duration,
     });
     if (error) { setMsg(error.message || 'Gagal menyimpan C.I.'); setSaving(false); return; }
-    const result = (data && typeof data === 'object') ? data as Record<string, unknown> : {};
-    const billCreated = result.payment_created === true;
-    const amount = Number(result.payment_amount || 0);
+    const result = Array.isArray(data) ? data[0] : data;
+    const billCreated = result?.payment_created === true;
+    const amount = Number(result?.payment_amount || 0);
     const billText = billCreated && amount > 0
       ? ` Tagihan pertama ${new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(amount)} otomatis dibuat di Tagihan.`
       : ' Tagihan pertama sudah ada dan tidak dibuat ulang.';
