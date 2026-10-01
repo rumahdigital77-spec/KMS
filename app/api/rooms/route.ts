@@ -21,29 +21,21 @@ export async function GET(req: Request) {
 
     if (publicMode) {
       if (!requestedProperty) return NextResponse.json({ error: 'PROPERTY_REQUIRED' }, { status: 400 });
-      const { data: row, error } = await supabase
-        .from('property_app_state')
-        .select('state')
-        .eq('property_id', requestedProperty)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('get_public_available_rooms', { p_property_id: requestedProperty });
       if (error) throw error;
-      const rooms = normalizeRooms(row?.state?.kostpro_rooms).filter(room => room.status === 'available');
-      return NextResponse.json({ rooms });
+      return NextResponse.json({ rooms: normalizeRooms(data) });
     }
 
     const scope = await getAuthenticatedPropertyId(supabase);
     if (!scope.propertyId) return NextResponse.json({ error: scope.error || 'AUTH_REQUIRED' }, { status: 401 });
 
-    // Canonical room data is stored inside the already property-scoped
-    // property_app_state JSON. The old kost_rooms table is not used by KOSTPRO.
-    const { data: row, error } = await supabase
-      .from('property_app_state')
-      .select('state')
-      .eq('property_id', scope.propertyId)
-      .maybeSingle();
+    // Canonical cloud state is property-scoped by the RPC using auth.uid().
+    // This avoids the obsolete kost_rooms table and prevents cross-property reads.
+    const { data, error } = await supabase.rpc('get_property_app_state');
     if (error) throw error;
 
-    return NextResponse.json({ rooms: normalizeRooms(row?.state?.kostpro_rooms) });
+    const state = data && typeof data === 'object' ? data as Record<string, unknown> : {};
+    return NextResponse.json({ rooms: normalizeRooms(state.kostpro_rooms) });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Database belum terhubung.' }, { status: 503 });
   }
@@ -61,32 +53,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Data kamar tidak valid.' }, { status: 400 });
     }
 
-    const { data: current, error: readError } = await supabase
-      .from('property_app_state')
-      .select('state')
-      .eq('property_id', scope.propertyId)
-      .maybeSingle();
+    const { data: cloudState, error: readError } = await supabase.rpc('get_property_app_state');
     if (readError) throw readError;
-
-    const rooms = normalizeRooms(current?.state?.kostpro_rooms);
+    const state = cloudState && typeof cloudState === 'object' ? cloudState as Record<string, unknown> : {};
+    const rooms = normalizeRooms(state.kostpro_rooms);
     const roomCode = String(room.id).trim().toUpperCase();
-    const nextRoom = {
-      id: roomCode,
-      tenant: room.tenant || '-',
-      price: Number(room.price) || 0,
-      status: room.status,
-      updated_at: new Date().toISOString(),
-    };
-    const nextRooms = rooms.some(x => x.id === roomCode)
-      ? rooms.map(x => x.id === roomCode ? nextRoom : x)
-      : [...rooms, nextRoom];
+    const nextRoom = { id: roomCode, tenant: room.tenant || '-', price: Number(room.price) || 0, status: room.status, updated_at: new Date().toISOString() };
+    const nextRooms = rooms.some(x => x.id === roomCode) ? rooms.map(x => x.id === roomCode ? nextRoom : x) : [...rooms, nextRoom];
 
-    const state = { ...(current?.state || {}), kostpro_rooms: nextRooms };
-    const { error } = await supabase
-      .from('property_app_state')
-      .upsert({ property_id: scope.propertyId, state, updated_at: new Date().toISOString() }, { onConflict: 'property_id' });
+    const { error } = await supabase.rpc('save_property_app_state', { p_key: 'kostpro_rooms', p_value: nextRooms });
     if (error) throw error;
-
     return NextResponse.json({ room: nextRoom });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Gagal menyimpan kamar.' }, { status: 500 });
