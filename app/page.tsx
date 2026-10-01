@@ -155,9 +155,9 @@ export default function Dashboard() {
         </Link>
         <Link href="/keuangan" className="dashboard-kpi kpi-gold">
           <span className="dashboard-kpi-icon"><WalletCards size={21}/></span>
-          <span className="dashboard-kpi-label">Pendapatan Masuk</span>
-          <strong>{money(income)}</strong>
-          <small>{paidCount} transaksi lunas</small>
+          <span className="dashboard-kpi-label">Room Available</span>
+          <strong>{available}</strong>
+          <small>kamar tersedia sekarang</small>
           <ChevronRight size={17} className="dashboard-kpi-arrow"/>
         </Link>
       </section>
