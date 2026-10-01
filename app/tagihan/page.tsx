@@ -12,19 +12,42 @@ export default function Tagihan(){
   const paymentAmount=Number(paidAmount||current.amount);
   if(!Number.isFinite(paymentAmount)||paymentAmount!==Number(current.amount))return setMsg('Nominal pembayaran harus sama dengan total tagihan. Pembayaran parsial belum diaktifkan.');
   if(!paidAt)return setMsg('Tanggal pembayaran wajib diisi.');
-  let receiptNo=current.receiptNo;
-  try{const s=loadData<Record<string,unknown>>('settings',{});const next=Number(s.receiptNext||1);if(!receiptNo){receiptNo=(String(s.receiptPrefix||'KW'))+'-'+new Date().getFullYear()+'-'+String(next).padStart(5,'0');await saveData('settings',{...s,receiptNext:next+1})}}catch{}
-  const paidPayment={...current,status:'paid' as const,paidAt,method,receiptNo};
-  const n=p.filter(x=>x.id!==sel);
-  const paymentHistory=loadData<Payment[]>('paymentHistory',[]);
-  const historyWithoutDuplicate=paymentHistory.filter(x=>x.id!==paidPayment.id);
-  const nextPaymentHistory=[...historyWithoutDuplicate,paidPayment];
-  const existing=loadData('transactions',defaultTransactions);
-  const alreadyRecorded=existing.some(x=>x.referenceId===current.id);
-  const tx:Transaction={id:'TR-'+Date.now(),date:paidAt,description:'POSTING KAMAR — '+current.room+' — '+current.tenant+' — '+current.month+' — '+method.toUpperCase(),category:'Pendapatan Kamar',amount:paymentAmount,type:'income',referenceId:current.id};
-  const transactions=alreadyRecorded?existing:[...existing,tx];
-  try{setP(n);await Promise.all([saveData('payments',n),saveData('paymentHistory',nextPaymentHistory),saveData('transactions',transactions)]);}catch(error){setMsg(error instanceof Error?`Gagal menyimpan pelunasan: ${error.message}`:'Gagal menyimpan pelunasan ke database.');return;}setShow(false);setMsg(alreadyRecorded?'Tagihan lunas dan dipindahkan dari daftar tagihan aktif. Membuka kwitansi...':'Pelunasan berhasil. Tagihan dipindahkan ke History Payment dan nomor kwitansi sudah dicatat. Membuka kwitansi...');
-  location.href='/kwitansi?id='+encodeURIComponent(current.id);
+
+  try{
+    const supabase=(await import('@/lib/supabase-browser')).createClient();
+    const {data,error}=await supabase.rpc('post_payment_transaction_v2',{
+      p_payment_id:current.id,
+      p_paid_at:paidAt,
+      p_method:method,
+    });
+    if(error)throw new Error(error.message||'Gagal memposting pembayaran.');
+    const result=(data&&typeof data==='object')?data as Record<string,unknown>:{};
+    const receiptNo=String(result.receipt_no||current.receiptNo||'');
+    const paidPayment={...current,status:'paid' as const,paidAt,method,receiptNo};
+    const n=p.filter(x=>x.id!==sel);
+    const paymentHistory=loadData<Payment[]>('paymentHistory',[]);
+    const nextPaymentHistory=[...paymentHistory.filter(x=>x.id!==paidPayment.id),paidPayment];
+    const existing=loadData<Transaction[]>('transactions',defaultTransactions);
+    const hasTx=existing.some(x=>x.referenceId===current.id);
+    const transactions=hasTx?existing:[...existing,{
+      id:'TR-'+Date.now(),
+      date:paidAt,
+      description:'POSTING KAMAR — '+current.room+' — '+current.tenant+' — '+current.month+' — '+method.toUpperCase(),
+      category:'Pendapatan Kamar',
+      amount:paymentAmount,
+      type:'income',
+      referenceId:current.id,
+    }];
+    localStorage.setItem('kostpro_payments',JSON.stringify(n));
+    localStorage.setItem('kostpro_paymentHistory',JSON.stringify(nextPaymentHistory));
+    localStorage.setItem('kostpro_transactions',JSON.stringify(transactions));
+    setP(n);
+    setShow(false);
+    setMsg(result.already_posted?'Pembayaran sudah terposting dan transaksi keuangan sudah tercatat. Membuka kwitansi...':'Pelunasan berhasil. Pembayaran, history, dan transaksi pendapatan diposting atomik ke database. Membuka kwitansi...');
+    location.href='/kwitansi?id='+encodeURIComponent(current.id);
+  }catch(error){
+    setMsg(error instanceof Error?error.message:'Gagal menyimpan pelunasan ke database.');
+  }
  };
  const openPay=(id:string)=>{const item=p.find(x=>x.id===id);setSel(id);setPaidAmount(item?String(item.amount):'');setPaidAt(new Date().toISOString().slice(0,10));setShow(true);setMsg('')};
  return <div className="tagihan-page"><div className="top tagihan-top"><div><div className="title">Tagihan & Pembayaran</div><div className="sub">Alur: penghuni baru → tagihan → pelunasan → transaksi → kwitansi</div></div><button className="btn" onClick={()=>{setShow(!show);if(!show){setPaidAmount('');setPaidAt(new Date().toISOString().slice(0,10));}setMsg('')}}>+ Catat Pembayaran</button></div>{msg&&<div className="card tagihan-notice" style={{marginBottom:18}}>{msg}</div>}{show&&<div className="card tagihan-payment-card" style={{marginBottom:18}}><div className="section-title">Pelunasan Tagihan</div><div className="sub" style={{marginBottom:14}}>Pilih tagihan yang akan dibayar. Setelah disimpan, sistem otomatis mencatat transaksi dan membuka kwitansi.</div><div className="form"><div className="field full"><label>Tagihan</label><select value={sel} onChange={e=>setSel(e.target.value)}><option value="">Pilih tagihan belum lunas</option>{p.map(x=><option key={x.id} value={x.id}>{x.tenant} — {x.room} — {money(x.amount)}</option>)}</select></div><div className="field"><label>Nominal Dibayar</label><input type="number" min="0" value={paidAmount} onChange={e=>setPaidAmount(e.target.value)} placeholder="Nominal sesuai tagihan" /></div><div className="field"><label>Tanggal Pembayaran</label><input type="date" value={paidAt} onChange={e=>setPaidAt(e.target.value)} /></div><div className="field"><label>Metode</label><select value={method} onChange={e=>setMethod(e.target.value)}><option value="transfer">Transfer</option><option value="cash">Cash</option><option value="qris">QRIS</option></select></div></div><div className="actions"><button className="btn" onClick={pay}>Simpan & Lunas + Buat Kwitansi</button><button className="btn secondary" onClick={()=>setShow(false)}>Batal</button></div></div>}<div className="card tagihan-list-card"><div className="tagihan-list-head"><div><div className="section-title">Daftar Tagihan Aktif</div><div className="sub">Tagihan yang masih menunggu pelunasan.</div></div><span className="tagihan-count">{p.length} tagihan</span></div><div className="table-wrap"><table className="table tagihan-table"><thead><tr><th>Penghuni</th><th>Kamar</th><th>Periode</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{p.filter(x=>x.status==='unpaid').map(x=><tr key={x.id}><td><b>{x.tenant}</b></td><td>{x.room}</td><td>{x.month}</td><td>{money(x.amount)}</td><td><span className={'badge '+(x.status==='paid'?'green':'red')}>{x.status==='paid'?'Lunas':'Belum Bayar'}</span></td><td>{x.status==='unpaid'?<button className="btn secondary tagihan-action" onClick={()=>openPay(x.id)}>Pelunasan → Kwitansi</button>:<button className="btn secondary tagihan-action" onClick={()=>location.href='/kwitansi?id='+encodeURIComponent(x.id)}>Lihat Kwitansi</button>}</td></tr>)}</tbody></table></div></div></div>}
