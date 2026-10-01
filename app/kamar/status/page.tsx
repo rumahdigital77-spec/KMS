@@ -14,7 +14,9 @@ export default function EditRoomStatus() {
 
   useEffect(() => {
     const refresh = () => {
-      setRooms(loadData<Room[]>('rooms', defaultRooms));
+      const loadedRooms = loadData<Room[]>('rooms', defaultRooms);
+      setRooms(loadedRooms);
+      setPriceInputs(Object.fromEntries(loadedRooms.map((room) => [room.id, String(room.price ?? 0)])));
       setTenants(loadData<Tenant[]>('tenants', defaultTenants));
     };
     refresh();
