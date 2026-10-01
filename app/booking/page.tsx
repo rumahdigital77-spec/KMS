@@ -119,7 +119,10 @@ export default function BookingPage() {
                       <button className="approve-btn" onClick={() => void updateStatus(b.id, 'CONFIRMED')}><CheckCircle2 size={15}/> APPROVE</button>
                       <button className="deny-btn" onClick={() => void updateStatus(b.id, 'CANCELLED')}><XCircle size={15}/> DENIED</button>
                     </>}
-                    {b.status === 'CONFIRMED' && <Link className="ci-btn" href={'/booking/ci?id=' + encodeURIComponent(b.id)}><UserRound size={15}/> C.I.</Link>}
+                    {b.status === 'CONFIRMED' && <>
+                      <Link className="ci-btn" href={'/booking/ci?id=' + encodeURIComponent(b.id)}><UserRound size={15}/> C.I.</Link>
+                      <button className="deny-small-btn" onClick={() => void updateStatus(b.id, 'CANCELLED')} title="Denied booking"><XCircle size={13}/> DENIED</button>
+                    </>}
                     {b.status === 'COMPLETED' && <span className="completed-label"><CheckCircle2 size={16}/> COMPLETED</span>}
                     {b.status === 'CANCELLED' && <span className="denied-label"><XCircle size={16}/> DENIED</span>}
                   </div></td>
