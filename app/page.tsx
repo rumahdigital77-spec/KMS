@@ -51,11 +51,35 @@ export default function Dashboard() {
     setPayments(loadData('payments', defaultPayments));
     setTransactions(loadData('transactions', defaultTransactions));
     setTenants(loadData('tenants', defaultTenants).filter(x => (x.status || 'active') === 'active'));
+    // Nama property canonical: selalu baca dari property aktif milik account login.
+    // Jangan gunakan localStorage/settings sebagai sumber identitas property.
     try {
-      const settings = loadData<Record<string, unknown>>('settings', {});
-      setOwner(String(settings.ownerName || settings.manager || ''));
-      setProperty(String(settings.name || settings.propertyName || 'Kost-Pro'));
-    } catch {}
+      const { data: { user } } = await createSupabaseBrowserClient().auth.getUser();
+      if (user) {
+        const { data: account } = await createSupabaseBrowserClient()
+          .from('user_accounts')
+          .select('full_name,property_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        setOwner(String(account?.full_name || user.user_metadata?.full_name || ''));
+        if (account?.property_id) {
+          const { data: activeProperty } = await createSupabaseBrowserClient()
+            .from('properties')
+            .select('name')
+            .eq('id', account.property_id)
+            .maybeSingle();
+          setProperty(String(activeProperty?.name || 'Kost-Pro'));
+        } else {
+          setProperty('Kost-Pro');
+        }
+      } else {
+        setOwner('');
+        setProperty('Kost-Pro');
+      }
+    } catch {
+      setOwner('');
+      setProperty('Kost-Pro');
+    }
     try {
       const raw = localStorage.getItem('kostpro_cctv');
       const data = raw ? JSON.parse(raw) : [];
