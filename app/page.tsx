@@ -7,6 +7,7 @@ import {
   ChevronRight, DoorOpen, FileText, ReceiptText, Sparkles, Users, WalletCards
 } from 'lucide-react';
 import AdminLoginButton from '@/components/AdminLoginButton';
+import { createClient as createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import {
   defaultPayments, defaultRooms, defaultTenants, defaultTransactions,
   loadData, money, Payment, Room, Tenant, Transaction
@@ -66,15 +67,37 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    loadDashboard();
-    const refresh = () => loadDashboard();
+    let disposed = false;
+    const refresh = () => {
+      if (!disposed) void loadDashboard();
+    };
+
+    // Realtime utama: setiap perubahan kamar di Supabase langsung memicu
+    // pembacaan ulang dari /api/rooms yang sudah terscope ke property login.
+    const supabase = createSupabaseBrowserClient();
+    const channel = supabase
+      .channel('kostpro-dashboard-rooms')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'kost_rooms' },
+        refresh,
+      )
+      .subscribe();
+
+    refresh();
+
+    // Fallback 1 detik tetap dipertahankan agar dashboard pulih otomatis
+    // bila koneksi Realtime terputus atau event terlewat.
     const interval = window.setInterval(refresh, 1000);
     window.addEventListener('kostpro:data-saved', refresh);
     window.addEventListener('kostpro:data-scope-changed', refresh);
+
     return () => {
+      disposed = true;
       window.removeEventListener('kostpro:data-saved', refresh);
       window.removeEventListener('kostpro:data-scope-changed', refresh);
       window.clearInterval(interval);
+      void supabase.removeChannel(channel);
     };
   }, []);
 
