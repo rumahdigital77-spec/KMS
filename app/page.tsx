@@ -14,7 +14,7 @@ import {
 
 const statusMeta = {
   occupied: { label: 'Terisi', icon: BedDouble, cls: 'dash-status-occupied' },
-  available: { label: 'Tersedia', icon: DoorOpen, cls: 'dash-status-available' },
+  available: { label: 'Available', icon: DoorOpen, cls: 'dash-status-available' },
   reserved: { label: 'Reservasi', icon: CalendarCheck, cls: 'dash-status-reserved' },
   maintenance: { label: 'Maintenance', icon: Activity, cls: 'dash-status-maintenance' },
 } as const;
@@ -68,11 +68,13 @@ export default function Dashboard() {
   useEffect(() => {
     loadDashboard();
     const refresh = () => loadDashboard();
+    const interval = window.setInterval(refresh, 5000);
     window.addEventListener('kostpro:data-saved', refresh);
     window.addEventListener('kostpro:data-scope-changed', refresh);
     return () => {
       window.removeEventListener('kostpro:data-saved', refresh);
       window.removeEventListener('kostpro:data-scope-changed', refresh);
+      window.clearInterval(interval);
     };
   }, []);
 
@@ -134,7 +136,7 @@ export default function Dashboard() {
           <span className="dashboard-kpi-icon"><DoorOpen size={21}/></span>
           <span className="dashboard-kpi-label">Total Kamar</span>
           <strong>{rooms.length}</strong>
-          <small>{available} tersedia sekarang</small>
+          <small>{available} Available sekarang</small>
           <ChevronRight size={17} className="dashboard-kpi-arrow"/>
         </Link>
         <Link href="/penghuni" className="dashboard-kpi kpi-green">
@@ -194,7 +196,7 @@ export default function Dashboard() {
             <div className="dashboard-ring" style={{ ['--ring' as string]: occupancy*3.6+'deg' }}><div><strong>{occupancy}%</strong><span>Occupied</span></div></div>
             <div className="dashboard-ring-legend">
               <div><i className="legend-dot dot-green"/><span>Terisi</span><b>{occupied}</b></div>
-              <div><i className="legend-dot dot-blue"/><span>Tersedia</span><b>{available}</b></div>
+              <div><i className="legend-dot dot-blue"/><span>Available</span><b>{available}</b></div>
               <div><i className="legend-dot dot-purple"/><span>Reservasi</span><b>{reserved}</b></div>
               <div><i className="legend-dot dot-amber"/><span>Maintenance</span><b>{maintenance}</b></div>
             </div>
