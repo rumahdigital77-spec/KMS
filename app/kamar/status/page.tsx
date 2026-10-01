@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { defaultRooms, defaultTenants, loadData, money, Room, Tenant, saveData } from '@/lib/store';
 
 const label = (s: Room['status']) =>
-  s === 'occupied' ? 'Terisi' : s === 'available' ? 'Tersedia' : 'Maintenance';
+  s === 'occupied' ? 'Terisi' : s === 'available' ? 'Available' : 'Maintenance';
 
 export default function EditRoomStatus() {
   const [rooms, setRooms] = useState<Room[]>(defaultRooms);
@@ -85,7 +85,7 @@ export default function EditRoomStatus() {
     return (
       <div className="kamar-status-actions">
         <button type="button" className="btn" disabled={occupied} onClick={() => change(r.id, 'available')}>
-          Tersedia
+          Available
         </button>
         <button type="button" className="btn" disabled={occupied} onClick={() => change(r.id, 'maintenance')}>
           Maintenance
@@ -109,7 +109,7 @@ export default function EditRoomStatus() {
         <div className="kamar-status-editor-head">
           <div>
             <div className="section-title">Status Kamar</div>
-            <div className="kamar-status-editor-sub">Kelola status Ready/Tersedia atau Maintenance. Status Terisi hanya ditetapkan otomatis dari C.I. atau input penghuni baru.</div>
+            <div className="kamar-status-editor-sub">Kelola status Ready/Available atau Maintenance. Status Terisi hanya ditetapkan otomatis dari C.I. atau input penghuni baru.</div>
           </div>
           <span className="kamar-status-count">{rooms.length} Kamar</span>
         </div>
