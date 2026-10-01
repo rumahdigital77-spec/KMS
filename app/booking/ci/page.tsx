@@ -44,18 +44,12 @@ export default function BookingCheckInPage() {
     if (!booking || saving) return;
     if (!name.trim() || !phone.trim() || !checkIn || duration < 1) { setMsg('Lengkapi data C.I. terlebih dahulu.'); return; }
     setSaving(true); setMsg('');
-    const { data, error } = await supabase.rpc('save_kostin_booking_checkin_v2', {
+    const { error } = await supabase.rpc('save_kostin_booking_checkin_v2', {
       p_booking_id: booking.id, p_guest_name: name.trim(), p_guest_phone: phone.trim(),
       p_check_in: checkIn, p_duration_months: duration,
     });
     if (error) { setMsg(error.message || 'Gagal menyimpan C.I.'); setSaving(false); return; }
-    const result = Array.isArray(data) ? data[0] : data;
-    const billCreated = result?.payment_created === true;
-    const amount = Number(result?.payment_amount || 0);
-    const billText = billCreated && amount > 0
-      ? ` Tagihan pertama ${new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(amount)} otomatis dibuat di Tagihan.`
-      : ' Tagihan pertama sudah ada dan tidak dibuat ulang.';
-    setMsg(`C.I. berhasil disimpan. Kamar OCCUPIED, penghuni aktif, booking COMPLETED.${billText}`);
+    setMsg('C.I. berhasil disimpan. Kamar sekarang OCCUPIED dan booking COMPLETED.');
     setSaving(false);
     setTimeout(() => router.push('/booking'), 900);
   }
