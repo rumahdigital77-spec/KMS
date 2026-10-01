@@ -35,8 +35,18 @@ export default function Dashboard() {
   const [property, setProperty] = useState('Kost-Pro');
   const [cctv, setCctv] = useState<CctvItem[]>([]);
 
-  const loadDashboard = () => {
-    setRooms(loadData('rooms', defaultRooms));
+  const loadDashboard = async () => {
+    // Kamar Dashboard wajib mengikuti sumber canonical cloud yang sama dengan KostIn.
+    // /api/rooms memakai property aktif milik account dan status live dari kost_rooms.
+    try {
+      const response = await fetch('/api/rooms', { cache: 'no-store' });
+      if (response.ok) {
+        const payload = await response.json();
+        if (Array.isArray(payload?.rooms)) {
+          setRooms(payload.rooms as Room[]);
+        }
+      }
+    } catch {}
     setPayments(loadData('payments', defaultPayments));
     setTransactions(loadData('transactions', defaultTransactions));
     setTenants(loadData('tenants', defaultTenants).filter(x => (x.status || 'active') === 'active'));
