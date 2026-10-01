@@ -58,7 +58,37 @@ export async function POST(req: Request) {
     const state = cloudState && typeof cloudState === 'object' ? cloudState as Record<string, unknown> : {};
     const rooms = normalizeRooms(state.kostpro_rooms);
     const roomCode = String(room.id).trim().toUpperCase();
-    const nextRoom = { id: roomCode, tenant: room.tenant || '-', price: Number(room.price) || 0, status: room.status, updated_at: new Date().toISOString() };
+    const currentRoom = rooms.find((x) => x.id === roomCode);
+    const bookings = Array.isArray(state.kostpro_bookings) ? state.kostpro_bookings as Array<Record<string, unknown>> : [];
+    const activeBooking = bookings.find((booking) =>
+      String(booking?.room_id ?? '').trim().toUpperCase() === roomCode &&
+      ['PENDING', 'CONFIRMED'].includes(String(booking?.status ?? '').toUpperCase())
+    );
+    const activeTenant = Array.isArray(state.kostpro_tenants)
+      ? (state.kostpro_tenants as Array<Record<string, unknown>>).some((tenant) =>
+          String(tenant?.room ?? '').trim().toLowerCase().replace(/^kamar\\s+/i, '') ===
+          roomCode.toLowerCase().replace(/^kamar\\s+/i, '') &&
+          !['history', 'inactive', 'checkout', 'checked_out'].includes(String(tenant?.status ?? 'active').trim().toLowerCase())
+        )
+      : false;
+
+    // Server-side invariant: a room with a live booking or active tenant cannot
+    // be manually released from the room-status endpoint. Cancellation/CO must
+    // go through the dedicated booking/tenant workflow.
+    if ((room.status === 'available' || room.status === 'maintenance') && (activeBooking || activeTenant)) {
+      return NextResponse.json(
+        { error: 'ROOM_LOCKED_BY_ACTIVE_BOOKING_OR_TENANT' },
+        { status: 409 }
+      );
+    }
+
+    const nextRoom = {
+      id: roomCode,
+      tenant: room.tenant || (currentRoom?.tenant ?? '-'),
+      price: Number(room.price) || 0,
+      status: room.status,
+      updated_at: new Date().toISOString()
+    };
     const nextRooms = rooms.some(x => x.id === roomCode) ? rooms.map(x => x.id === roomCode ? nextRoom : x) : [...rooms, nextRoom];
 
     const { error } = await supabase.rpc('save_property_app_state', { p_key: 'kostpro_rooms', p_value: nextRooms });
