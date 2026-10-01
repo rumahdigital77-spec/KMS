@@ -76,10 +76,10 @@ export default function Dashboard() {
     // pembacaan ulang dari /api/rooms yang sudah terscope ke property login.
     const supabase = createSupabaseBrowserClient();
     const channel = supabase
-      .channel('kostpro-dashboard-rooms')
+      .channel('kostpro-dashboard-property-state')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'kost_rooms' },
+        { event: '*', schema: 'public', table: 'property_app_state' },
         refresh,
       )
       .subscribe();
