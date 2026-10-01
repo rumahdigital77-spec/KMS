@@ -59,15 +59,15 @@ export async function POST(req: Request) {
     const rooms = normalizeRooms(state.kostpro_rooms);
     const roomCode = String(room.id).trim().toUpperCase();
     const currentRoom = rooms.find((x) => x.id === roomCode);
-    const bookings = Array.isArray(state.kostpro_bookings) ? state.kostpro_bookings as Array<Record<string, unknown>> : [];
+    const bookings = Array.isArray(state.kostpro_bookings) ? state.kostpro_bookings : [];
     const activeBooking = bookings.find((booking) =>
       String(booking?.room_id ?? '').trim().toUpperCase() === roomCode &&
       ['PENDING', 'CONFIRMED'].includes(String(booking?.status ?? '').toUpperCase())
     );
     const activeTenant = Array.isArray(state.kostpro_tenants)
-      ? (state.kostpro_tenants as Array<Record<string, unknown>>).some((tenant) =>
-          String(tenant?.room ?? '').trim().toLowerCase().replace(/^kamar\\s+/i, '') ===
-          roomCode.toLowerCase().replace(/^kamar\\s+/i, '') &&
+      ? state.kostpro_tenants.some((tenant) =>
+          String(tenant?.room ?? '').trim().toLowerCase().replace(/^kamar\s+/i, '') ===
+          roomCode.toLowerCase().replace(/^kamar\s+/i, '') &&
           !['history', 'inactive', 'checkout', 'checked_out'].includes(String(tenant?.status ?? 'active').trim().toLowerCase())
         )
       : false;
