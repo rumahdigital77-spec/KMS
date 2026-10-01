@@ -37,6 +37,9 @@ export default function Tagihan(){
       amount:paymentAmount,
       type:'income',
       referenceId:current.id,
+      debitAccount: method === 'cash' ? 'Kas' : method === 'transfer' ? 'Bank' : 'QRIS',
+      creditAccount: 'Pendapatan Sewa Kamar',
+      accountingBasis: 'cash',
     }];
     localStorage.setItem('kostpro_payments',JSON.stringify(n));
     localStorage.setItem('kostpro_paymentHistory',JSON.stringify(nextPaymentHistory));
