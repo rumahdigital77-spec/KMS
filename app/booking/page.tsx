@@ -9,7 +9,7 @@ import BookingPremiumStyles from '@/components/BookingPremiumStyles';
 type Booking = {
   id: string; guest_name: string; guest_phone: string; check_in: string;
   duration_months: number; status: string; created_at: string;
-  property_id: string; room_id: string; room_name?: string; property_name?: string;
+  property_id: string; room_id: string; room_name?: string; property_name?: string; room_price?: number;
 };
 
 const supabase = createClient();
@@ -106,11 +106,11 @@ export default function BookingPage() {
           visible.length === 0 ? <div className="booking-empty"><CalendarCheck size={30}/><b>Belum ada booking</b><span>Booking dari KostIn akan muncul otomatis di sini.</span></div> :
           <div className="booking-table-wrap">
             <table className="booking-table">
-              <thead><tr><th>BOOKING</th><th>KAMAR</th><th>CHECK-IN</th><th>DURASI</th><th>STATUS</th><th>AKSI</th></tr></thead>
+              <thead><tr><th>BOOKING</th><th>KAMAR</th><th>HARGA / BULAN</th><th>CHECK-IN</th><th>DURASI</th><th>STATUS</th><th>AKSI</th></tr></thead>
               <tbody>{visible.map(b => (
                 <tr key={b.id}>
                   <td><div className="booking-guest"><span><UserRound size={16}/></span><div><b>{b.guest_name}</b><small>{b.guest_phone}</small></div></div></td>
-                  <td><strong className="booking-room">{b.room_name || b.room_id}</strong><small className="booking-property">{b.property_name || b.property_id}</small></td>
+                  <td><strong className="booking-room">{b.room_name || b.room_id}</strong><small className="booking-property">{b.property_name || b.property_id}</small></td>\n                  <td><strong>{b.room_price ? new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(b.room_price)) : '—'}</strong><small className="booking-property">per bulan</small></td>
                   <td>{new Date(b.check_in + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                   <td>{b.duration_months} bulan</td>
                   <td><span className={'booking-status-pill ' + b.status.toLowerCase()}>{b.status === 'CANCELLED' ? 'DENIED' : b.status}</span></td>
