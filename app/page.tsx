@@ -51,18 +51,19 @@ export default function Dashboard() {
     setPayments(loadData('payments', defaultPayments));
     setTransactions(loadData('transactions', defaultTransactions));
     setTenants(loadData('tenants', defaultTenants).filter(x => (x.status || 'active') === 'active'));
-    // Property identity must come from the same account/property relation
-    // used by User & Akses. This avoids stale localStorage/auth metadata names.
+    // Canonical property identity: authenticated user_accounts -> properties.
+    // Cast only this query boundary because this project has no generated Supabase DB types.
     try {
       const supabase = createSupabaseBrowserClient();
       const { data: authData } = await supabase.auth.getUser();
       const user = authData.user;
+
       if (!user) {
         setOwner('');
         setProperty('Kost-Pro');
       } else {
-        const { data: profile, error: profileError } = await supabase
-          .from('user_accounts')
+        const accounts = supabase.from('user_accounts') as any;
+        const { data: profile, error: profileError } = await accounts
           .select('full_name,property_id')
           .eq('user_id', user.id)
           .maybeSingle();
@@ -70,11 +71,13 @@ export default function Dashboard() {
         if (profileError) throw profileError;
 
         setOwner(String(profile?.full_name || user.user_metadata?.full_name || ''));
-        if (profile?.property_id) {
-          const { data: activeProperty, error: propertyError } = await supabase
-            .from('properties')
+
+        const propertyId = typeof profile?.property_id === 'string' ? profile.property_id : '';
+        if (propertyId) {
+          const properties = supabase.from('properties') as any;
+          const { data: activeProperty, error: propertyError } = await properties
             .select('name')
-            .eq('id', profile.property_id)
+            .eq('id', propertyId)
             .maybeSingle();
 
           if (propertyError) throw propertyError;
@@ -84,7 +87,6 @@ export default function Dashboard() {
         }
       }
     } catch {
-      // Keep the last safe UI value; never write/change database data here.
       setOwner('');
       setProperty('Kost-Pro');
     }
