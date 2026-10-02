@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { defaultTransactions, loadData, money, normalizeMoney, saveData, Transaction } from '@/lib/store';
+import { defaultPayments, defaultTransactions, loadData, money, normalizeMoney, saveData, Payment, Transaction } from '@/lib/store';
 
 export default function Keuangan() {
   const [transactions, setTransactions] = useState<Transaction[]>(defaultTransactions);
+  const [payments, setPayments] = useState<Payment[]>(defaultPayments);
   const [show, setShow] = useState(false);
   const [type, setType] = useState<Transaction['type']>('expense');
   const [desc, setDesc] = useState('');
@@ -13,8 +14,18 @@ export default function Keuangan() {
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    setTransactions(loadData('transactions', defaultTransactions));
+    const refresh = () => {
+      setTransactions(loadData('transactions', defaultTransactions));
+      setPayments(loadData('payments', defaultPayments));
+    };
+    refresh();
+    window.addEventListener('kostpro:data-saved', refresh);
+    window.addEventListener('kostpro:data-scope-changed', refresh);
     if (new URLSearchParams(location.search).get('aksi') === 'tambah') setShow(true);
+    return () => {
+      window.removeEventListener('kostpro:data-saved', refresh);
+      window.removeEventListener('kostpro:data-scope-changed', refresh);
+    };
   }, []);
 
   const income = useMemo(
@@ -25,6 +36,7 @@ export default function Keuangan() {
     () => transactions.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0),
     [transactions]
   );
+  const receivable = useMemo(() => payments.filter(item => item.status === 'unpaid').reduce((sum, item) => sum + normalizeMoney(item.amount), 0), [payments]);
   const result = income - expense;
   const resultDisplay = result < 0 ? '(' + money(Math.abs(result)) + ')' : '+' + money(result);
 
@@ -122,6 +134,10 @@ export default function Keuangan() {
           <div className="metric finance-metric">{money(expense)}</div>
         </div>
         <div className="card">
+          <div className="label finance-label">PIUTANG AKTIF</div>
+          <div className="metric finance-metric">{money(receivable)}</div>
+        </div>
+        <div className="card">
           <div className="label finance-label">LABA / (RUGI) BERSIH</div>
           <div className={`metric finance-metric ${result < 0 ? 'result-negative' : 'result-positive'}`}>{resultDisplay}</div>
         </div>
@@ -172,6 +188,24 @@ export default function Keuangan() {
               <div role="cell">Total Pendapatan</div>
               <div className="report-amount" role="cell">—</div>
               <div className="report-amount" role="cell">{money(income)}</div>
+            </div>
+
+            <div className="report-section" role="row">
+              <div>PIUTANG / TAGIHAN AKTIF</div>
+            </div>
+
+            {payments.filter(item => item.status === 'unpaid').map(item => (
+              <div className="report-row report-data" role="row" key={'receivable-' + item.id}>
+                <div className="report-description" role="cell">{item.tenant || 'Tamu'} — {item.room || '-'} — {item.month || '-'}</div>
+                <div className="report-amount" role="cell">{money(item.amount)}</div>
+                <div className="report-amount" role="cell">—</div>
+              </div>
+            ))}
+
+            <div className="report-row report-total" role="row">
+              <div role="cell">Total Piutang Aktif</div>
+              <div className="report-amount" role="cell">{money(receivable)}</div>
+              <div className="report-amount" role="cell">—</div>
             </div>
 
             <div className="report-section" role="row">
