@@ -199,12 +199,7 @@ export default function Dashboard() {
             })}
           </div>
           <div className="dashboard-room-grid">
-            {rooms.slice().sort((a, b) => {
-              const an = Number((String(a.id).match(/\d+/) || [''])[0]);
-              const bn = Number((String(b.id).match(/\d+/) || [''])[0]);
-              if (Number.isFinite(an) && Number.isFinite(bn) && an !== bn) return an - bn;
-              return String(a.id).localeCompare(String(b.id));
-            }).map(room => {
+            {rooms.map(room => {
               const Meta = statusMeta[room.status];
               return <Link key={room.id} href={'/kamar?room='+encodeURIComponent(room.id)} className={'dashboard-room-tile '+Meta.cls}>
                 <div className="dashboard-room-top"><span>{room.id}</span><Meta.icon size={17}/></div>
