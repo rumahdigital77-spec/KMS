@@ -51,30 +51,36 @@ export default function Dashboard() {
     setPayments(loadData('payments', defaultPayments));
     setTransactions(loadData('transactions', defaultTransactions));
     setTenants(loadData('tenants', defaultTenants).filter(x => (x.status || 'active') === 'active'));
-    // Nama property canonical: selalu baca dari property aktif milik account login.
-    // Jangan gunakan localStorage/settings sebagai sumber identitas property.
+    // Property identity is always resolved from the authenticated account.
     try {
-      const { data: { user } } = await createSupabaseBrowserClient().auth.getUser();
-      if (user) {
-        const { data: account } = await createSupabaseBrowserClient()
+      const supabase = createSupabaseBrowserClient();
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData.user;
+      if (!user) {
+        setOwner('');
+        setProperty('Kost-Pro');
+      } else {
+        const { data: account } = await supabase
           .from('user_accounts')
-          .select('full_name,property_id')
+          .select('full_name, property_id')
           .eq('user_id', user.id)
+          .limit(1)
           .maybeSingle();
-        setOwner(String(account?.full_name || user.user_metadata?.full_name || ''));
+
+        const metadata = user.user_metadata as Record<string, unknown> | null | undefined;
+        setOwner(String(account?.full_name || metadata?.full_name || ''));
+
         if (account?.property_id) {
-          const { data: activeProperty } = await createSupabaseBrowserClient()
+          const { data: activeProperty } = await supabase
             .from('properties')
             .select('name')
             .eq('id', account.property_id)
+            .limit(1)
             .maybeSingle();
           setProperty(String(activeProperty?.name || 'Kost-Pro'));
         } else {
           setProperty('Kost-Pro');
         }
-      } else {
-        setOwner('');
-        setProperty('Kost-Pro');
       }
     } catch {
       setOwner('');
