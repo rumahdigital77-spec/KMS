@@ -29,23 +29,13 @@ export async function GET(req: Request) {
     const scope = await getAuthenticatedPropertyId(supabase);
     if (!scope.propertyId) return NextResponse.json({ error: scope.error || 'AUTH_REQUIRED' }, { status: 401 });
 
-    const { data: propertyRow, error: propertyError } = await supabase
-      .from('properties')
-      .select('id,name')
-      .eq('id', scope.propertyId)
-      .maybeSingle();
-    if (propertyError) throw propertyError;
-
     // LIVE ROOM SOURCE: canonical cloud state is property-scoped by the RPC using auth.uid().
+    // This avoids the obsolete kost_rooms table and prevents cross-property reads.
     const { data, error } = await supabase.rpc('get_property_app_state');
     if (error) throw error;
 
     const state = data && typeof data === 'object' ? data as Record<string, unknown> : {};
-    return NextResponse.json({
-      property_id: scope.propertyId,
-      property_name: String(propertyRow?.name || ''),
-      rooms: normalizeRooms(state.kostpro_rooms),
-    }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
+    return NextResponse.json({ rooms: normalizeRooms(state.kostpro_rooms) });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Database belum terhubung.' }, { status: 503 });
   }
@@ -82,8 +72,14 @@ export async function POST(req: Request) {
         )
       : false;
 
+    // Server-side invariant: a room with a live booking or active tenant cannot
+    // be manually released from the room-status endpoint. Cancellation/CO must
+    // go through the dedicated booking/tenant workflow.
     if ((room.status === 'available' || room.status === 'maintenance') && (activeBooking || activeTenant)) {
-      return NextResponse.json({ error: 'ROOM_LOCKED_BY_ACTIVE_BOOKING_OR_TENANT' }, { status: 409 });
+      return NextResponse.json(
+        { error: 'ROOM_LOCKED_BY_ACTIVE_BOOKING_OR_TENANT' },
+        { status: 409 }
+      );
     }
 
     const nextRoom = {
