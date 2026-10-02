@@ -46,9 +46,6 @@ export default function Dashboard() {
         if (Array.isArray(payload?.rooms)) {
           setRooms(payload.rooms as Room[]);
         }
-        if (typeof payload?.property_name === 'string' && payload.property_name.trim()) {
-          setProperty(payload.property_name.trim());
-        }
       }
     } catch {}
     setPayments(loadData('payments', defaultPayments));
@@ -57,8 +54,7 @@ export default function Dashboard() {
     try {
       const settings = loadData<Record<string, unknown>>('settings', {});
       setOwner(String(settings.ownerName || settings.manager || ''));
-      // Property identity comes from the authenticated canonical properties row
-      // returned by /api/rooms. Local settings are intentionally not authoritative.
+      setProperty(String(settings.name || settings.propertyName || 'Kost-Pro'));
     } catch {}
     try {
       const raw = localStorage.getItem('kostpro_cctv');
