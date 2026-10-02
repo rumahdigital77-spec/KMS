@@ -51,16 +51,40 @@ export default function Dashboard() {
     setPayments(loadData('payments', defaultPayments));
     setTransactions(loadData('transactions', defaultTransactions));
     setTenants(loadData('tenants', defaultTenants).filter(x => (x.status || 'active') === 'active'));
-    // Property identity comes directly from the authenticated account metadata
-    // saved during Create Database. No local settings or database writes are used.
+    // Property identity must come from the same account/property relation
+    // used by User & Akses. This avoids stale localStorage/auth metadata names.
     try {
       const supabase = createSupabaseBrowserClient();
       const { data: authData } = await supabase.auth.getUser();
       const user = authData.user;
-      const metadata = user?.user_metadata;
-      setOwner(String(metadata?.full_name || ''));
-      setProperty(String(metadata?.property_name || 'Kost-Pro'));
+      if (!user) {
+        setOwner('');
+        setProperty('Kost-Pro');
+      } else {
+        const { data: profile, error: profileError } = await supabase
+          .from('user_accounts')
+          .select('full_name,property_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (profileError) throw profileError;
+
+        setOwner(String(profile?.full_name || user.user_metadata?.full_name || ''));
+        if (profile?.property_id) {
+          const { data: activeProperty, error: propertyError } = await supabase
+            .from('properties')
+            .select('name')
+            .eq('id', profile.property_id)
+            .maybeSingle();
+
+          if (propertyError) throw propertyError;
+          setProperty(String(activeProperty?.name || 'Kost-Pro'));
+        } else {
+          setProperty('Kost-Pro');
+        }
+      }
     } catch {
+      // Keep the last safe UI value; never write/change database data here.
       setOwner('');
       setProperty('Kost-Pro');
     }
