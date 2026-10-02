@@ -42,7 +42,7 @@ export default function Keuangan() {
       setMsg('Nominal transaksi harus lebih besar dari Rp0.');
       return;
     }
-    const next = [
+    const next: Transaction[] = [
       ...transactions,
       {
         id: 'TR-' + Date.now(),
