@@ -35,7 +35,9 @@ export async function GET(req: Request) {
     if (error) throw error;
 
     const state = data && typeof data === 'object' ? data as Record<string, unknown> : {};
-    return NextResponse.json({ rooms: normalizeRooms(state.kostpro_rooms) });
+    const { data: propertyRow, error: propertyError } = await supabase.from('properties').select('id,name').eq('id', scope.propertyId).maybeSingle();
+    if (propertyError) throw propertyError;
+    return NextResponse.json({ property_id: scope.propertyId, property_name: String(propertyRow?.name || ''), rooms: normalizeRooms(state.kostpro_rooms) }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Database belum terhubung.' }, { status: 503 });
   }
