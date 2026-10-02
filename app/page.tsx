@@ -60,23 +60,26 @@ export default function Dashboard() {
         setOwner('');
         setProperty('Kost-Pro');
       } else {
-        const { data: account } = await supabase
+        const { data: accountData } = await supabase
           .from('user_accounts')
           .select('full_name, property_id')
           .eq('user_id', user.id)
           .limit(1)
           .maybeSingle();
 
+        const account = accountData as { full_name?: unknown; property_id?: unknown } | null;
         const metadata = user.user_metadata as Record<string, unknown> | null | undefined;
         setOwner(String(account?.full_name || metadata?.full_name || ''));
 
-        if (account?.property_id) {
-          const { data: activeProperty } = await supabase
+        const propertyId = typeof account?.property_id === 'string' ? account.property_id : '';
+        if (propertyId) {
+          const { data: propertyData } = await supabase
             .from('properties')
             .select('name')
-            .eq('id', account.property_id)
+            .eq('id', propertyId)
             .limit(1)
             .maybeSingle();
+          const activeProperty = propertyData as { name?: unknown } | null;
           setProperty(String(activeProperty?.name || 'Kost-Pro'));
         } else {
           setProperty('Kost-Pro');
