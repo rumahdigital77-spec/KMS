@@ -124,11 +124,18 @@ export default function Dashboard() {
   }, [transactions]);
   const maxBar = Math.max(...monthlyBars.map(x => x.value), 1);
 
-  // Dashboard room cards must always use natural room order: K1, K2, ... K10.
-  // Never mutate the live room array; only create a presentation-sorted copy.
+  // Presentation-only natural room order: K1, K2, ... K10.
+  // Keep the live room array untouched and avoid locale-dependent sorting.
   const orderedRooms = useMemo(() => {
-    const collator = new Intl.Collator('id', { numeric: true, sensitivity: 'base' });
-    return rooms.slice().sort((a, b) => collator.compare(String(a.id), String(b.id)));
+    const roomNumber = (value: string) => {
+      const match = value.match(/\d+/);
+      return match ? Number(match[0]) : Number.MAX_SAFE_INTEGER;
+    };
+    return rooms.slice().sort((a, b) => {
+      const numberDiff = roomNumber(String(a.id)) - roomNumber(String(b.id));
+      if (numberDiff !== 0) return numberDiff;
+      return String(a.id).localeCompare(String(b.id));
+    });
   }, [rooms]);
 
   const recentTenants = tenants.slice().sort((a,b) => String(b.startDate).localeCompare(String(a.startDate))).slice(0,5);
