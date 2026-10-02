@@ -51,18 +51,11 @@ export default function Dashboard() {
     setPayments(loadData('payments', defaultPayments));
     setTransactions(loadData('transactions', defaultTransactions));
     setTenants(loadData('tenants', defaultTenants).filter(x => (x.status || 'active') === 'active'));
-    // Property identity is resolved server-side from the authenticated account.
-    // This keeps the dashboard tied to the active property without changing database data.
     try {
-      const response = await fetch('/api/property', { cache: 'no-store' });
-      if (!response.ok) throw new Error('PROPERTY_LOOKUP_FAILED');
-      const payload = await response.json();
-      setOwner(String(payload?.owner || ''));
-      setProperty(String(payload?.name || 'Kost-Pro'));
-    } catch {
-      setOwner('');
-      setProperty('Kost-Pro');
-    }
+      const settings = loadData<Record<string, unknown>>('settings', {});
+      setOwner(String(settings.ownerName || settings.manager || ''));
+      setProperty(String(settings.name || settings.propertyName || 'Kost-Pro'));
+    } catch {}
     try {
       const raw = localStorage.getItem('kostpro_cctv');
       const data = raw ? JSON.parse(raw) : [];
