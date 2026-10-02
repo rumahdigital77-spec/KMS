@@ -51,41 +51,14 @@ export default function Dashboard() {
     setPayments(loadData('payments', defaultPayments));
     setTransactions(loadData('transactions', defaultTransactions));
     setTenants(loadData('tenants', defaultTenants).filter(x => (x.status || 'active') === 'active'));
-    // Canonical property identity: authenticated user_accounts -> properties.
-    // Cast only this query boundary because this project has no generated Supabase DB types.
+    // Property identity is resolved server-side from the authenticated account.
+    // This keeps the dashboard tied to the active property without changing database data.
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData.user;
-
-      if (!user) {
-        setOwner('');
-        setProperty('Kost-Pro');
-      } else {
-        const accounts = supabase.from('user_accounts') as any;
-        const { data: profile, error: profileError } = await accounts
-          .select('full_name,property_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (profileError) throw profileError;
-
-        setOwner(String(profile?.full_name || user.user_metadata?.full_name || ''));
-
-        const propertyId = typeof profile?.property_id === 'string' ? profile.property_id : '';
-        if (propertyId) {
-          const properties = supabase.from('properties') as any;
-          const { data: activeProperty, error: propertyError } = await properties
-            .select('name')
-            .eq('id', propertyId)
-            .maybeSingle();
-
-          if (propertyError) throw propertyError;
-          setProperty(String(activeProperty?.name || 'Kost-Pro'));
-        } else {
-          setProperty('Kost-Pro');
-        }
-      }
+      const response = await fetch('/api/property', { cache: 'no-store' });
+      if (!response.ok) throw new Error('PROPERTY_LOOKUP_FAILED');
+      const payload = await response.json();
+      setOwner(String(payload?.owner || ''));
+      setProperty(String(payload?.name || 'Kost-Pro'));
     } catch {
       setOwner('');
       setProperty('Kost-Pro');
