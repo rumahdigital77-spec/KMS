@@ -51,40 +51,15 @@ export default function Dashboard() {
     setPayments(loadData('payments', defaultPayments));
     setTransactions(loadData('transactions', defaultTransactions));
     setTenants(loadData('tenants', defaultTenants).filter(x => (x.status || 'active') === 'active'));
-    // Property identity is always resolved from the authenticated account.
+    // Property identity comes directly from the authenticated account metadata
+    // saved during Create Database. No local settings or database writes are used.
     try {
       const supabase = createSupabaseBrowserClient();
       const { data: authData } = await supabase.auth.getUser();
       const user = authData.user;
-      if (!user) {
-        setOwner('');
-        setProperty('Kost-Pro');
-      } else {
-        const { data: accountData } = await supabase
-          .from('user_accounts')
-          .select('full_name, property_id')
-          .eq('user_id', user.id)
-          .limit(1)
-          .maybeSingle();
-
-        const account = accountData as { full_name?: unknown; property_id?: unknown } | null;
-        const metadata = user.user_metadata as Record<string, unknown> | null | undefined;
-        setOwner(String(account?.full_name || metadata?.full_name || ''));
-
-        const propertyId = typeof account?.property_id === 'string' ? account.property_id : '';
-        if (propertyId) {
-          const { data: propertyData } = await supabase
-            .from('properties')
-            .select('name')
-            .eq('id', propertyId)
-            .limit(1)
-            .maybeSingle();
-          const activeProperty = propertyData as { name?: unknown } | null;
-          setProperty(String(activeProperty?.name || 'Kost-Pro'));
-        } else {
-          setProperty('Kost-Pro');
-        }
-      }
+      const metadata = user?.user_metadata;
+      setOwner(String(metadata?.full_name || ''));
+      setProperty(String(metadata?.property_name || 'Kost-Pro'));
     } catch {
       setOwner('');
       setProperty('Kost-Pro');
