@@ -68,7 +68,7 @@ export default function AdminLoginButton() {
       <div className="admin-login-control">
         <button
           type="button"
-          className="admin-login-trigger"
+          className={`admin-login-trigger ${loggedIn ? 'is-logged-in' : 'is-logged-out'}`}
           aria-label={loggedIn ? 'Logout admin' : 'Login admin'}
           onClick={() => {
             if (loggedIn) void logout();
