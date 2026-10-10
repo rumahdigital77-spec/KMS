@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { createClient } from '../lib/supabase-browser';
+import { LogIn, LogOut } from 'lucide-react';
 
 export default function AdminLoginButton() {
   const supabase = createClient();
@@ -75,7 +76,7 @@ export default function AdminLoginButton() {
           }}
           disabled={busy}
         >
-          <img src="/admin-login-power.jpg" alt="" className="admin-login-icon" />
+          {loggedIn ? <LogOut aria-hidden="true" className="admin-login-icon-svg" /> : <LogIn aria-hidden="true" className="admin-login-icon-svg" />}
           <span>{loggedIn ? 'LOGOUT' : 'LOGIN'}</span>
         </button>
       </div>
