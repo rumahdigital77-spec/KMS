@@ -1572,3 +1572,14 @@ input,select,textarea{font-size:16px}
 .admin-login-trigger:has(.admin-login-icon-svg){background:linear-gradient(135deg,#f0fdf4,#dcfce7 60%,#fff)}
 .admin-login-trigger:has(.admin-login-icon-svg) .admin-login-icon-svg{color:#16a34a}
 .admin-login-trigger:has(.admin-login-icon-svg) span{color:#166534}
+
+/* Final explicit state colours for the login/logout toggle */
+.admin-login-trigger.is-logged-in{background:linear-gradient(135deg,#ecfdf5,#bbf7d0 58%,#fff)!important;border-color:#86efac!important;color:#166534!important;box-shadow:0 8px 22px rgba(22,163,74,.17)!important}
+.admin-login-trigger.is-logged-in .admin-login-icon-svg{color:#16a34a!important}
+.admin-login-trigger.is-logged-in span{color:#166534!important}
+.admin-login-trigger.is-logged-in::before{background:#22c55e!important;box-shadow:0 0 0 3px #bbf7d0!important}
+.admin-login-trigger.is-logged-out{background:linear-gradient(135deg,#fff7ed,#fed7aa 58%,#fff)!important;border-color:#fdba74!important;color:#9a3412!important;box-shadow:0 8px 22px rgba(234,88,12,.16)!important}
+.admin-login-trigger.is-logged-out .admin-login-icon-svg{color:#ea580c!important}
+.admin-login-trigger.is-logged-out span{color:#9a3412!important}
+.admin-login-trigger.is-logged-out::before{background:#f97316!important;box-shadow:0 0 0 3px #fed7aa!important;animation:adminLoginPulseOff 2s ease-in-out infinite!important}
+@keyframes adminLoginPulseOff{0%,100%{box-shadow:0 0 0 3px #fed7aa}50%{box-shadow:0 0 0 5px rgba(253,186,116,.5)}}
